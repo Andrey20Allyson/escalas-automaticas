@@ -22,17 +22,29 @@ export class DaySearch {
 
 export class DaysOfWork {
   private readonly days: boolean[];
+  private numOfDaysOff: number;
+  
   readonly length: number;
 
   constructor(month: number, startValue = false) {
     this.days = new Array(getNumOfDaysInMonth(month)).fill(startValue);
 
     this.length = this.days.length;
+    
+    this.numOfDaysOff = startValue ? 0 : this.length;
+  }
+
+  getNumOfDaysOff() {
+    return this.numOfDaysOff;
   }
 
   work(day: number) {
     if (day >= this.length) return;
-    this.days[day] = true;
+
+    if (this.days[day] === false) {
+      this.numOfDaysOff--;
+      this.days[day] = true;
+    }
   }
 
   searchClosestDayOff(search: DaySearch): number | undefined {
@@ -54,7 +66,11 @@ export class DaysOfWork {
 
   notWork(day: number) {
     if (day >= this.length) return;
-    this.days[day] = false;
+    
+    if (this.days[day] === true) {
+      this.numOfDaysOff++;
+      this.days[day] = false;
+    }
   }
 
   workOn(day: number): boolean {

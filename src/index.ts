@@ -4,6 +4,25 @@ import { TableWorker } from './table-worker';
 import { ExtraDutyTable, ExtraDutyTableEntry } from './extra-duty-table';
 import { WorkerInfo } from './extra-duty-table/worker-info';
 
+function workerNumOfDaysOffSorter(a: WorkerInfo, b: WorkerInfo): number {
+  return a.daysOfWork.getNumOfDaysOff() - b.daysOfWork.getNumOfDaysOff();
+}
+
+function forkArray<T>(array: Array<T>, separator: (value: T) => boolean) {
+  let falseArray = [];
+  let trueArray = [];
+
+  for (let item of array) {
+    if (separator(item)) {
+      trueArray.push(item);
+    } else {
+      falseArray.push(item);
+    }
+  }
+
+  return { falseArray, trueArray }
+}
+
 function toInterval(start: number, end: number) {
   return `${start.toString().padStart(2, '0')} ÀS ${end.toString().padStart(2, '0')}h`;
 }
@@ -12,7 +31,7 @@ function workerNameSorter(a: ExtraDutyTableEntry, b: ExtraDutyTableEntry): numbe
   return a.workerName < b.workerName ? -1 : a.workerName > b.workerName ? 1 : 0;
 }
 
-const DEBUG = false;
+const DEBUG = true;
 
 function extraDutyTableEntryToRow({
   day,
@@ -54,19 +73,22 @@ async function main() {
   }
 
   const extraTable = new ExtraDutyTable();
+  const sortedWorkers = workerInfos
+  // .sort(workerNumOfDaysOffSorter)
 
-  for (let i = 0; i < 10; i++) {
-    for (const worker of workerInfos) {
-      extraTable.assign(worker);
-    }
-  }
+  const { falseArray, trueArray } = forkArray(sortedWorkers, v => v.daysOfWork.getNumOfDaysOff() < 10);
+
+  extraTable.assignArray(trueArray);
+  extraTable.assignArray(falseArray);
 
   const dpEndT = Date.now();
 
   const outBook = XLSX.utils.book_new();
+  const extraEntries = extraTable.toArray();
 
-  const sheetBody = Array
-    .from(extraTable)
+  console.log(`Faltaram ${workerInfos.length * 10 - extraEntries.length} cargos!`);
+
+  const sheetBody = extraEntries
     .sort(workerNameSorter)
     .map(extraDutyTableEntryToRow);
 

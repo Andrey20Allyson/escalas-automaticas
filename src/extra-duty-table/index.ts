@@ -22,6 +22,8 @@ export class ExtraDuty implements Iterable<string> {
   }
 
   add(worker: WorkerInfo) {
+    if (this.has(worker)) throw new Error(`Can't add a worker to same duty for the second time!`);
+
     this.workers.add(worker.workerName);
   }
 }
@@ -40,13 +42,34 @@ export class DayOfExtraDuty {
   }
 
   constructor(
+    readonly index: number,
     readonly dutyTable: ExtraDutyTable,
   ) {
     this.duties = [];
   }
 
-  getDuty(dutyIndex: number) {
-    if (dutyIndex >= this.config.maxDuties) throw new Error(`Out of bounds error, limit: ${this.config.maxDuties}`);
+  getGaxDuties() {
+    return Math.floor(24 / this.config.dutyInterval);
+  }
+
+  getDuty(dutyIndex: number): ExtraDuty {
+    const maxDuties = this.getGaxDuties();
+
+    if (dutyIndex < 0) {
+      const dayOfExtraDuty = this.dutyTable.getDayOfExtraDuty(this.index + Math.floor(dutyIndex / maxDuties));
+
+      if (dutyIndex + maxDuties < 0) throw new Error(`Out of bounds error, limit: ${maxDuties}, index: ${dutyIndex}`);
+
+      return dayOfExtraDuty.getDuty(maxDuties + dutyIndex);
+    }
+
+    if (dutyIndex >= maxDuties) {
+      const dayOfExtraDuty = this.dutyTable.getDayOfExtraDuty(this.index + Math.ceil((dutyIndex - maxDuties + 1) / maxDuties));
+      
+      if (dutyIndex - maxDuties >= maxDuties) throw new Error(`Out of bounds error, limit: ${maxDuties}, index: ${dutyIndex}`);
+
+      return dayOfExtraDuty.getDuty(dutyIndex - maxDuties);
+    } 
 
     const duty = this.duties.at(dutyIndex);
     if (duty) return duty;
@@ -58,19 +81,24 @@ export class DayOfExtraDuty {
     return newDuty;
   }
 
-  insert(worker: WorkerInfo, day: number, dutyIndex: number): boolean {
-    if (dutyIndex > 0) {
-      const pastDuty = this.getDuty(dutyIndex - 1);
-
-      if (pastDuty.has(worker)) return false;
+  workedAtInterval(worker: WorkerInfo, start: number, end: number) {
+    for (let i = start; i < end; i++) {
+      if (this.getDuty(i).has(worker)) return true;
     }
 
-    const duty = this.getDuty(dutyIndex);
+    return false
+  }
 
-    if (duty.has(worker)) return false;
+  insert(worker: WorkerInfo, dutyIndex: number, distance: number = 0): boolean {
+    if (distance < 0) throw new Error(`Distance can't be smaller than 0! distance: ${distance}`);
+
+    const workedInDutyAfterOrNowOrBefore = this.workedAtInterval(worker, dutyIndex - 1 - distance, dutyIndex + 2 + distance);
+    if (workedInDutyAfterOrNowOrBefore) return false;
+
+    const duty = this.getDuty(dutyIndex);
     if (duty.reachedTheLimit()) return false;
 
-    const workedYesterday = worker.daysOfWork.workOn(day - 1);
+    const workedYesterday = worker.daysOfWork.workOn(this.index - 1);
 
     if (!workedYesterday) {
       duty.add(worker);
@@ -79,8 +107,6 @@ export class DayOfExtraDuty {
 
     const offTimeEnd = (worker.workTime.startTime + worker.workTime.totalTime * 2) % 24;
     const dutyStart = (this.config.firstDutyTime + this.config.dutyInterval * dutyIndex) % 24;
-
-    if (dutyStart)
 
     if (offTimeEnd > dutyStart) return false;
 
@@ -97,6 +123,15 @@ export interface ExtraDutyTableEntry {
   dutyEnd: number;
 }
 
+export interface WorkerSetEntry {
+  readonly worker: WorkerInfo;
+  dutiesLeft: number;
+}
+
+export function workerSetEntryFactory(worker: WorkerInfo): WorkerSetEntry {
+  return { worker, dutiesLeft: 10 }
+}
+
 export class ExtraDutyTable implements Iterable<ExtraDutyTableEntry> {
   readonly dayOfExtraDutyConfig: DayOfExtraDutyConfig;
   readonly width: number;
@@ -104,7 +139,7 @@ export class ExtraDutyTable implements Iterable<ExtraDutyTableEntry> {
 
   constructor(month = getMonth()) {
     this.dayOfExtraDutyConfig = {
-      firstDutyTime: 7,
+      firstDutyTime: 1,
       dutyInterval: 6,
       maxDuties: 4,
     };
@@ -136,38 +171,68 @@ export class ExtraDutyTable implements Iterable<ExtraDutyTableEntry> {
     }
   }
 
+  toArray() {
+    return Array.from(this);
+  }
+
   getDayOfExtraDuty(day: number) {
-    if (day >= this.width) throw new Error(`Out of bounds error, limit: ${this.width}`)
+    // if (day >= this.width) throw new Error(`Out of bounds error, limit: ${this.width}`)
 
     const dayOfExtraDuty = this.table.at(day);
     if (dayOfExtraDuty) return dayOfExtraDuty;
 
-    const newDayOfExtraDuty = new DayOfExtraDuty(this);
+    const newDayOfExtraDuty = new DayOfExtraDuty(day, this);
 
-    this.table[day] = newDayOfExtraDuty;
+    this.table[newDayOfExtraDuty.index] = newDayOfExtraDuty;
 
     return newDayOfExtraDuty;
   }
 
-  assign(worker: WorkerInfo) {
+  assign(worker: WorkerInfo, distance = 0) {
     const randDay = randomIntFromInterval(0, this.width - 1);
-    
+
     const search = DaySearch.fromDay(randDay);
 
     while (true) {
       const dayOff = worker.daysOfWork.searchClosestDayOff(search);
       if (dayOff === undefined) break;
-  
+
       const dayOfExtraDuty = this.getDayOfExtraDuty(dayOff);
-  
+
       for (let dutyIndex = 0; dutyIndex < this.dayOfExtraDutyConfig.maxDuties; dutyIndex++) {
-        if (!dayOfExtraDuty.insert(worker, dayOff, dutyIndex)) continue;
-  
+        if (!dayOfExtraDuty.insert(worker, dutyIndex, distance)) continue;
+
         return true;
       }
     }
 
-    console.warn(`Has't possible insert worker ${worker.workerName}!`);
+    return false;
+  }
+
+  assignArray(workers: WorkerInfo[]): boolean {
+    let workersSet: Set<WorkerSetEntry> = new Set(workers.map(workerSetEntryFactory));
+
+    for (let i = 0; i < 20; i++) {
+      for (const entry of workersSet) {
+        const result = this.assign(entry.worker, 1);
+
+        if (result) {
+          entry.dutiesLeft--;
+        }
+
+        if (entry.dutiesLeft <= 0) {
+          workersSet.delete(entry);
+          break;
+        }
+      }
+
+      if (workersSet.size === 0) return true;
+    }
+
+    // for (const entry of workersSet) {
+    //   console.log(entry);
+    // }
+
     return false;
   }
 }
