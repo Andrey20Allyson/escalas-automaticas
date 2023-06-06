@@ -2,6 +2,12 @@ import type { ExtraDutyTable } from '..';
 import { WorkerInfo } from '../worker-info';
 import { ExtraDuty } from './extra-duty';
 
+export interface DayOfExtraDutyFillOptions {
+  force?: boolean;
+  start?: number;
+  end?: number;
+}
+
 export class DayOfExtraDuty implements Iterable<ExtraDuty> {
   private readonly duties: readonly ExtraDuty[];
   readonly size: number;
@@ -16,7 +22,7 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
   ) {
     this.size = this.getMaxDuties();
 
-    this.duties = ExtraDuty.arrayFrom(this);
+    this.duties = ExtraDuty.dutiesFrom(this);
   }
 
   [Symbol.iterator](): Iterator<ExtraDuty> {
@@ -47,11 +53,20 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
     return this.getDuty(index);
   }
 
-  canInsert(worker: WorkerInfo, duty: ExtraDuty) {
-    return !duty.isFull()
-      && !duty.has(worker)
+  canInsert(worker: WorkerInfo, duty: ExtraDuty): boolean;
+  canInsert(worker: WorkerInfo, index: number): boolean;
+  canInsert(worker: WorkerInfo, arg1: ExtraDuty | number) {
+    const duty = this.getDutyFromDutyOrIndex(arg1);
+
+    return duty.canAdd(worker)
       && !this.otherDutiesHasWorker(worker, duty.index)
       && !duty.collidesWithWork(worker);
+  }
+
+  canInsertIn(worker: WorkerInfo, dutyIndex: number) {
+    const duty = this.getDuty(dutyIndex);
+
+    return this.canInsert(worker, duty);
   }
 
   getDuty(dutyIndex: number): ExtraDuty {
@@ -81,13 +96,43 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
       || this.workedAtInterval(worker, nextIndex, nextIndex + this.config.dutyMinDistance);
   }
 
-  insert(worker: WorkerInfo, dutyIndex: number): boolean {
-    const duty = this.getDuty(dutyIndex);
+  fill(worker: WorkerInfo, options: DayOfExtraDutyFillOptions = {}) {
+    const {
+      start = 0,
+      end = this.size,
+      force,
+    } = options;
 
-    if (!this.canInsert(worker, duty)) return false;
+    let count = 0;
 
-    duty.add(worker);
+    for (let i = start; i < end; i++) {
+      if (this.insert(worker, i, force)) count++;
+    }
 
-    return true;
+    return count;
+  }
+
+  insert(worker: WorkerInfo, index: number, force?: boolean): boolean;
+  insert(worker: WorkerInfo, duty: ExtraDuty, force?: boolean): boolean;
+  insert(worker: WorkerInfo, arg1: ExtraDuty | number, force = false): boolean {
+    const duty = this.getDutyFromDutyOrIndex(arg1);
+
+    if (!force && !this.canInsert(worker, duty)) return false;
+
+    return duty.add(worker, true);
+  }
+
+  getDutyFromDutyOrIndex(dutyOrIndex: ExtraDuty | number) {
+    return dutyOrIndex instanceof ExtraDuty ? dutyOrIndex : this.getDuty(dutyOrIndex);
+  }
+
+  static daysFrom(table: ExtraDutyTable): readonly DayOfExtraDuty[] {
+    const duties: DayOfExtraDuty[] = new Array(table.width);
+
+    for (let i = 0; i < duties.length; i++) {
+      duties[i] = new this(i, table);
+    }
+
+    return duties;
   }
 }

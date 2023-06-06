@@ -1,8 +1,9 @@
-import * as XLSX from 'xlsx';
 import fs from 'fs/promises';
-import { TableWorker } from './table-worker';
+import * as XLSX from 'xlsx';
 import { ExtraDutyTable, ExtraDutyTableEntry } from './extra-duty-table';
+import { ExtraDutyTableV2 } from './extra-duty-table/v2';
 import { WorkerInfo } from './extra-duty-table/worker-info';
+import { TableWorker } from './table-worker';
 
 function workerNumOfDaysOffSorter(a: WorkerInfo, b: WorkerInfo): number {
   return a.daysOfWork.getNumOfDaysOff() - b.daysOfWork.getNumOfDaysOff();
@@ -121,13 +122,13 @@ async function main() {
     workerInfos.push(worker);
   }
 
-  const extraTable = new ExtraDutyTable();
+  const extraTable = new ExtraDutyTableV2();
   const sortedWorkers = workerInfos
   // .sort(workerNumOfDaysOffSorter)
 
   const { falseArray, trueArray } = forkArray(sortedWorkers, v => v.daysOfWork.getNumOfDaysOff() < 10);
 
-  extraTable.assignArray(trueArray);
+  extraTable.assignArrayToAllWeekEnds(trueArray);
   // extraTable.assignArray(falseArray);
 
   const dpEndT = Date.now();

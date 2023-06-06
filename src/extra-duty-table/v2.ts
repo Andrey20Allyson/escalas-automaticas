@@ -3,37 +3,38 @@ import { thisMonthWeekends } from "./utils";
 import { WorkerInfo } from "./worker-info";
 
 export class ExtraDutyTableV2 extends ExtraDutyTable {
-  assignOnAllWeekEnds(worker: WorkerInfo, distance = 0): boolean {
-    let threeTimes = true;
-    
+  assignOnAllWeekEnds(worker: WorkerInfo): boolean {
+    const oldDutyMinDistance = this.config.dutyMinDistance;
+    this.config.dutyMinDistance = 1;
+
     for (const weekend of thisMonthWeekends) {
-      if (threeTimes) {
-        if (weekend.saturday) {
-          const dayOfDuty = this.getDay(weekend.saturday);
+      if (weekend.saturday) {
+        const day = this.getDay(weekend.saturday);
 
-          const duty = dayOfDuty.getDuty(0);
-
-          duty.isFull();
-        }
-
-        if (weekend.sunday) {
-          const dayOfDuty = this.getDay(weekend.sunday);
-
-
-        }
-      } else {
-
+        day.fill(worker);
       }
-
-      threeTimes = !threeTimes;
+      
+      if (weekend.sunday) {
+        const day = this.getDay(weekend.sunday);
+        
+        day.fill(worker);
+      }
     }
 
-    throw new Error('Method not implemented');
+    this.config.dutyMinDistance = oldDutyMinDistance;
+
+    return worker.isCompletelyBusy();
   }
 
-  assignArray(workers: WorkerInfo[]): boolean {
+  assignArrayToAllWeekEnds(workers: WorkerInfo[]): boolean {
+    const workersSet = new Set(workers);
 
+    for (const worker of workersSet) {
+      this.assignOnAllWeekEnds(worker);
 
-    throw new Error('Method not implemented');
+      if (worker.isCompletelyBusy()) workersSet.delete(worker);
+    }
+
+    return workersSet.size === 0;
   }
 }

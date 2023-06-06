@@ -20,19 +20,19 @@ export interface ExtraDutyTableEntry {
 }
 
 export class ExtraDutyTable implements Iterable<ExtraDutyTableEntry> {
+  readonly days: readonly DayOfExtraDuty[];
   readonly config: ExtraDutyTableConfig;
   readonly width: number;
-  readonly table: DayOfExtraDuty[];
 
   constructor(config?: Partial<ExtraDutyTableConfig>) {
     this.config = ExtraDutyTable.createConfigFrom(config);
 
     this.width = getNumOfDaysInMonth(this.config.month);
-    this.table = [];
+    this.days = DayOfExtraDuty.daysFrom(this);
   }
 
   *[Symbol.iterator](): Iterator<ExtraDutyTableEntry> {
-    for (const day of this.table) {
+    for (const day of this.days) {
       for (const duty of day) {
         for (const workerName of duty) {
           yield {
@@ -51,16 +51,7 @@ export class ExtraDutyTable implements Iterable<ExtraDutyTableEntry> {
   }
 
   getDay(day: number) {
-    // if (day >= this.width) throw new Error(`Out of bounds error, limit: ${this.width}`)
-
-    const dayOfExtraDuty = this.table.at(day);
-    if (dayOfExtraDuty) return dayOfExtraDuty;
-
-    const newDayOfExtraDuty = new DayOfExtraDuty(day, this);
-
-    this.table[newDayOfExtraDuty.day] = newDayOfExtraDuty;
-
-    return newDayOfExtraDuty;
+    return this.days.at(day) ?? new DayOfExtraDuty(day, this);
   }
 
   assign(worker: WorkerInfo) {
@@ -89,13 +80,9 @@ export class ExtraDutyTable implements Iterable<ExtraDutyTableEntry> {
 
     for (let i = 0; i < 20; i++) {
       for (const worker of workersSet) {
-        const result = this.assign(worker);
+        this.assign(worker);
 
-        if (result) {
-          worker.positionsLeft--;
-        }
-
-        if (worker.positionsLeft <= 0) {
+        if (worker.isCompletelyBusy()) {
           workersSet.delete(worker);
           break;
         }

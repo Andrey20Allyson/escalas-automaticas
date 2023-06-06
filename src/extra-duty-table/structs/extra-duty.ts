@@ -41,7 +41,7 @@ export class ExtraDuty implements Iterable<string> {
 
     const yesterdayWorkOffTimeEnd = worker.workTime.startTime + worker.workTime.totalTime * 2;
 
-    return yesterdayWorkOffTimeEnd > this.start;
+    return yesterdayWorkOffTimeEnd - 24 > this.start;
   }
 
   collidesWithYesterdayWork(worker: WorkerInfo) {
@@ -58,7 +58,7 @@ export class ExtraDuty implements Iterable<string> {
   }
 
   isFull() {
-    return this.workers.size >= this.config.dutyCapacity;
+    return this.getSize() >= this.config.dutyCapacity;
   }
 
   has(worker: WorkerInfo) {
@@ -69,14 +69,23 @@ export class ExtraDuty implements Iterable<string> {
     return this.workers.size;
   }
 
-  add(worker: WorkerInfo) {
-    if (this.has(worker)) throw new Error(`Can't add a worker to same duty for the second time!`);
-    if (this.isFull()) throw new Error(`Can't add more workers because is full!`);
-
-    this.workers.add(worker.workerName);
+  canAdd(worker: WorkerInfo) {
+    return !worker.isCompletelyBusy()
+      && !this.isFull()
+      && !this.has(worker);
   }
 
-  static arrayFrom(day: DayOfExtraDuty): readonly ExtraDuty[] {
+  add(worker: WorkerInfo, force = false): boolean {
+    if (!force && !this.canAdd(worker)) return false;
+
+    this.workers.add(worker.workerName);
+
+    worker.occupyPosition();
+
+    return true;
+  }
+
+  static dutiesFrom(day: DayOfExtraDuty): readonly ExtraDuty[] {
     const duties: ExtraDuty[] = new Array(day.size);
 
     for (let i = 0; i < duties.length; i++) {
