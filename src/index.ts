@@ -8,6 +8,42 @@ function workerNumOfDaysOffSorter(a: WorkerInfo, b: WorkerInfo): number {
   return a.daysOfWork.getNumOfDaysOff() - b.daysOfWork.getNumOfDaysOff();
 }
 
+function sum(a: number, b: number) {
+  return a + b;
+}
+
+function analyseDuties(duties: ExtraDutyTableEntry[], extraTable: ExtraDutyTable) {
+  const numOfWorkersMap = new Array(extraTable.width).fill(null).map(v => [0, 0, 0, 0] as [number, number, number, number]);
+
+  for (let i = 0; i < duties.length; i++) {
+    const duty = duties[i];
+
+    switch (duty.dutyStart) {
+      case 1:
+        numOfWorkersMap[duty.day][0]++;
+        break;
+      case 7:
+        numOfWorkersMap[duty.day][1]++;
+        break;
+      case 13:
+        numOfWorkersMap[duty.day][2]++;
+        break;
+      case 19:
+        numOfWorkersMap[duty.day][3]++;
+        break;
+      default: 
+        throw new Error(`unknow duty a at hour ${duty.dutyStart}`)
+    }
+  }
+
+  for (let i = 0; i < numOfWorkersMap.length; i++) {
+    const numOfWorkers = numOfWorkersMap[i];
+    if (numOfWorkers.reduce(sum, 0) <= 0) continue;
+
+    console.log(`dia ${i + 1} tem os cargos do 1 ao 4 ocupados com ${numOfWorkers.join(', ')} respectivamente`);
+  }
+}
+
 function forkArray<T>(array: Array<T>, separator: (value: T) => boolean) {
   let falseArray = [];
   let trueArray = [];
@@ -39,7 +75,20 @@ function extraDutyTableEntryToRow({
   dutyStart,
   workerName
 }: ExtraDutyTableEntry) {
-  return [day.toString(), toInterval(dutyStart, dutyEnd), workerName];
+  return [(day + 1).toString(), toInterval(dutyStart, dutyEnd), workerName];
+}
+
+async function saveTable(entries: ExtraDutyTableEntry[]) {
+  const outBook = XLSX.utils.book_new();
+  const sheetBody = entries
+    // .sort(workerNameSorter)
+    .map(extraDutyTableEntryToRow);
+
+  XLSX.utils.book_append_sheet(outBook, XLSX.utils.aoa_to_sheet([
+    ['Dia', 'Plantão', 'Nome']
+  ].concat(sheetBody)), 'Main');
+
+  await fs.writeFile('output/out-data.xlsx', XLSX.write(outBook, { type: 'buffer' }));
 }
 
 async function main() {
@@ -79,24 +128,17 @@ async function main() {
   const { falseArray, trueArray } = forkArray(sortedWorkers, v => v.daysOfWork.getNumOfDaysOff() < 10);
 
   extraTable.assignArray(trueArray);
-  extraTable.assignArray(falseArray);
+  // extraTable.assignArray(falseArray);
 
   const dpEndT = Date.now();
 
-  const outBook = XLSX.utils.book_new();
   const extraEntries = extraTable.toArray();
 
   console.log(`Faltaram ${workerInfos.length * 10 - extraEntries.length} cargos!`);
 
-  const sheetBody = extraEntries
-    .sort(workerNameSorter)
-    .map(extraDutyTableEntryToRow);
+  analyseDuties(extraEntries, extraTable);
 
-  XLSX.utils.book_append_sheet(outBook, XLSX.utils.aoa_to_sheet([
-    ['Dia', 'Plantão', 'Nome']
-  ].concat(sheetBody)), 'Main');
-
-  await fs.writeFile('output/out-data.xlsx', XLSX.write(outBook, { type: 'buffer' }));
+  // await saveTable(extraEntries);
 
   const endT = Date.now();
 

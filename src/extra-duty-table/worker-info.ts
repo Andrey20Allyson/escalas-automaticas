@@ -1,11 +1,27 @@
 import { DaysOfWork, WorkTime } from "./parsers";
 
 export class WorkerInfo {
+  positionsLeft: number;
+
   constructor(
     readonly workerName: string,
     readonly workTime: WorkTime,
     readonly daysOfWork: DaysOfWork,
-  ) { }
+  ) {
+    this.positionsLeft = 10;
+  }
+
+  resetPositionsLeft() {
+    this.positionsLeft = 10;
+  }
+
+  occupyPosition() {
+    this.positionsLeft--;
+  }
+
+  isCompletelyBusy() {
+    return this.positionsLeft <= 0;
+  }
 
   static parse(workerName: string, hourlyText: string) {
     if (hourlyText.includes('FÉRIAS')) return;
@@ -17,5 +33,13 @@ export class WorkerInfo {
     if (!daysOfWork) throw new Error(`Can't parse daysOfWork of "${workerName}"!`);
 
     return new this(workerName, workTime, daysOfWork);
+  }
+
+  static fromName(name: string) {
+    return new WorkerInfo(
+      name,
+      new WorkTime(7, 8),
+      DaysOfWork.fromDays([]),
+    );
   }
 }

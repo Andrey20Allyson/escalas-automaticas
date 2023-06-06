@@ -1,5 +1,3 @@
-import { firstMondayFromToday, getMonth, getNumOfDaysInMonth, isBusinessDay } from "../utils";
-
 export const WORK_TIME_REGEXP = /^(\d{2})[^\d]*(\d{2})/;
 
 export class WorkTime {

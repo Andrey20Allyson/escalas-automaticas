@@ -1,4 +1,4 @@
-import { getMonth, getNumOfDaysInMonth, firstMondayFromToday, isBusinessDay } from "../utils";
+import { getMonth, getNumOfDaysInMonth, thisMonthFirstMonday, isBusinessDay } from "../utils";
 
 export const DAYS_OF_WORK_REGEXP = /\(DIAS:[^\d]*([^]*)\)/;
 
@@ -93,11 +93,10 @@ export class DaysOfWork {
 
   static fromDailyWorker(month: number) {
     const daysInThisMonth = getNumOfDaysInMonth(month);
-    const firstMonday = firstMondayFromToday();
     const daysOfWork = new this(month);
 
     for (let i = 0; i < daysInThisMonth; i++) {
-      if (isBusinessDay(firstMonday, i)) {
+      if (isBusinessDay(thisMonthFirstMonday, i)) {
         daysOfWork.work(i);
       }
     }
