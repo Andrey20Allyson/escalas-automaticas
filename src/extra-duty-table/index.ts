@@ -19,7 +19,7 @@ export interface ExtraDutyTableEntry {
   day: number;
 }
 
-export class ExtraDutyTable implements Iterable<ExtraDutyTableEntry> {
+export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
   readonly days: readonly DayOfExtraDuty[];
   readonly config: ExtraDutyTableConfig;
   readonly width: number;
@@ -31,8 +31,12 @@ export class ExtraDutyTable implements Iterable<ExtraDutyTableEntry> {
     this.days = DayOfExtraDuty.daysFrom(this);
   }
 
-  *[Symbol.iterator](): Iterator<ExtraDutyTableEntry> {
-    for (const day of this.days) {
+  [Symbol.iterator](): Iterator<DayOfExtraDuty> {
+    return this.days[Symbol.iterator]();
+  }
+
+  *entries(): Iterable<ExtraDutyTableEntry> {
+    for (const day of this) {
       for (const duty of day) {
         for (const workerName of duty) {
           yield {

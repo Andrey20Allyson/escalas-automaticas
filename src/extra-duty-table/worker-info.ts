@@ -7,12 +7,14 @@ export class WorkerInfo {
     readonly workerName: string,
     readonly workTime: WorkTime,
     readonly daysOfWork: DaysOfWork,
+    readonly startPositionsLeft: number = 10,
   ) {
-    this.positionsLeft = 10;
+    this.startPositionsLeft = 10;
+    this.positionsLeft = this.startPositionsLeft;
   }
 
   resetPositionsLeft() {
-    this.positionsLeft = 10;
+    this.positionsLeft = this.startPositionsLeft;
   }
 
   occupyPosition() {

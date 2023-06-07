@@ -1,152 +1,100 @@
-import fs from 'fs/promises';
-import * as XLSX from 'xlsx';
-import { ExtraDutyTable, ExtraDutyTableEntry } from './extra-duty-table';
+import { program } from 'commander';
+import { analyseResult } from './analyser';
+import { Benchmarker } from './extra-duty-table/utils/benchmark';
 import { ExtraDutyTableV2 } from './extra-duty-table/v2';
-import { WorkerInfo } from './extra-duty-table/worker-info';
-import { TableWorker } from './table-worker';
+import { loadWorkers, saveTable } from './io';
+import z from 'zod';
 
-function workerNumOfDaysOffSorter(a: WorkerInfo, b: WorkerInfo): number {
-  return a.daysOfWork.getNumOfDaysOff() - b.daysOfWork.getNumOfDaysOff();
+interface ExecutionOptions {
+  input: string;
+  output?: string;
+  sheetName?: string;
+  analyse?: boolean;
+  benchmark?: boolean;
+  sortByName?: boolean;
 }
 
-function sum(a: number, b: number) {
-  return a + b;
-}
+async function execute(options: ExecutionOptions) {
+  const benchmarker = new Benchmarker();
+  const programProcess = benchmarker.start('full process');
 
-function analyseDuties(duties: ExtraDutyTableEntry[], extraTable: ExtraDutyTable) {
-  const numOfWorkersMap = new Array(extraTable.width).fill(null).map(v => [0, 0, 0, 0] as [number, number, number, number]);
+  // loads workers from specified file
+  const loadWorkersProcess = benchmarker.start('load workers from file');
+  const workers = await loadWorkers(options.input, options.sheetName);
+  loadWorkersProcess.end();
 
-  for (let i = 0; i < duties.length; i++) {
-    const duty = duties[i];
+  // assign workers to table
+  const assignArrayProcess = benchmarker.start('assign workers to table');
+  const table = new ExtraDutyTableV2();
+  table.assignArray(workers);
+  assignArrayProcess.end();
 
-    switch (duty.dutyStart) {
-      case 1:
-        numOfWorkersMap[duty.day][0]++;
-        break;
-      case 7:
-        numOfWorkersMap[duty.day][1]++;
-        break;
-      case 13:
-        numOfWorkersMap[duty.day][2]++;
-        break;
-      case 19:
-        numOfWorkersMap[duty.day][3]++;
-        break;
-      default: 
-        throw new Error(`unknow duty a at hour ${duty.dutyStart}`)
-    }
+  if (options.analyse) {
+    // analyse the result
+    const analysisProcess = benchmarker.start('analyse result');
+    const analysisResult = analyseResult(table, workers);
+    console.log(analysisResult);
+    analysisProcess.end();
   }
 
-  for (let i = 0; i < numOfWorkersMap.length; i++) {
-    const numOfWorkers = numOfWorkersMap[i];
-    if (numOfWorkers.reduce(sum, 0) <= 0) continue;
+  if (options.output) {
+    // saves the result
+    const saveTableProcess = benchmarker.start('save table inside a file');
+    await saveTable(options.output, table);
+    saveTableProcess.end();
+  }
 
-    console.log(`dia ${i + 1} tem os cargos do 1 ao 4 ocupados com ${numOfWorkers.join(', ')} respectivamente`);
+  programProcess.end();
+
+  if (options.benchmark) {
+    const benchmarkMessage = benchmarker.getMessage();
+    console.log(benchmarkMessage);
   }
 }
 
-function forkArray<T>(array: Array<T>, separator: (value: T) => boolean) {
-  let falseArray = [];
-  let trueArray = [];
+const programOptionsSchema = z.object({
+  output: z.string().optional(),
+  analyse: z.boolean(),
+  benchmark: z.boolean(),
+  sheetName: z.string().optional(),
+  hourly: z.string().optional(),
+  names: z.string().optional(),
+  sortByName: z.boolean(),
+})
 
-  for (let item of array) {
-    if (separator(item)) {
-      trueArray.push(item);
-    } else {
-      falseArray.push(item);
-    }
-  }
-
-  return { falseArray, trueArray }
-}
-
-function toInterval(start: number, end: number) {
-  return `${start.toString().padStart(2, '0')} ÀS ${end.toString().padStart(2, '0')}h`;
-}
-
-function workerNameSorter(a: ExtraDutyTableEntry, b: ExtraDutyTableEntry): number {
-  return a.workerName < b.workerName ? -1 : a.workerName > b.workerName ? 1 : 0;
-}
-
-const DEBUG = true;
-
-function extraDutyTableEntryToRow({
-  day,
-  dutyEnd,
-  dutyStart,
-  workerName
-}: ExtraDutyTableEntry) {
-  return [(day + 1).toString(), toInterval(dutyStart, dutyEnd), workerName];
-}
-
-async function saveTable(entries: ExtraDutyTableEntry[]) {
-  const outBook = XLSX.utils.book_new();
-  const sheetBody = entries
-    // .sort(workerNameSorter)
-    .map(extraDutyTableEntryToRow);
-
-  XLSX.utils.book_append_sheet(outBook, XLSX.utils.aoa_to_sheet([
-    ['Dia', 'Plantão', 'Nome']
-  ].concat(sheetBody)), 'Main');
-
-  await fs.writeFile('output/out-data.xlsx', XLSX.write(outBook, { type: 'buffer' }));
-}
+type ProgramOptions = z.infer<typeof programOptionsSchema>;
 
 async function main() {
-  const data = await fs.readFile('input/JUNHO COMANDO.2023.xlsx');
-  const book = XLSX.read(data);
+  program.option('-o, --output <path>', 'output file');
+  program.option('-a, --analyse', 'analyse result', false);
+  program.option('-b, --benchmark', 'benchmark the process', false);
+  program.option('-n, --names <string>', 'the cells sequence that contain worker names');
+  program.option('-h, --hourly <string>', 'the cells sequence that contain worker hourly');
+  program.option('-s, --sheetName <string>', 'the excel sheet with data');
+  program.option('--sortByName', 'sort the result by worker name', false);
 
-  const tableWorker = new TableWorker(book);
+  program.parse();
 
-  tableWorker.useSheet('Planilha1');
+  const {
+    sortByName,
+    sheetName,
+    benchmark,
+    analyse,
+    output,
+  } = programOptionsSchema.parse(program.opts());
 
-  const start = 2;
-  const end = 32;
+  const input = program.args.at(0);
 
-  const NAME_COL = 'd';
-  const TIME_TABLE_COL = 'f';
+  if (!input) throw new Error(`Can't initialize because this program needs a input file`);
 
-  const workerInfos: WorkerInfo[] = [];
-
-  const startT = Date.now();
-
-  for (let i = start; i < end; i++) {
-    const name = tableWorker.get(NAME_COL, i);
-    const timeTable = tableWorker.get(TIME_TABLE_COL, i);
-
-    if (!name || !timeTable) continue;
-
-    const worker = WorkerInfo.parse(name, timeTable);
-    if (!worker) continue;
-
-    workerInfos.push(worker);
-  }
-
-  const extraTable = new ExtraDutyTableV2();
-  const sortedWorkers = workerInfos
-  // .sort(workerNumOfDaysOffSorter)
-
-  const { falseArray, trueArray } = forkArray(sortedWorkers, v => v.daysOfWork.getNumOfDaysOff() < 10);
-
-  extraTable.assignArrayToAllWeekEnds(trueArray);
-  // extraTable.assignArray(falseArray);
-
-  const dpEndT = Date.now();
-
-  const extraEntries = extraTable.toArray();
-
-  console.log(`Faltaram ${workerInfos.length * 10 - extraEntries.length} cargos!`);
-
-  analyseDuties(extraEntries, extraTable);
-
-  // await saveTable(extraEntries);
-
-  const endT = Date.now();
-
-  if (DEBUG) {
-    console.log(`Ended in ${endT - startT}ms`);
-    console.log(`Ended data process in ${dpEndT - startT}ms`)
-  }
+  await execute({
+    sortByName,
+    sheetName,
+    benchmark,
+    analyse,
+    output,
+    input,
+  });
 }
 
 main();

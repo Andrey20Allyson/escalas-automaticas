@@ -11,9 +11,12 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "^20.2.5",
+    "chalk": "^5.2.0",
+    "commander": "^10.0.1",
     "tsx": "^3.12.7",
     "typescript": "^5.1.3",
     "vitest": "^0.31.4",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "zod": "^3.21.4"
   }
 }
