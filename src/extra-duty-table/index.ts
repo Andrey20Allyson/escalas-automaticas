@@ -2,8 +2,10 @@ import { DaySearch } from './parsers';
 import { DayOfExtraDuty } from './structs/day-of-extra-duty';
 import { getMonth, getNumOfDaysInMonth, randomIntFromInterval } from '../utils';
 import { WorkerInfo } from './worker-info';
+import { ExtraDuty } from './structs/extra-duty';
 
 export interface ExtraDutyTableConfig {
+  readonly dutyPositionSize: number;
   readonly firstDutyTime: number;
   readonly dutyInterval: number;
   readonly dutyDuration: number;
@@ -13,10 +15,9 @@ export interface ExtraDutyTableConfig {
 }
 
 export interface ExtraDutyTableEntry {
-  workerName: string;
-  dutyStart: number;
-  dutyEnd: number;
-  day: number;
+  worker: WorkerInfo;
+  duty: ExtraDuty;
+  day: DayOfExtraDuty;
 }
 
 export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
@@ -38,15 +39,16 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
   *entries(): Iterable<ExtraDutyTableEntry> {
     for (const day of this) {
       for (const duty of day) {
-        for (const workerName of duty) {
-          yield {
-            day: duty.day,
-            dutyStart: duty.start,
-            dutyEnd: duty.end % 24,
-            workerName,
-          };
+        for (const [_, worker] of duty) {
+          yield { worker, duty, day };
         }
       }
+    }
+  }
+
+  clear() {
+    for (const day of this) {
+      day.clear();
     }
   }
 
@@ -79,7 +81,7 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
     return false;
   }
 
-  assignArray(workers: WorkerInfo[]): boolean {
+  tryAssignArray(workers: WorkerInfo[]): boolean {
     let workersSet: Set<WorkerInfo> = new Set(workers);
 
     for (let i = 0; i < 20; i++) {
@@ -100,11 +102,12 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
 
   static createConfigFrom(partialConfig?: Partial<ExtraDutyTableConfig>): ExtraDutyTableConfig {
     return {
-      dutyMinDistance: 2,
-      firstDutyTime: 1,
+      dutyPositionSize: 2,
+      dutyMinDistance: 1,
+      firstDutyTime: 7,
+      dutyInterval: 12,
+      dutyDuration: 12,
       dutyCapacity: 2,
-      dutyInterval: 6,
-      dutyDuration: 6,
       month: getMonth(),
       ...partialConfig,
     };

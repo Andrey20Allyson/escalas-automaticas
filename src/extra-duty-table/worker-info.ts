@@ -4,7 +4,7 @@ export class WorkerInfo {
   positionsLeft: number;
 
   constructor(
-    readonly workerName: string,
+    readonly name: string,
     readonly workTime: WorkTime,
     readonly daysOfWork: DaysOfWork,
     readonly startPositionsLeft: number = 10,
@@ -17,12 +17,20 @@ export class WorkerInfo {
     this.positionsLeft = this.startPositionsLeft;
   }
 
-  occupyPosition() {
-    this.positionsLeft--;
+  occupyPositions(num = 1) {
+    this.positionsLeft -= num;
   }
 
-  isCompletelyBusy() {
-    return this.positionsLeft <= 0;
+  leavePositions(num = 1) {
+    this.positionsLeft += num;
+  }
+
+  isPositionsLeftEqualsToStart() {
+    return this.positionsLeft === this.startPositionsLeft;
+  }
+
+  isCompletelyBusy(positions = 1) {
+    return this.positionsLeft - positions < 0;
   }
 
   static parse(workerName: string, hourlyText: string) {

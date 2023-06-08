@@ -2,8 +2,8 @@ import type { ExtraDutyTableConfig } from "..";
 import { WorkerInfo } from "../worker-info";
 import type { DayOfExtraDuty } from "./day-of-extra-duty";
 
-export class ExtraDuty implements Iterable<string> {
-  readonly workers: Set<string>;
+export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
+  readonly workers: Map<string, WorkerInfo>;
   readonly offTimeEnd: number;
   readonly start: number;
   readonly end: number;
@@ -13,7 +13,7 @@ export class ExtraDuty implements Iterable<string> {
     readonly index: number,
     readonly config: ExtraDutyTableConfig
   ) {
-    this.workers = new Set();
+    this.workers = new Map();
 
     this.start = config.firstDutyTime + config.dutyInterval * index;
     this.end = this.start + this.config.dutyDuration;
@@ -53,7 +53,7 @@ export class ExtraDuty implements Iterable<string> {
     return this.offTimeEnd > tomorrowWorkStart;
   }
 
-  [Symbol.iterator](): Iterator<string> {
+  [Symbol.iterator](): Iterator<[string, WorkerInfo]> {
     return this.workers[Symbol.iterator]();
   }
 
@@ -62,7 +62,7 @@ export class ExtraDuty implements Iterable<string> {
   }
 
   has(worker: WorkerInfo) {
-    return this.workers.has(worker.workerName);
+    return this.workers.has(worker.name);
   }
 
   getSize() {
@@ -70,7 +70,7 @@ export class ExtraDuty implements Iterable<string> {
   }
 
   canAdd(worker: WorkerInfo) {
-    return !worker.isCompletelyBusy()
+    return !worker.isCompletelyBusy(this.config.dutyPositionSize)
       && !this.isFull()
       && !this.has(worker);
   }
@@ -78,11 +78,19 @@ export class ExtraDuty implements Iterable<string> {
   add(worker: WorkerInfo, force = false): boolean {
     if (!force && !this.canAdd(worker)) return false;
 
-    this.workers.add(worker.workerName);
+    this.workers.set(worker.name, worker);
 
-    worker.occupyPosition();
+    worker.occupyPositions(this.config.dutyPositionSize);
 
     return true;
+  }
+
+  clear() {
+    for (const [_, worker] of this) {
+      worker.leavePositions(this.config.dutyPositionSize);
+    }
+
+    this.workers.clear();
   }
 
   static dutiesFrom(day: DayOfExtraDuty): readonly ExtraDuty[] {

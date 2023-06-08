@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import { Text } from '../utils/text';
+import { Text } from './text';
 import { ExtraDutyTable } from "../extra-duty-table";
 import { WorkerInfo } from "../extra-duty-table/worker-info";
 
@@ -34,7 +34,8 @@ export function analyseResult(table: ExtraDutyTable, workers: WorkerInfo[], colo
       if (success && size > 0 && size !== 2 && size !== 3) success = false;
 
       numOfWorkersInThisDay += size;
-      numOfWorkersMap[duty.index] += size;
+      numOfWorkersMap[duty.index * 2] += size;
+      numOfWorkersMap[duty.index * 2 + 1] += size;
     }
 
     positionsLeft -= positionsLeft;

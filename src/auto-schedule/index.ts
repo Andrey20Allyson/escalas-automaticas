@@ -1,4 +1,4 @@
-import { analyseResult } from './analyser';
+import { analyseResult } from '../utils/analyser';
 import { Benchmarker } from '../utils/benchmark';
 import { ExtraDutyTableV2 } from '../extra-duty-table/v2';
 import { loadWorkers, saveTable } from './io';
@@ -10,6 +10,7 @@ export interface ExecutionOptions {
   analyse?: boolean;
   benchmark?: boolean;
   sortByName?: boolean;
+  tries?: number;
 }
 
 export async function execute(options: ExecutionOptions) {
@@ -24,7 +25,8 @@ export async function execute(options: ExecutionOptions) {
   // assign workers to table
   const assignArrayProcess = benchmarker.start('assign workers to table');
   const table = new ExtraDutyTableV2();
-  table.assignArray(workers);
+  const success = table.tryAssignArrayMultipleTimes(workers, options.tries ?? 500);
+  if (!success) throw new Error(`Can't assign with success!`);
   assignArrayProcess.end();
 
   if (options.analyse) {

@@ -1,4 +1,4 @@
-import type { ExtraDutyTable } from '..';
+import type { ExtraDutyTable, ExtraDutyTableConfig } from '..';
 import { WorkerInfo } from '../worker-info';
 import { ExtraDuty } from './extra-duty';
 
@@ -11,15 +11,14 @@ export interface DayOfExtraDutyFillOptions {
 export class DayOfExtraDuty implements Iterable<ExtraDuty> {
   private readonly duties: readonly ExtraDuty[];
   readonly size: number;
-
-  get config() {
-    return this.dutyTable.config;
-  }
+  readonly config: ExtraDutyTableConfig;
 
   constructor(
     readonly day: number,
     readonly dutyTable: ExtraDutyTable,
   ) {
+    this.config = dutyTable.config;
+    
     this.size = this.getMaxDuties();
 
     this.duties = ExtraDuty.dutiesFrom(this);
@@ -31,6 +30,12 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
 
   getMaxDuties() {
     return Math.floor(24 / this.config.dutyInterval);
+  }
+
+  clear() {
+    for (const duty of this) {
+      duty.clear();
+    }
   }
 
   at(index: number): ExtraDuty | undefined {
@@ -122,7 +127,7 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
     return duty.add(worker, true);
   }
 
-  getDutyFromDutyOrIndex(dutyOrIndex: ExtraDuty | number) {
+  getDutyFromDutyOrIndex(dutyOrIndex: ExtraDuty | number): ExtraDuty {
     return dutyOrIndex instanceof ExtraDuty ? dutyOrIndex : this.getDuty(dutyOrIndex);
   }
 

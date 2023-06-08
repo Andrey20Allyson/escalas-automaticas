@@ -9,16 +9,26 @@ export function toInterval(start: number, end: number) {
 }
 
 export function workerNameSorter(a: ExtraDutyTableEntry, b: ExtraDutyTableEntry): number {
-  return a.workerName < b.workerName ? -1 : a.workerName > b.workerName ? 1 : 0;
+  return a.worker < b.worker ? -1 : a.worker > b.worker ? 1 : 0;
 }
 
-export function extraDutyTableEntryToRow({
-  day,
-  dutyEnd,
-  dutyStart,
-  workerName,
-}: ExtraDutyTableEntry) {
-  return [(day + 1).toString(), toInterval(dutyStart, dutyEnd), workerName];
+export function toStringTuple(entry: ExtraDutyTableEntry, index: number): [string, string, string] {
+  return [
+    (entry.day.day + 1).toString(),
+    toInterval((entry.duty.start + 6 * index) % 24, (entry.duty.start + 6 * (index + 1)) % 24),
+    entry.worker.name,
+  ];
+}
+
+export function toSheetBody(entries: ExtraDutyTableEntry[]): string[][] {
+  const body: [string, string, string][] = [['Dia', 'Plantão', 'Nome']];
+
+  for (const entry of entries) {
+    body.push(toStringTuple(entry, 0));
+    body.push(toStringTuple(entry, 1));
+  }
+
+  return body;
 }
 
 export async function saveTable(file: string, table: ExtraDutyTable, sortByName = false) {
@@ -26,10 +36,10 @@ export async function saveTable(file: string, table: ExtraDutyTable, sortByName 
   const entries = Array.from(table.entries())
 
   if (sortByName) entries.sort(workerNameSorter);
-  
-  const sheetBody = entries.map(extraDutyTableEntryToRow);
 
-  XLSX.utils.book_append_sheet(outBook, XLSX.utils.aoa_to_sheet([['Dia', 'Plantão', 'Nome']].concat(sheetBody)), 'Main');
+  const sheetBody = toSheetBody(entries);
+
+  XLSX.utils.book_append_sheet(outBook, XLSX.utils.aoa_to_sheet(sheetBody), 'Main');
 
   await fs.writeFile(file.endsWith('.xlsx') ? file : file + '.xlsx', XLSX.write(outBook, { type: 'buffer' }));
 }
@@ -56,7 +66,7 @@ export function scrappeWorkersFromBook(book: XLSX.WorkBook, sheetName?: string) 
   const tableWorker = new TableWorker(book);
   if (tableWorker.book.SheetNames.length === 0) throw new EmptyBookError();
 
-  sheetName = tableWorker.book.SheetNames.length === 1? tableWorker.book.SheetNames[0] : sheetName;
+  sheetName = tableWorker.book.SheetNames.length === 1 ? tableWorker.book.SheetNames[0] : sheetName;
   if (!sheetName) throw new MustInsertSheetNameError();
 
   const sheetExists = tableWorker.useSheet(sheetName);
@@ -87,12 +97,12 @@ export function scrappeWorkersFromBook(book: XLSX.WorkBook, sheetName?: string) 
 
 export async function loadBook(path: string) {
   const data = await fs.readFile(path);
-  
+
   return XLSX.read(data);
 }
 
 export async function loadWorkers(path: string, sheetName?: string) {
   const book = await loadBook(path);
-  
+
   return scrappeWorkersFromBook(book, sheetName);
 }

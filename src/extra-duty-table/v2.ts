@@ -11,17 +11,29 @@ export function filterDiarists(worker: WorkerInfo) {
 }
 
 export class ExtraDutyTableV2 extends ExtraDutyTable {
-  assignArray(workers: WorkerInfo[]): boolean {
+  tryAssignArrayMultipleTimes(workers: WorkerInfo[], times: number): boolean {
+    for (let i = 0; i < times; i++) {
+      if (this.tryAssignArray(workers)) return true;
+    }
+
+    return false;
+  }
+
+  tryAssignArray(workers: WorkerInfo[]): boolean {
     const [
       diarists,
       periodics,
     ] = forkArray(workers, filterDiarists);
 
-    this.assignArrayToAllWeekEnds(diarists);
+    const diaristsResult = this.tryAssignArrayToAllWeekEnds(diarists);
+
+    if (!diaristsResult) {
+      this.clear();
+
+      return false;
+    }
 
     const oldDutyCapacity = this.config.dutyCapacity;
-    
-    let assignSuccess = true;
 
     for (let i = 1; i <= 3; i++) {
       this.config.dutyCapacity = i;
@@ -30,25 +42,27 @@ export class ExtraDutyTableV2 extends ExtraDutyTable {
         let filteredWorkers = periodics.filter(filterBusyWorkers);
 
         for (const duty of iterRandom(day)) {
-          let success = false;
+          if (duty.isFull()) continue;
 
           for (const worker of iterRandom(filteredWorkers)) {
-            success = day.insert(worker, duty);
-
-            if (success) break;
+            if (day.insert(worker, duty)) break;
           }
 
-          if (!success) assignSuccess = false
+          if (i < 3 && !duty.isFull()) {
+            this.clear();
+
+            return false;
+          }
         }
       }
     }
 
     this.config.dutyCapacity = oldDutyCapacity;
 
-    return assignSuccess;
+    return true;
   }
 
-  assignOnAllWeekEnds(worker: WorkerInfo): boolean {
+  tryAssignOnAllWeekEnds(worker: WorkerInfo): boolean {
     const oldDutyMinDistance = this.config.dutyMinDistance;
     this.config.dutyMinDistance = 1;
 
@@ -71,11 +85,11 @@ export class ExtraDutyTableV2 extends ExtraDutyTable {
     return worker.isCompletelyBusy();
   }
 
-  assignArrayToAllWeekEnds(workers: WorkerInfo[]): boolean {
+  tryAssignArrayToAllWeekEnds(workers: WorkerInfo[]): boolean {
     const workersSet = new Set(workers);
 
     for (const worker of workersSet) {
-      this.assignOnAllWeekEnds(worker);
+      this.tryAssignOnAllWeekEnds(worker);
 
       if (worker.isCompletelyBusy()) workersSet.delete(worker);
     }
