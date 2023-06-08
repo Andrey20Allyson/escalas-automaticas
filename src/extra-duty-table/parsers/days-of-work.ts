@@ -1,4 +1,4 @@
-import { getMonth, getNumOfDaysInMonth, thisMonthFirstMonday, isBusinessDay } from "../utils";
+import { getMonth, getNumOfDaysInMonth, thisMonthFirstMonday, isBusinessDay } from "../../utils";
 
 export const DAYS_OF_WORK_REGEXP = /\(DIAS:[^\d]*([^]*)\)/;
 

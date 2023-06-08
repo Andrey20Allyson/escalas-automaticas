@@ -1,6 +1,6 @@
 import { DaySearch } from './parsers';
 import { DayOfExtraDuty } from './structs/day-of-extra-duty';
-import { getMonth, getNumOfDaysInMonth, randomIntFromInterval } from './utils';
+import { getMonth, getNumOfDaysInMonth, randomIntFromInterval } from '../utils';
 import { WorkerInfo } from './worker-info';
 
 export interface ExtraDutyTableConfig {

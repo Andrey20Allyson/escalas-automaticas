@@ -1,7 +1,7 @@
 import chalk from "chalk";
-import { Text } from './extra-duty-table/utils/text';
-import { ExtraDutyTable } from "./extra-duty-table";
-import { WorkerInfo } from "./extra-duty-table/worker-info";
+import { Text } from '../utils/text';
+import { ExtraDutyTable } from "../extra-duty-table";
+import { WorkerInfo } from "../extra-duty-table/worker-info";
 
 export function numberToColoredString(value: number) {
   switch (value) {

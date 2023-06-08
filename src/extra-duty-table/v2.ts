@@ -1,5 +1,5 @@
 import { ExtraDutyTable } from ".";
-import { forkArray, iterRandom, thisMonthWeekends } from "./utils";
+import { forkArray, iterRandom, thisMonthWeekends } from "../utils";
 import { WorkerInfo } from "./worker-info";
 
 export function filterBusyWorkers(worker: WorkerInfo) {

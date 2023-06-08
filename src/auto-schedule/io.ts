@@ -1,7 +1,7 @@
-import { ExtraDutyTableEntry, ExtraDutyTable } from "./extra-duty-table";
+import { ExtraDutyTableEntry, ExtraDutyTable } from "../extra-duty-table";
 import fs from 'fs/promises';
 import * as XLSX from 'xlsx';
-import { WorkerInfo } from "./extra-duty-table/worker-info";
+import { WorkerInfo } from "../extra-duty-table/worker-info";
 import { TableWorker } from "./table-worker";
 
 export function toInterval(start: number, end: number) {
