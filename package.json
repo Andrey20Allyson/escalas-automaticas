@@ -2,6 +2,9 @@
   "name": "@andrey-allyson/escalas-automaticas",
   "version": "1.0.0",
   "main": "./dist/index.js",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "vitest"
   },
