@@ -113,3 +113,6 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
     };
   }
 }
+
+export * from './parsers';
+export * from './structs';

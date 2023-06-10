@@ -1,11 +1,6 @@
-import { execute } from './auto-schedule';
+export * from './extra-duty-table';
+export * from './extra-duty-table/v2';
 
-const INPUT_FILE = './input/data.xlsx';
-const OUTPUT_FILE = './output/out-data.xlsx';
-
-execute({
-  input: INPUT_FILE,
-  output: OUTPUT_FILE,
-  analyse: true,
-  benchmark: true,
-});
+export * as io from './auto-schedule/io';
+export * from './auto-schedule';
+export * as tableWorker from './auto-schedule/table-worker';
