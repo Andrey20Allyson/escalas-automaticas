@@ -3,9 +3,9 @@ import { ExtraDutyTableV2 } from './v2';
 import { WorkerInfo } from './worker-info';
 
 test(`#clear shold restart all workers positionsLeft`, () => {
-  const worker0 = WorkerInfo.fromName('Jose');
-  const worker1 = WorkerInfo.fromName('Roberto');
-  const worker2 = WorkerInfo.fromName('Cariane');
+  const worker0 = WorkerInfo.fakeFromName('Jose');
+  const worker1 = WorkerInfo.fakeFromName('Roberto');
+  const worker2 = WorkerInfo.fakeFromName('Cariane');
 
   const table = new ExtraDutyTableV2();
 

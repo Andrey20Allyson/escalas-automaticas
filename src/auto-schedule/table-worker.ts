@@ -4,13 +4,6 @@ export class TableWorker {
   private _sheet?: XLSX.WorkSheet;
   constructor(readonly book: XLSX.WorkBook) { }
 
-  // createSheet(sheetName: string) {
-  //   if (!this.book.SheetNames.includes(sheetName)) {
-  //     this.book.SheetNames.push(sheetName);
-  //     this.book.Sheets[sheetName] = {};
-  //   }
-  // }
-
   useSheet(sheetName: string) {
     this._sheet = this.book.Sheets[sheetName];
 

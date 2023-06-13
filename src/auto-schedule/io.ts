@@ -4,44 +4,40 @@ import * as XLSX from 'xlsx';
 import { WorkerInfo } from "../extra-duty-table/worker-info";
 import { TableWorker } from "./table-worker";
 
-export function toInterval(start: number, end: number) {
-  return `${start.toString().padStart(2, '0')} ÀS ${end.toString().padStart(2, '0')}h`;
-}
-
-export function workerNameSorter(a: ExtraDutyTableEntry, b: ExtraDutyTableEntry): number {
-  return a.worker < b.worker ? -1 : a.worker > b.worker ? 1 : 0;
-}
-
-export function toStringTuple(entry: ExtraDutyTableEntry, index: number): [string, string, string] {
-  return [
-    (entry.day.day + 1).toString(),
-    toInterval((entry.duty.start + 6 * index) % 24, (entry.duty.start + 6 * (index + 1)) % 24),
-    entry.worker.name,
-  ];
-}
-
-export function toSheetBody(entries: ExtraDutyTableEntry[]): string[][] {
-  const body: [string, string, string][] = [['Dia', 'Plantão', 'Nome']];
-
-  for (const entry of entries) {
-    body.push(toStringTuple(entry, 0));
-    body.push(toStringTuple(entry, 1));
+export namespace utils {
+  export function toInterval(start: number, end: number) {
+    return `${start.toString().padStart(2, '0')} ÀS ${end.toString().padStart(2, '0')}h`;
   }
 
-  return body;
+  export function workerNameSorter(a: ExtraDutyTableEntry, b: ExtraDutyTableEntry): number {
+    return a.worker < b.worker ? -1 : a.worker > b.worker ? 1 : 0;
+  }
+
+  export function toStringTuple(entry: ExtraDutyTableEntry, index: number): string[] {
+    return [
+      (entry.day.day + 1).toString(),
+      toInterval((entry.duty.start + 6 * index) % 24, (entry.duty.start + 6 * (index + 1)) % 24),
+      entry.worker.name,
+      `${entry.worker.config.registration}-${entry.worker.config.postResistration}`,
+      entry.worker.config.patent,
+      entry.worker.config.post,
+    ];
+  }
+
+  export function toSheetBody(entries: ExtraDutyTableEntry[]): string[][] {
+    const body: string[][] = [['Dia', 'Plantão', 'Nome', 'Mat', 'Grad', 'Posto']];
+
+    for (const entry of entries) {
+      body.push(toStringTuple(entry, 0));
+      body.push(toStringTuple(entry, 1));
+    }
+
+    return body;
+  }
 }
 
 export async function saveTable(file: string, table: ExtraDutyTable, sortByName = false) {
-  const outBook = XLSX.utils.book_new();
-  const entries = Array.from(table.entries())
-
-  if (sortByName) entries.sort(workerNameSorter);
-
-  const sheetBody = toSheetBody(entries);
-
-  XLSX.utils.book_append_sheet(outBook, XLSX.utils.aoa_to_sheet(sheetBody), 'Main');
-
-  await fs.writeFile(file.endsWith('.xlsx') ? file : file + '.xlsx', XLSX.write(outBook, { type: 'buffer' }));
+  await fs.writeFile(file.endsWith('.xlsx') ? file : file + '.xlsx', serializeTable(table, { sheetName: 'Main', sortByName }));
 }
 
 export class EmptyBookError extends Error {
@@ -71,22 +67,38 @@ export function scrappeWorkersFromBook(book: XLSX.WorkBook, sheetName?: string) 
 
   const sheetExists = tableWorker.useSheet(sheetName);
   if (!sheetExists) throw new SheetNotFoundError(sheetName, tableWorker.book.SheetNames);
-
-  const start = 2;
-  const end = 32;
-
-  const NAME_COL = 'd';
-  const TIME_TABLE_COL = 'f';
+  
+  enum Collumn {
+    NAME = 'd',
+    HOURLY = 'f',
+    PATENT = 'b',
+    POST = 'e',
+    REGISTRATION = 'c',
+  }
 
   const workerInfos: WorkerInfo[] = [];
 
-  for (let i = start; i < end; i++) {
-    const name = tableWorker.get(NAME_COL, i);
-    const timeTable = tableWorker.get(TIME_TABLE_COL, i);
+  let i = 2;
+  while (true) {
+    const j = i++;
 
-    if (!name || !timeTable) continue;
+    const hourly = tableWorker.get(Collumn.HOURLY, j);
+    const registration = tableWorker.get(Collumn.REGISTRATION, j);
+    
+    const name = tableWorker.get(Collumn.NAME, j) ?? '';
+    const patent = tableWorker.get(Collumn.PATENT, j) ?? '';
+    const post = tableWorker.get(Collumn.POST, j) ?? '';
 
-    const worker = WorkerInfo.parse(name, timeTable);
+    if (!registration || !hourly) break;
+
+    const worker = WorkerInfo.parse({
+      name,
+      post,
+      hourly,
+      patent,
+      registration,
+    });
+
     if (!worker) continue;
 
     workerInfos.push(worker);
@@ -95,14 +107,44 @@ export function scrappeWorkersFromBook(book: XLSX.WorkBook, sheetName?: string) 
   return workerInfos;
 }
 
-export async function loadBook(path: string) {
+export async function loadBook(path: string, options?: XLSX.ParsingOptions) {
   const data = await fs.readFile(path);
 
-  return XLSX.read(data);
+  return XLSX.read(data, options);
+}
+
+export async function loadSheetNames(path: string) {
+  const book = await loadBook(path, { bookSheets: true });
+
+  return book.SheetNames;
 }
 
 export async function loadWorkers(path: string, sheetName?: string) {
   const book = await loadBook(path);
 
   return scrappeWorkersFromBook(book, sheetName);
+}
+
+export function parseWorkers(data: Buffer, sheetName?: string): WorkerInfo[] {
+  const book = XLSX.read(data);
+
+  return scrappeWorkersFromBook(book, sheetName);
+}
+
+export interface SerializeTableOptions {
+  sheetName: string;
+  sortByName?: boolean;
+}
+
+export function serializeTable(table: ExtraDutyTable, options: SerializeTableOptions): Buffer {
+  const outBook = XLSX.utils.book_new();
+  const entries = Array.from(table.entries());
+
+  if (options.sortByName) entries.sort(utils.workerNameSorter);
+
+  const sheetBody = utils.toSheetBody(entries);
+
+  XLSX.utils.book_append_sheet(outBook, XLSX.utils.aoa_to_sheet(sheetBody), options.sheetName);
+
+  return XLSX.write(outBook, { type: 'buffer' });
 }

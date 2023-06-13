@@ -1,16 +1,52 @@
-import { DaysOfWork, WorkTime } from "./parsers";
+import { DaysOfWork, WorkTime } from "./parsers"; 
 
-export class WorkerInfo {
+export interface WorkerInfoConfig {
+  name: string;
+  post: string;
+  patent: string;
+  workTime: WorkTime;
+  registration: number;
+  daysOfWork: DaysOfWork;
+  postResistration: number;
+  startPositionsLeft?: number;
+}
+
+export interface WorkerParseData {
+  name: string;
+  post: string;
+  patent: string;
+  hourly: string;
+  registration: string;
+}
+
+export interface Worker {
+  name: string;
+  daysOfWork: DaysOfWork;
+  workTime: WorkTime;
+}
+
+export class WorkerInfo implements Worker {
   positionsLeft: number;
+  readonly config: WorkerInfoConfig;
+  readonly startPositionsLeft: number;
 
-  constructor(
-    readonly name: string,
-    readonly workTime: WorkTime,
-    readonly daysOfWork: DaysOfWork,
-    readonly startPositionsLeft: number = 10,
-  ) {
-    this.startPositionsLeft = 10;
+  constructor(config: WorkerInfoConfig) {
+    this.config = config;
+
+    this.startPositionsLeft = config.startPositionsLeft ?? 10;
     this.positionsLeft = this.startPositionsLeft;
+  }
+
+  get name() {
+    return this.config.name;
+  }
+
+  get daysOfWork() {
+    return this.config.daysOfWork;
+  }
+
+  get workTime() {
+    return this.config.workTime;
   }
 
   resetPositionsLeft() {
@@ -33,23 +69,46 @@ export class WorkerInfo {
     return this.positionsLeft - positions < 0;
   }
 
-  static parse(workerName: string, hourlyText: string) {
-    if (hourlyText.includes('FÉRIAS')) return;
+  static parse(data: WorkerParseData) {
+    if (data.hourly.includes('FÉRIAS')) return;
 
-    const workTime = WorkTime.parse(hourlyText);
-    if (!workTime) throw new Error(`Can't parse workTime of "${workerName}"`);
+    const workTime = WorkTime.parse(data.hourly);
+    if (!workTime) throw new Error(`Can't parse workTime of "${data.name}"`);
 
-    const daysOfWork = DaysOfWork.parse(hourlyText);
-    if (!daysOfWork) throw new Error(`Can't parse daysOfWork of "${workerName}"!`);
+    const daysOfWork = DaysOfWork.parse(data.hourly);
+    if (!daysOfWork) throw new Error(`Can't parse daysOfWork of "${data.name}"!`);
 
-    return new this(workerName, workTime, daysOfWork);
+    const splitedRegistration = data.registration.split('-');
+    if (splitedRegistration.length !== 2) throw new Error(`Can't parse registration "${data.registration}"`);
+
+    const [registration, postResistration] = splitedRegistration.map(parseNumberOrThrow);
+    
+    return new this({
+      name: data.name,
+      postResistration,
+      registration,
+      patent: data.patent,
+      post: data.post,
+      workTime,
+      daysOfWork,
+    });
   }
 
-  static fromName(name: string) {
-    return new WorkerInfo(
+  static fakeFromName(name: string) {
+    return new WorkerInfo({
       name,
-      new WorkTime(7, 8),
-      DaysOfWork.fromDays([]),
-    );
+      post: 'N/A',
+      patent: 'N/A',
+      registration: 0,
+      postResistration: 0,
+      workTime: new WorkTime(7, 8),
+      daysOfWork: DaysOfWork.fromDays([]),
+    });
   }
+}
+
+function parseNumberOrThrow(value?: unknown) {
+  const num = Number(value);
+  if (isNaN(num)) throw new Error(`Can't parse "${value}" because results in NaN!`);
+  return num;
 }
