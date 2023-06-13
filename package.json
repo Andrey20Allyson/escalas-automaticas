@@ -1,12 +1,14 @@
 {
   "name": "@andrey-allyson/escalas-automaticas",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "main": "./dist/index.js",
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "test": "vitest"
+    "test": "vitest",
+    "build": "tsc",
+    "prepublish": "tsc"
   },
   "keywords": [],
   "author": "",
