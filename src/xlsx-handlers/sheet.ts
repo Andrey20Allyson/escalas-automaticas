@@ -18,7 +18,10 @@ export class SheetHandler {
 
   private generateRef() {
     const ref = this.sheet['!ref'];
-    if (!ref) throw error(`sheet['!ref'] is undefined`);
+    if (!ref) return new SheetRange(
+      new CellAddress('a', 1),
+      new CellAddress('a', 1),
+    );
 
     return SheetRange.parse(ref);
   }

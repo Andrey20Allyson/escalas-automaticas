@@ -14,25 +14,20 @@ import fs from 'fs/promises';
 import XLSX from 'xlsx';
 import { SheetHandler } from './xlsx-handlers/sheet';
 import { CellValueTypes } from './xlsx-handlers/cell';
+import { BookHandler } from './xlsx-handlers/book';
 
 async function main() {
   const data = await fs.readFile('input/output-pattern.xlsx');
 
-  const book = XLSX.read(data, {
-    cellStyles: true,
-  });
-
-  const sheet: XLSX.WorkSheet | undefined = book.Sheets['DADOS'];
-  if (!sheet) throw new Error(`Can't fint sheet DADOS`);
-
-  const sheetHandler = new SheetHandler(sheet);
+  const book = BookHandler.parse(data);
+  const sheet = new SheetHandler(book.sheet('DADOS'));
 
   const startT = Date.now();
 
-  for (const lineHandler of sheetHandler.iterLines(15, 316126)) {
-    const name = lineHandler.collumnAt('b').asOptional(CellValueTypes.STRING);
+  for (const line of sheet.iterLines(15, 316126)) {
+    const name = line.collumnAt('b').asOptional(CellValueTypes.STRING);
 
-    name.value = `pessoa ${lineHandler.line - 14}`;
+    name.value = `pessoa ${line.line - 14}`;
   }
 
   const endT = Date.now();
