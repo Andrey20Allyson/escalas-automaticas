@@ -1,40 +1,48 @@
-export type Result<R, E extends ResultError = ResultError> = R | E;
+export type ResultType<R, E extends ResultError = ResultError> = R | E;
+export type SuccessResult<R> = R extends ResultError ? never : R;
+export type FailResult<R> = R extends ResultError ? R : never;
 
 const ResultErrorType = Symbol();
+const CreateError = Symbol();
 
 export class ResultError {
   readonly type = ResultErrorType;
   constructor(readonly message?: string) { }
 
-  createError() {
+  [CreateError]() {
     const error = new Error(this.message);
     error.name = this.constructor.name;
 
     return error;
   }
-}
 
-export function unwrap<T>(result: Result<T>): T {
-  if (isError(result)) throw result.createError();
-  return result as T;
-}
-
-export function resultFrom<T, E extends ResultError>(results: Result<T, E>[]): Result<T[], E> {
-  for (let i = 0; i < results.length; i++) {
-    if (isError(results[i])) return results[i] as E;
+  static isError(result: ResultType<unknown>): result is ResultError {
+    return result instanceof ResultError;
   }
 
-  return results as T[];
+  static create(value?: unknown) {
+    return new ResultError(String(value));
+  }
 }
 
-export function error(message?: string) {
-  return new ResultError(message);
-}
-
-export function isError(result: Result<unknown>): result is ResultError {
-  return result instanceof ResultError;
-}
-
-export function optional<T>(result: Result<T>): T | null {
-  return isError(result) ? null : result as T;
+export abstract class Result {
+  /**
+   * @throws Error if result is instance of ResultError
+   */
+  static unwrap<T>(result: ResultType<T>): T {
+    if (ResultError.isError(result)) throw result[CreateError]();
+    return result as T;
+  }
+  
+  static all<R extends readonly unknown[] | []>(results: R): ResultType<{ -readonly[K in keyof R]: SuccessResult<R[K]> }, FailResult<R[keyof R]>> {
+    for (let i = 0; i < results.length; i++) {
+      if (ResultError.isError(results[i])) return results[i] as FailResult<R[keyof R]>;
+    }
+  
+    return results as { -readonly[K in keyof R]: SuccessResult<R[K]> };
+  }
+  
+  static optional<T>(result: ResultType<T>): T | null {
+    return ResultError.isError(result) ? null : result as T;
+  }
 }

@@ -1,49 +1,50 @@
 import XLSX from 'xlsx';
-import { Result, ResultError, error, isError, optional, unwrap } from '../utils/result';
+import { ResultType, Result, ResultError } from '../utils/result';
 
-export type CellValue = XLSX.CellObject['v'];
+export type CellValueType = XLSX.CellObject['v'];
 
-export enum CellValueTypes {
-  DATE,
-  STRING,
-  NUMBER,
-  BOOLEAN,
-  EMPITY,
-}
+export type RunTimeCellTypeMap = {
+  'empity': undefined;
+  'boolean': boolean;
+  'string': string;
+  'number': number;
+  'date': Date;
+};
 
-export interface CellValueTypeMap {
-  [CellValueTypes.DATE]: Date,
-  [CellValueTypes.STRING]: string,
-  [CellValueTypes.NUMBER]: number,
-  [CellValueTypes.BOOLEAN]: boolean,
-  [CellValueTypes.EMPITY]: undefined,
-}
+export type CellTypeMap = {
+  'any': CellAnyType;
+  'boolean?': boolean | undefined;
+  'string?': string | undefined;
+  'number?': number | undefined,
+  'date?': Date | undefined;
+} & RunTimeCellTypeMap;
 
-export class CellHandler<V extends CellValueTypeMap[CellValueTypes] = CellValueTypeMap[CellValueTypes]> {
-  static readonly CONSTRUCTORS_MAP: ReadonlyMap<Function, CellValueTypes> = new Map([
-    [Date, CellValueTypes.DATE],
-    [Number, CellValueTypes.NUMBER],
-    [Boolean, CellValueTypes.BOOLEAN],
-    [String as Function, CellValueTypes.STRING],
+export type RunTimeCellTypes = keyof RunTimeCellTypeMap;
+export type CellTypes = keyof CellTypeMap;
+
+export type CellAnyType = RunTimeCellTypeMap[keyof RunTimeCellTypeMap];
+
+export class CellHandler<V extends CellAnyType = CellAnyType> {
+  static readonly CONSTRUCTORS_MAP: ReadonlyMap<Function, RunTimeCellTypes> = new Map<Function, RunTimeCellTypes>([
+    [String as Function, 'string'],
+    [Boolean, 'boolean'],
+    [Number, 'number'],
+    [Date, 'date'],
   ]);
 
-  static readonly TYPE_NAMES: ReadonlyMap<CellValueTypes, string> = new Map([
-    [CellValueTypes.DATE, 'date'],
-    [CellValueTypes.NUMBER, 'number'],
-    [CellValueTypes.STRING, 'string'],
-    [CellValueTypes.BOOLEAN, 'boolean'],
-    [CellValueTypes.EMPITY, 'undefined'],
+  static readonly TYPE_NAMES: ReadonlyMap<CellTypes, string> = new Map<CellTypes, string>([
+    ['empity', 'undefined'],
   ]);
 
-  static readonly XLSX_TYPE_MAP: ReadonlyMap<CellValueTypes, XLSX.ExcelDataType> = new Map([
-    [CellValueTypes.BOOLEAN, 'b'],
-    [CellValueTypes.DATE, 'd'],
-    [CellValueTypes.EMPITY, 'z'],
-    [CellValueTypes.NUMBER, 'n'],
-    [CellValueTypes.STRING, 's'],
+  static readonly XLSX_TYPE_MAP: ReadonlyMap<RunTimeCellTypes, XLSX.ExcelDataType> = new Map<RunTimeCellTypes, XLSX.ExcelDataType>([
+    ['boolean', 'b'],
+    ['string', 's'],
+    ['empity', 'z'],
+    ['number', 'n'],
+    ['date', 'd'],
   ]);
 
-  private _type: CellValueTypes;
+  private _type: RunTimeCellTypes;
 
   constructor(
     readonly cell: XLSX.CellObject,
@@ -54,55 +55,68 @@ export class CellHandler<V extends CellValueTypeMap[CellValueTypes] = CellValueT
   set value(value: V) {
     this._type = CellHandler.typeOf(value);
     this.cell.t = CellHandler.toXLSXType(this._type);
-
-    this.cell.v = value as CellValue;
+    this.cell.v = value as CellValueType;
   }
 
   get value(): V {
     return this.cell.v as V;
   }
 
-  static typeOf(value: CellValueTypeMap[CellValueTypes]) {
-    return unwrap(this.safeTypeOf(value));
+  static typeOf(value: CellTypeMap[CellTypes]) {
+    return Result.unwrap(this.safeTypeOf(value));
   }
 
-  static safeTypeOf(value: CellValueTypeMap[CellValueTypes]): Result<CellValueTypes> {
-    if (value === undefined) return CellValueTypes.EMPITY;
+  static safeTypeOf(value: CellTypeMap[CellTypes]): ResultType<RunTimeCellTypes> {
+    if (value === undefined) return 'empity';
 
     const constructor = value.constructor;
 
-    return this.CONSTRUCTORS_MAP.get(constructor) ?? error(`Unespected type '${constructor.name}'`);
+    return this.CONSTRUCTORS_MAP.get(constructor) ?? ResultError.create(`Unespected type '${constructor.name}'`);
   }
 
-  static getTypeName(type: CellValueTypes): string {
-    return this.TYPE_NAMES.get(type) ?? 'unknown';
+  static getTypeName(type: CellTypes): string {
+    return this.TYPE_NAMES.get(type) ?? type;
   }
 
-  static toXLSXType(type: CellValueTypes): XLSX.ExcelDataType {
+  static toXLSXType(type: RunTimeCellTypes): XLSX.ExcelDataType {
     return this.XLSX_TYPE_MAP.get(type) ?? 'e';
+  }
+
+  static typeTuple<T extends readonly CellTypes[] | []>(tuple: T): T {
+    return tuple;
   }
 
   type() {
     return this._type;
   }
 
-  as<T extends CellValueTypes>(type: T): CellHandler<CellValueTypeMap[T]> {
-    return unwrap(this.safeAs(type));
+  as<T extends CellTypes>(type: T): CellHandler<CellTypeMap[T]> {
+    return Result.unwrap(this.safeAs(type));
   }
 
-  safeAs<T extends CellValueTypes>(type: T): Result<CellHandler<CellValueTypeMap[T]>> {
-    if (this._type === type) return this as unknown as Result<CellHandler<CellValueTypeMap[T]>>;
-
-    return error(`Can't assign cell with type '${this._type}' as a '${type}'`);
+  is<T extends CellTypes>(type: T): this is CellHandler<CellTypeMap[T]> {
+    return type === 'any' || type.includes(this._type) || (this._type === 'empity' && type.at(-1) === '?');
   }
 
-  asOptional<T extends CellValueTypes>(type: T): CellHandler<CellValueTypeMap[T] | undefined> {
-    return unwrap(this.asSafeOptional(type));
+  safeAs<T extends CellTypes>(type: T): ResultType<CellHandler<CellTypeMap[T]>> {
+    return this.is(type) ?
+      this :
+      ResultError.create(`Can't assign cell with type '${CellHandler.getTypeName(this._type)}' as a '${CellHandler.getTypeName(type)}'`);
   }
 
-  asSafeOptional<T extends CellValueTypes>(type: T): Result<CellHandler<CellValueTypeMap[T] | undefined>> {
-    if (this.value === undefined || this._type === type) return this as Result<CellHandler<CellValueTypeMap[T] | undefined>>;
+  static typeAll<C extends readonly CellHandler[] | [], T extends readonly CellTypes[] | []>(cells: C, types?: T) {
+    return Result.unwrap(this.safeTypeAll(cells, types));
+  }
 
-    return error(`Can't assign cell with type '${this._type}' as a '${type}'`);
+  static safeTypeAll<C extends readonly CellHandler[] | [], T extends readonly CellTypes[] | []>(cells: C, types: T = [] as T): ResultType<{ -readonly [K in keyof C]: CellHandler<CellTypeMap[K extends keyof T ? T[K] : CellTypes]> }> {
+    for (let i = 0; i < cells.length; i++) {
+      const type = types.at(i);
+      if (!type) continue;
+
+      const result = cells[i].safeAs(type);
+      if (ResultError.isError(result)) return result;
+    }
+
+    return cells as { -readonly [K in keyof C]: CellHandler<CellTypeMap[K extends keyof T ? T[K] : CellTypes]> };
   }
 }

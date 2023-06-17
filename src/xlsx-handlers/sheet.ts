@@ -1,4 +1,4 @@
-import { Result, error, unwrap } from "../utils/result";
+import { Result, ResultError, ResultType } from "../utils/result";
 import { CellAddress } from "./address";
 import { CellHandler } from "./cell";
 import { LineHander } from "./line";
@@ -6,18 +6,18 @@ import { SheetRange } from "./sheet-range";
 import XLSX from 'xlsx';
 
 export class SheetHandler {
-  cellMap: Map<string, CellHandler>;
+  private cellMap: Map<string, CellHandler>;
   readonly ref: SheetRange;
 
   constructor(
     readonly sheet: XLSX.WorkSheet
   ) {
     this.cellMap = new Map();
-    this.ref = this.generateRef();
+    this.ref = SheetHandler.generateRef(this.sheet);
   }
 
-  private generateRef() {
-    const ref = this.sheet['!ref'];
+  static generateRef(sheet: XLSX.WorkSheet) {
+    const ref = sheet['!ref'];
     if (!ref) return new SheetRange(
       new CellAddress('a', 1),
       new CellAddress('a', 1),
@@ -38,20 +38,18 @@ export class SheetHandler {
     return cell;
   }
 
-  isCell(cell: XLSX.CellObject | XLSX.WSKeys): cell is XLSX.CellObject {
+  isCellObject(cell: XLSX.CellObject | XLSX.WSKeys): cell is XLSX.CellObject {
     return typeof cell === 'object' && 't' in cell;
   }
 
-  safeAt(collumn: string, line: number): Result<CellHandler> {
+  safeAt(collumn: string, line: number): ResultType<CellHandler> {
     const cellAddress = CellAddress.stringify(collumn, line);
 
     const mappedHandler = this.cellMap.get(cellAddress);
-
     if (mappedHandler) return mappedHandler;
 
     const cell: XLSX.CellObject | XLSX.WSKeys = this.sheet[cellAddress] ?? this.createCellObject(cellAddress);
-
-    if (!this.isCell(cell)) return error(`Unespected type of cell: ${cell}`);
+    if (!this.isCellObject(cell)) return ResultError.create(`Unespected type of cell: ${cell}`);
 
     const handler = new CellHandler(cell);
 
@@ -61,11 +59,7 @@ export class SheetHandler {
   }
 
   at(collumn: string, line: number) {
-    return unwrap(this.safeAt(collumn, line));
-  }
-
-  set(collumn: string, line: number) {
-    
+    return Result.unwrap(this.safeAt(collumn, line));
   }
 
   *iterLines(start = this.ref.start.line, end = this.ref.end.line + 1): Iterable<LineHander> {

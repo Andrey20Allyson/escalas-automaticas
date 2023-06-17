@@ -1,12 +1,30 @@
 import XLSX from 'xlsx';
-import { Result, error, unwrap } from '../utils/result';
+import { Result, ResultError, ResultType } from '../utils/result';
 import { SheetHandler } from './sheet';
+
+export class SheetNotFoundError extends ResultError {
+  constructor(sheetName: string, sheetList: readonly string[]) {
+    super(`Can't find sheet with name "${sheetName}"!\n  Did you mean ${sheetList.map((name) => `\n    "${name}"`).join(';')}\n`);
+  }
+}
+
+export class EmptyBookError extends ResultError {
+  constructor() {
+    super(`This book is empty!`);
+  }
+}
+
+export class MustInsertSheetNameError extends ResultError {
+  constructor() {
+    super(`If book have more than one sheet you must insert a sheet name!`);
+  }
+}
 
 export class BookHandler {
   private sheetMap: Map<string, SheetHandler>;
 
   constructor(
-    readonly book: XLSX.WorkBook
+    readonly book: XLSX.WorkBook = XLSX.utils.book_new(),
   ) {
     this.sheetMap = new Map();
   }
@@ -23,17 +41,26 @@ export class BookHandler {
     return handler;
   }
 
-  sheet(name: string) {
-    return unwrap(this.safeSheet(name));
+  get sheetNames(): readonly string[] {
+    return this.book.SheetNames;
   }
 
-  safeSheet(name: string): Result<SheetHandler> {
+  getSheet(name?: string) {
+    return Result.unwrap(this.safeGetSheet(name));
+  }
+
+  safeGetSheet(name?: string): ResultType<SheetHandler, EmptyBookError | MustInsertSheetNameError | SheetNotFoundError> {
+    if (this.sheetNames.length === 0) return new EmptyBookError();
+
+    name = this.sheetNames.length === 1 ? this.sheetNames[0] : name;
+    if (!name) return new MustInsertSheetNameError();
+
     const sheet: XLSX.WorkSheet | undefined = this.book.Sheets[name];
 
     const mappedHandler = this.sheetMap.get(name);
     if (mappedHandler) return mappedHandler;
 
-    if (!sheet) return error(`Can't find sheet with name '${name}'`);
+    if (!sheet) return new SheetNotFoundError(name, this.sheetNames);
 
     const handler = new SheetHandler(sheet);
 
@@ -42,7 +69,15 @@ export class BookHandler {
     return handler;
   }
 
-  static parse(data: any) {
+  toArrayBuffer(): ArrayBuffer {
+    return XLSX.write(this.book, { type: 'array' });
+  }
+
+  toBuffer(): Buffer {
+    return XLSX.write(this.book, { type: 'buffer' });
+  }
+
+  static parse(data: ArrayBuffer | Buffer) {
     const book = XLSX.read(data, {
       cellStyles: true,
     });

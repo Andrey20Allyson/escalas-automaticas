@@ -1,38 +1,45 @@
-// import { execute } from './auto-schedule';
-
-// const INPUT_FILE = './input/data.xlsx';
-// const OUTPUT_FILE = './output/out-data.xlsx';
-
-// execute({
-//   input: INPUT_FILE,
-//   output: OUTPUT_FILE,
-//   analyse: true,
-//   benchmark: true,
-// });
-
 import fs from 'fs/promises';
-import XLSX from 'xlsx';
-import { SheetHandler } from './xlsx-handlers/sheet';
-import { CellValueTypes } from './xlsx-handlers/cell';
+import { execute } from './auto-schedule';
+import { ResultError } from './utils/result';
 import { BookHandler } from './xlsx-handlers/book';
+import { Benchmarker } from './utils/benchmark';
 
-async function main() {
-  const data = await fs.readFile('input/output-pattern.xlsx');
+async function programTest() {
+  const INPUT_FILE = './input/data.xlsx';
+  const OUTPUT_FILE = './output/out-data.xlsx';
+  
+  await execute({
+    input: INPUT_FILE,
+    output: OUTPUT_FILE,
+    analyse: true,
+    benchmark: true,
+  });
+} 
 
-  const book = BookHandler.parse(data);
-  const sheet = new SheetHandler(book.sheet('DADOS'));
+async function XLSXHandersTest() {
+  const inputBuffer = await fs.readFile('input/output-pattern.xlsx');
 
-  const startT = Date.now();
+  const book = BookHandler.parse(inputBuffer);
+  const sheet = book.getSheet('DADOS');
 
-  for (const line of sheet.iterLines(15, 316126)) {
-    const name = line.collumnAt('b').asOptional(CellValueTypes.STRING);
+  const benchmarker = new Benchmarker();
+
+  const iteration = benchmarker.start('Table iteration');
+
+  for (const line of sheet.iterLines(15, 310_000)) {
+    const name = line.at('b').safeAs('string?');
+
+    if (ResultError.isError(name)) continue;
 
     name.value = `pessoa ${line.line - 14}`;
   }
 
-  const endT = Date.now();
+  iteration.end();
 
-  console.log(`ended at ${endT - startT}ms`);
+  const benchmarkMessage = benchmarker.getMessage();
+  console.log(benchmarkMessage);
 }
 
-main();
+programTest();
+
+// XLSXHandersTest();

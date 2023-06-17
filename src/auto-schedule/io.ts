@@ -1,8 +1,11 @@
-import { ExtraDutyTableEntry, ExtraDutyTable } from "../extra-duty-table";
 import fs from 'fs/promises';
 import * as XLSX from 'xlsx';
+import { ExtraDutyTable, ExtraDutyTableEntry } from "../extra-duty-table";
 import { WorkerInfo } from "../extra-duty-table/worker-info";
-import { TableWorker } from "./table-worker";
+import { Result, ResultError, ResultType } from "../utils/result";
+import { BookHandler } from "../xlsx-handlers/book";
+import { CellHandler } from '../xlsx-handlers/cell';
+import { LineHander } from '../xlsx-handlers/line';
 
 export namespace utils {
   export function toInterval(start: number, end: number) {
@@ -40,68 +43,66 @@ export async function saveTable(file: string, table: ExtraDutyTable, sortByName 
   await fs.writeFile(file.endsWith('.xlsx') ? file : file + '.xlsx', serializeTable(table, { sheetName: 'Main', sortByName }));
 }
 
-export class EmptyBookError extends Error {
-  constructor() {
-    super(`This book is empty!`);
-  }
-}
-
-export class MustInsertSheetNameError extends Error {
-  constructor() {
-    super(`If book have more than one sheet you must insert a sheet name!`);
-  }
-}
-
-export class SheetNotFoundError extends Error {
-  constructor(sheetName: string, sheetList: string[]) {
-    super(`Can't find sheet with name "${sheetName}"!\n  Did you mean ${sheetList.map((name) => `\n    "${name}"`).join(';')}\n`);
-  }
-}
-
 export function scrappeWorkersFromBook(book: XLSX.WorkBook, sheetName?: string) {
-  const tableWorker = new TableWorker(book);
-  if (tableWorker.book.SheetNames.length === 0) throw new EmptyBookError();
+  return Result.unwrap(safeScrappeWorkersFromBook(book, sheetName));
+}
 
-  sheetName = tableWorker.book.SheetNames.length === 1 ? tableWorker.book.SheetNames[0] : sheetName;
-  if (!sheetName) throw new MustInsertSheetNameError();
+export enum WorkerInfoCollumns {
+  NAME = 'd',
+  HOURLY = 'f',
+  PATENT = 'b',
+  POST = 'e',
+  REGISTRATION = 'c',
+}
 
-  const sheetExists = tableWorker.useSheet(sheetName);
-  if (!sheetExists) throw new SheetNotFoundError(sheetName, tableWorker.book.SheetNames);
-  
-  enum Collumn {
-    NAME = 'd',
-    HOURLY = 'f',
-    PATENT = 'b',
-    POST = 'e',
-    REGISTRATION = 'c',
-  }
+const collumnsTuple = LineHander.collumnTuple([
+  WorkerInfoCollumns.NAME,
+  WorkerInfoCollumns.HOURLY,
+  WorkerInfoCollumns.PATENT,
+  WorkerInfoCollumns.POST,
+  WorkerInfoCollumns.REGISTRATION
+]);
+
+const cellsTypeTuple = CellHandler.typeTuple([
+  'string',
+  'string',
+  'string?',
+  'string?',
+  'string?'
+]);
+
+export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, sheetName?: string): ResultType<WorkerInfo[]> {
+  const book = new BookHandler(workBook);
+
+  const sheet = book.safeGetSheet(sheetName);
+  if (ResultError.isError(sheet)) return sheet;
 
   const workerInfos: WorkerInfo[] = [];
 
-  let i = 2;
-  while (true) {
-    const j = i++;
+  for (const line of sheet.iterLines(2)) {
+    const cellsResult = line.safeGetCells(collumnsTuple);
+    if (ResultError.isError(cellsResult)) return cellsResult;
 
-    const hourly = tableWorker.get(Collumn.HOURLY, j);
-    const registration = tableWorker.get(Collumn.REGISTRATION, j);
-    
-    const name = tableWorker.get(Collumn.NAME, j) ?? '';
-    const patent = tableWorker.get(Collumn.PATENT, j) ?? '';
-    const post = tableWorker.get(Collumn.POST, j) ?? '';
+    const typedCellsResult = CellHandler.safeTypeAll(cellsResult, cellsTypeTuple);
+    if (ResultError.isError(typedCellsResult)) return typedCellsResult;
 
-    if (!registration || !hourly) break;
+    const [nameCell, hourlyCell, patentCell, postCell, registrationCell] = typedCellsResult;
 
-    const worker = WorkerInfo.parse({
-      name,
-      post,
-      hourly,
-      patent,
-      registration,
-    });
+    try {
+      const worker = WorkerInfo.parse({
+        name: nameCell.value,
+        hourly: hourlyCell.value,
+        patent: patentCell.value ?? '',
+        post: postCell.value ?? '',
+        registration: registrationCell.value ?? '',
+      });
 
-    if (!worker) continue;
+      if (!worker) continue;
 
-    workerInfos.push(worker);
+      workerInfos.push(worker);
+    } catch (e) {
+      return ResultError.create(e);
+    }
   }
 
   return workerInfos;

@@ -1,4 +1,4 @@
-import { Result, ResultError } from "../utils/result";
+import { ResultType, ResultError } from "../utils/result";
 import { firstNumberIndex } from "../utils/string";
 
 export class InvalidCellAddressError extends ResultError {
@@ -21,7 +21,7 @@ export class CellAddress {
     return collumn.toUpperCase() + line.toString();
   }
 
-  static parse(value: string): Result<CellAddress> {
+  static parse(value: string): ResultType<CellAddress> {
     value = value.toUpperCase();
     if (value.length < 2) return new InvalidCellAddressError(value);
 
