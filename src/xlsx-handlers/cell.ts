@@ -1,5 +1,6 @@
 import XLSX from 'xlsx';
 import { ResultType, Result, ResultError } from '../utils/result';
+import { CellFormatHandler } from './cell-format';
 
 export type CellValueType = XLSX.CellObject['v'];
 
@@ -45,11 +46,14 @@ export class CellHandler<V extends CellAnyType = CellAnyType> {
   ]);
 
   private _type: RunTimeCellTypes;
+  readonly format: CellFormatHandler;
 
   constructor(
     readonly cell: XLSX.CellObject,
   ) {
     this._type = CellHandler.typeOf(cell.v);
+    
+    this.format = new CellFormatHandler(this);
   }
 
   set value(value: V) {

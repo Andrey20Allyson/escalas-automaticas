@@ -24,7 +24,7 @@ export class BookHandler {
   private sheetMap: Map<string, SheetHandler>;
 
   constructor(
-    readonly book: XLSX.WorkBook = XLSX.utils.book_new(),
+    readonly workBook: XLSX.WorkBook = XLSX.utils.book_new(),
   ) {
     this.sheetMap = new Map();
   }
@@ -32,7 +32,7 @@ export class BookHandler {
   createSheet(name: string) {
     const sheet: XLSX.WorkSheet = {};
 
-    XLSX.utils.book_append_sheet(this.book, sheet, name);
+    XLSX.utils.book_append_sheet(this.workBook, sheet, name);
 
     const handler = new SheetHandler(sheet);
 
@@ -42,7 +42,7 @@ export class BookHandler {
   }
 
   get sheetNames(): readonly string[] {
-    return this.book.SheetNames;
+    return this.workBook.SheetNames;
   }
 
   getSheet(name?: string) {
@@ -55,7 +55,7 @@ export class BookHandler {
     name = this.sheetNames.length === 1 ? this.sheetNames[0] : name;
     if (!name) return new MustInsertSheetNameError();
 
-    const sheet: XLSX.WorkSheet | undefined = this.book.Sheets[name];
+    const sheet: XLSX.WorkSheet | undefined = this.workBook.Sheets[name];
 
     const mappedHandler = this.sheetMap.get(name);
     if (mappedHandler) return mappedHandler;
@@ -70,11 +70,11 @@ export class BookHandler {
   }
 
   toArrayBuffer(): ArrayBuffer {
-    return XLSX.write(this.book, { type: 'array' });
+    return XLSX.write(this.workBook, { type: 'array' });
   }
 
   toBuffer(): Buffer {
-    return XLSX.write(this.book, { type: 'buffer' });
+    return XLSX.write(this.workBook, { type: 'buffer', cellStyles: true });
   }
 
   static parse(data: ArrayBuffer | Buffer) {

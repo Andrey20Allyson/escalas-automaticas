@@ -6,6 +6,7 @@ import { Result, ResultError, ResultType } from "../utils/result";
 import { BookHandler } from "../xlsx-handlers/book";
 import { CellHandler } from '../xlsx-handlers/cell';
 import { LineHander } from '../xlsx-handlers/line';
+import { MainTableFactory } from './table-factories/main-factory';
 
 export namespace utils {
   export function toInterval(start: number, end: number) {
@@ -40,7 +41,11 @@ export namespace utils {
 }
 
 export async function saveTable(file: string, table: ExtraDutyTable, sortByName = false) {
-  await fs.writeFile(file.endsWith('.xlsx') ? file : file + '.xlsx', serializeTable(table, { sheetName: 'Main', sortByName }));
+  const patternBuffer = await fs.readFile('./input/output-pattern.xlsx');
+
+  const outputBuffer = await serializeTable(table, { sheetName: 'DADOS', sortByName, pattern: new MainTableFactory(patternBuffer) });
+
+  await fs.writeFile(file.endsWith('.xlsx') ? file : file + '.xlsx', outputBuffer);
 }
 
 export function scrappeWorkersFromBook(book: XLSX.WorkBook, sheetName?: string) {
@@ -132,20 +137,41 @@ export function parseWorkers(data: Buffer, sheetName?: string): WorkerInfo[] {
   return scrappeWorkersFromBook(book, sheetName);
 }
 
-export interface SerializeTableOptions {
+export interface TableFactory {
+  generate(table: ExtraDutyTable, options: TableFactoryOptions): Promise<ResultType<Buffer>>;
+}
+
+export interface TableFactoryOptions {
   sheetName: string;
   sortByName?: boolean;
 }
 
-export function serializeTable(table: ExtraDutyTable, options: SerializeTableOptions): Buffer {
-  const outBook = XLSX.utils.book_new();
-  const entries = Array.from(table.entries());
+export interface SerializeTableOptions extends TableFactoryOptions {
+  pattern?: TableFactory;
+}
 
-  if (options.sortByName) entries.sort(utils.workerNameSorter);
+export class DefaultTableFactory implements TableFactory {
+  async generate(table: ExtraDutyTable, options: TableFactoryOptions): Promise<Buffer> {
+    const book = XLSX.utils.book_new();
+    const entries = Array.from(table.entries());
 
-  const sheetBody = utils.toSheetBody(entries);
+    if (options.sortByName) entries.sort(utils.workerNameSorter);
 
-  XLSX.utils.book_append_sheet(outBook, XLSX.utils.aoa_to_sheet(sheetBody), options.sheetName);
+    const sheetBody = utils.toSheetBody(entries);
 
-  return XLSX.write(outBook, { type: 'buffer' });
+    XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(sheetBody), options.sheetName);
+
+    return XLSX.write(book, {
+      type: 'buffer',
+      cellStyles: true,
+    });
+  }
+}
+
+export const defaultTableFactory = new DefaultTableFactory();
+
+export async function serializeTable(table: ExtraDutyTable, options: SerializeTableOptions): Promise<Buffer> {
+  const factory = options.pattern ?? defaultTableFactory;
+
+  return Result.unwrap(await factory.generate(table, options));
 }

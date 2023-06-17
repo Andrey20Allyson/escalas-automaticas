@@ -63,13 +63,13 @@ export interface GenerateOptions {
   outputSheetName?: string;
 }
 
-export function generate(data: Buffer, options: GenerateOptions = {}): Buffer {
+export async function generate(data: Buffer, options: GenerateOptions = {}): Promise<Buffer> {
   const workers = parseWorkers(data, options.inputSheetName);
 
   const table = new ExtraDutyTableV2({ month: options.month });
   table.tryAssignArrayMultipleTimes(workers, options.tries ?? 500);
 
-  return serializeTable(table, {
+  return await serializeTable(table, {
     sheetName: options.outputSheetName ?? 'Main',
   });
 }

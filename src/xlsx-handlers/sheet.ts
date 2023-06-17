@@ -58,13 +58,17 @@ export class SheetHandler {
     return handler;
   }
 
+  lineAt(line: number): LineHander {
+    return new LineHander(this, line);
+  }
+
   at(collumn: string, line: number) {
     return Result.unwrap(this.safeAt(collumn, line));
   }
 
   *iterLines(start = this.ref.start.line, end = this.ref.end.line + 1): Iterable<LineHander> {
     for (let i = start; i < end; i++) {
-      yield new LineHander(this, i);
+      yield this.lineAt(i);
     }
   }
 }
