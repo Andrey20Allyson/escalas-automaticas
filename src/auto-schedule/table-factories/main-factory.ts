@@ -1,7 +1,7 @@
-import { ExtraDutyTable, ExtraDutyTableEntry } from "../../extra-duty-table";
-import { ResultType, enumerate } from "../../utils";
-import { TableFactory, TableFactoryOptions, utils } from "../io";
 import ExcelJS from 'exceljs';
+import { ExtraDutyTable, ExtraDutyTableEntry } from "../../extra-duty-table";
+import { enumerate } from "../../utils";
+import { TableFactory, TableFactoryOptions } from "../io";
 
 export enum OutputCollumns {
   NAME = 'B',
@@ -71,7 +71,7 @@ function sortByRegistration(a: ExtraDutyTableEntry, b: ExtraDutyTableEntry) {
 export class MainTableFactory implements TableFactory {
   constructor(readonly buffer: Buffer | ArrayBuffer) { }
 
-  async generate(table: ExtraDutyTable, options: TableFactoryOptions): Promise<ResultType<Buffer>> {
+  async generate(table: ExtraDutyTable, options: TableFactoryOptions): Promise<Buffer> {
     const book = new ExcelJS.Workbook();
     await book.xlsx.load(this.buffer);
 
@@ -82,6 +82,10 @@ export class MainTableFactory implements TableFactory {
     entries.sort(sortByGrad);
 
     const sheet = book.getWorksheet(options.sheetName);
+
+    const monthCell = sheet.getCell('C7');
+
+    monthCell.value = table.config.month + 1;
 
     for (const [i, rowData] of enumerate(iterRows(entries))) {
       const row = sheet.getRow(i + 15);

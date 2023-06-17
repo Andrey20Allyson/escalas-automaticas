@@ -119,8 +119,14 @@ export async function loadBook(path: string, options?: XLSX.ParsingOptions) {
   return XLSX.read(data, options);
 }
 
-export async function loadSheetNames(path: string) {
-  const book = await loadBook(path, { bookSheets: true });
+export async function loadSheetNames(path: string): Promise<string[]> {
+  const buffer = await fs.readFile(path);
+
+  return parseSheetNames(buffer);
+}
+
+export function parseSheetNames(buffer: Buffer): string[] {
+  const book = XLSX.read(buffer, { bookSheets: true });
 
   return book.SheetNames;
 }
@@ -138,7 +144,7 @@ export function parseWorkers(data: Buffer, sheetName?: string): WorkerInfo[] {
 }
 
 export interface TableFactory {
-  generate(table: ExtraDutyTable, options: TableFactoryOptions): Promise<ResultType<Buffer>>;
+  generate(table: ExtraDutyTable, options: TableFactoryOptions): Promise<Buffer>;
 }
 
 export interface TableFactoryOptions {
@@ -161,10 +167,7 @@ export class DefaultTableFactory implements TableFactory {
 
     XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(sheetBody), options.sheetName);
 
-    return XLSX.write(book, {
-      type: 'buffer',
-      cellStyles: true,
-    });
+    return XLSX.write(book, { type: 'buffer' });
   }
 }
 

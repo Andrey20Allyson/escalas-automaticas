@@ -1,10 +1,8 @@
 import fs from 'fs/promises';
-import { execute } from './auto-schedule';
+import { execute, generate } from './auto-schedule';
 import { Benchmarker } from './utils/benchmark';
 import { ResultError } from './utils/result';
 import { BookHandler } from './xlsx-handlers/book';
-import XLSX from 'xlsx';
-import ExcelJS from 'exceljs';
 
 async function programTest() {
   const INPUT_FILE = './input/data.xlsx';
@@ -26,10 +24,6 @@ async function XLSXHandersTest() {
 
   const benchmarker = new Benchmarker();
 
-  const cell = sheet.at('b', 14);
-
-  console.log(cell.cell.s);
-
   const iteration = benchmarker.start('Table iteration');
 
   for (const line of sheet.iterLines(15, 150)) {
@@ -46,6 +40,16 @@ async function XLSXHandersTest() {
   console.log(benchmarkMessage);
 }
 
-programTest();
+async function generateTest() {
+  const inputBuffer = await fs.readFile('input/data.xlsx');
+
+  const outdata = await generate(inputBuffer);
+
+  await fs.writeFile('./output/data.xlsx', outdata);
+}
+
+// generateTest();
+
+// programTest();
 
 // XLSXHandersTest();

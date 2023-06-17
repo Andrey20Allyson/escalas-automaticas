@@ -2,6 +2,7 @@ import { analyseResult } from '../utils/analyser';
 import { Benchmarker } from '../utils/benchmark';
 import { ExtraDutyTableV2 } from '../extra-duty-table/v2';
 import { loadWorkers, parseWorkers, saveTable, serializeTable } from './io';
+import { MainTableFactory } from './table-factories/main-factory';
 
 export interface ExecutionOptions {
   input: string;
@@ -15,6 +16,7 @@ export interface ExecutionOptions {
 
 /**
  * Server environment only
+ * @deprecated
  */
 export async function execute(options: ExecutionOptions) {
   const benchmarker = new Benchmarker();
@@ -56,6 +58,7 @@ export async function execute(options: ExecutionOptions) {
 }
 
 export interface GenerateOptions {
+  patternData?: Buffer;
   month?: number;
   tries?: number;
   sortByName?: boolean;
@@ -63,13 +66,16 @@ export interface GenerateOptions {
   outputSheetName?: string;
 }
 
-export async function generate(data: Buffer, options: GenerateOptions = {}): Promise<Buffer> {
+export function generate(data: Buffer, options: GenerateOptions = {}): Promise<Buffer> {
   const workers = parseWorkers(data, options.inputSheetName);
 
   const table = new ExtraDutyTableV2({ month: options.month });
   table.tryAssignArrayMultipleTimes(workers, options.tries ?? 500);
 
-  return await serializeTable(table, {
+  return serializeTable(table, {
     sheetName: options.outputSheetName ?? 'Main',
+    ...(options.patternData && {
+      pattern: new MainTableFactory(options.patternData)
+    }),
   });
 }
