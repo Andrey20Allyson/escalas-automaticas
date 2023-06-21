@@ -1,7 +1,7 @@
+import { ExtraDutyTableV2 } from '../extra-duty-table/v2';
 import { analyseResult } from '../utils/analyser';
 import { Benchmarker } from '../utils/benchmark';
-import { ExtraDutyTableV2 } from '../extra-duty-table/v2';
-import { loadWorkers, parseWorkers, saveTable, serializeTable } from './io';
+import { WorkerRegistries, loadWorkers, parseWorkers, saveTable, serializeTable } from './io';
 import { MainTableFactory } from './table-factories/main-factory';
 
 export interface ExecutionOptions {
@@ -24,7 +24,7 @@ export async function execute(options: ExecutionOptions) {
 
   // loads workers from specified file
   const loadWorkersProcess = benchmarker.start('load workers from file');
-  const workers = await loadWorkers(options.input, options.sheetName);
+  const workers = await loadWorkers(options.input, options);
   loadWorkersProcess.end();
 
   // assign workers to table
@@ -62,20 +62,41 @@ export interface GenerateOptions {
   month?: number;
   tries?: number;
   sortByName?: boolean;
+  benchmarker?: Benchmarker;
   inputSheetName?: string;
   outputSheetName?: string;
+  workerRegistryMap?: ReadonlyMap<string, WorkerRegistries>;
+
+  onAnalyse?: (message: string) => void;
 }
 
-export function generate(data: Buffer, options: GenerateOptions = {}): Promise<Buffer> {
-  const workers = parseWorkers(data, options.inputSheetName);
+export async function generate(data: Buffer, options: GenerateOptions = {}): Promise<Buffer> {
+  const workersParseProcess = options.benchmarker?.start('parse workers');
+  const workers = parseWorkers(data, { sheetName: options.inputSheetName, workerRegistryMap: options.workerRegistryMap });
+  workersParseProcess?.end();
 
-  const table = new ExtraDutyTableV2({ month: options.month });
+  const assignArrayProcess = options.benchmarker?.start('assign workers to table');
+  const table = new ExtraDutyTableV2({
+    ...(options.month && {
+      month: options.month
+    }),
+  });
   table.tryAssignArrayMultipleTimes(workers, options.tries ?? 500);
+  assignArrayProcess?.end();
 
-  return serializeTable(table, {
+  if (options.onAnalyse) {
+    const analysisResult = analyseResult(table, workers);
+    options.onAnalyse(analysisResult);
+  }
+
+  const serializeTableProcess = options.benchmarker?.start('serialize table');
+  const serializedTable = await serializeTable(table, {
     sheetName: options.outputSheetName ?? 'Main',
     ...(options.patternData && {
       pattern: new MainTableFactory(options.patternData)
     }),
   });
+  serializeTableProcess?.end();
+
+  return serializedTable;
 }

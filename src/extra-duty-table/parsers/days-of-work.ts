@@ -1,4 +1,5 @@
-import { getMonth, getNumOfDaysInMonth, thisMonthFirstMonday, isBusinessDay } from "../../utils";
+import { getMonth, getNumOfDaysInMonth, isBusinessDay, thisMonthFirstMonday } from "../../utils";
+import { Holidays } from "../holidays";
 
 export const DAYS_OF_WORK_REGEXP = /\(DIAS:[^\d]*([^]*)\)/;
 
@@ -23,14 +24,14 @@ export class DaySearch {
 export class DaysOfWork {
   private readonly days: boolean[];
   private numOfDaysOff: number;
-  
+
   readonly length: number;
 
   constructor(month: number, startValue = false) {
     this.days = new Array(getNumOfDaysInMonth(month)).fill(startValue);
 
     this.length = this.days.length;
-    
+
     this.numOfDaysOff = startValue ? 0 : this.length;
   }
 
@@ -47,12 +48,24 @@ export class DaysOfWork {
     }
   }
 
+  addHolidays(holidays: Holidays, month: number): void {
+    const monthHolidays = holidays.get(month);
+
+    for (const holiday of monthHolidays) {
+      const dayIndex = holiday.day - 1;
+
+      if (dayIndex >= 0 && dayIndex < this.days.length) {
+        this.days[dayIndex] = false;
+      }
+    }
+  }
+
   searchClosestDayOff(search: DaySearch): number | undefined {
     if (search.next === search.past && !this.workOn(search.next)) {
       const day = search.next;
 
       search.step();
-      
+
       return day;
     }
 
@@ -66,7 +79,7 @@ export class DaysOfWork {
 
   notWork(day: number) {
     if (day >= this.length) return;
-    
+
     if (this.days[day] === true) {
       this.numOfDaysOff++;
       this.days[day] = false;

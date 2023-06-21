@@ -1,8 +1,8 @@
 import fs from 'fs/promises';
-import { execute, generate } from './auto-schedule';
 import { Benchmarker } from './utils/benchmark';
 import { ResultError } from './utils/result';
 import { BookHandler } from './xlsx-handlers/book';
+import { io, generate, execute } from '.';
 
 async function programTest() {
   const INPUT_FILE = './input/data.xlsx';
@@ -41,14 +41,39 @@ async function XLSXHandersTest() {
 }
 
 async function generateTest() {
+  const benchmarker = new Benchmarker();
+
+  const fullProcess = benchmarker.start('full process');
+
+  const readInputFilesProcess = benchmarker.start('read input files');
   const inputBuffer = await fs.readFile('input/data.xlsx');
+  const patternBuffer = await fs.readFile('input/output-pattern.xlsx');
+  const registriesFileBuffer = await fs.readFile('input/Efetivo Mat. e CPF.xlsx');
+  readInputFilesProcess.end();
 
-  const outdata = await generate(inputBuffer);
+  const parseRegistriesProcess = benchmarker.start('parse registries');
+  const workerRegistryMap = io.parseRegistryMap(registriesFileBuffer);
+  parseRegistriesProcess.end();
 
+  const outdata = await generate(inputBuffer, {
+    patternData: patternBuffer,
+    outputSheetName: 'DADOS',
+    onAnalyse: console.log,
+    workerRegistryMap,
+    benchmarker,
+  });
+
+  const writeOutputFileProcess = benchmarker.start('write output file'); 
   await fs.writeFile('./output/data.xlsx', outdata);
+  writeOutputFileProcess.end();
+
+  fullProcess.end();
+
+  const benchmarkMessage = benchmarker.getMessage();
+  console.log(benchmarkMessage);
 }
 
-// generateTest();
+generateTest();
 
 // programTest();
 

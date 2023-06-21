@@ -24,6 +24,12 @@ export class LineHander {
     return tuple;
   }
 
+  static *safeIterCells<C extends readonly string[] | []>(lines: Iterable<LineHander>, collumns: C): Iterable<[LineHander, ResultType<{ -readonly [K in keyof C]: CellHandler }>]> {
+    for (const line of lines) {
+      yield [line, line.safeGetCells(collumns)];
+    }
+  }
+
   safeGetCells<C extends readonly string[] | []>(collumns: C): ResultType<{ -readonly [K in keyof C]: CellHandler }> {
     let cells: CellHandler[] = new Array(collumns.length);
 
@@ -35,6 +41,6 @@ export class LineHander {
       cells[i] = result;
     }
 
-    return cells as { -readonly[K in keyof C]: CellHandler };
+    return cells as { -readonly [K in keyof C]: CellHandler };
   }
 }

@@ -8,6 +8,7 @@ export interface WorkerInfoConfig {
   registration: number;
   daysOfWork: DaysOfWork;
   postResistration: number;
+  individualRegistry: number;
   startPositionsLeft?: number;
 }
 
@@ -17,6 +18,7 @@ export interface WorkerParseData {
   patent: string;
   hourly: string;
   registration: string;
+  individualRegistry: string;
 }
 
 export interface Worker {
@@ -91,6 +93,7 @@ export class WorkerInfo implements Worker {
       post: data.post,
       workTime,
       daysOfWork,
+      individualRegistry: parseNumberOrThrow(data.individualRegistry.replace(/\.|\-/g, '')),
     });
   }
 
@@ -101,6 +104,7 @@ export class WorkerInfo implements Worker {
       patent: 'N/A',
       registration: 0,
       postResistration: 0,
+      individualRegistry: 0,
       workTime: new WorkTime(7, 8),
       daysOfWork: DaysOfWork.fromDays([]),
     });
