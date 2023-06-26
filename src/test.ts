@@ -1,8 +1,9 @@
 import fs from 'fs/promises';
+import { execute, generate } from '.';
+import { WorkerRegistriesMap } from './extra-duty-table/worker-registries';
 import { Benchmarker } from './utils/benchmark';
-import { ResultError } from './utils/result';
+import { Result, ResultError } from './utils/result';
 import { BookHandler } from './xlsx-handlers/book';
-import { io, generate, execute } from '.';
 
 async function programTest() {
   const INPUT_FILE = './input/data.xlsx';
@@ -48,11 +49,11 @@ async function generateTest() {
   const readInputFilesProcess = benchmarker.start('read input files');
   const inputBuffer = await fs.readFile('input/data.xlsx');
   const patternBuffer = await fs.readFile('input/output-pattern.xlsx');
-  const registriesFileBuffer = await fs.readFile('input/Efetivo Mat. e CPF.xlsx');
+  const registriesFileBuffer = await fs.readFile('input/registries.json');
   readInputFilesProcess.end();
 
   const parseRegistriesProcess = benchmarker.start('parse registries');
-  const workerRegistryMap = io.parseRegistryMap(registriesFileBuffer);
+  const workerRegistryMap = Result.unwrap(WorkerRegistriesMap.parseJSON(registriesFileBuffer));
   parseRegistriesProcess.end();
 
   const outdata = await generate(inputBuffer, {

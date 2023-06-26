@@ -27,7 +27,7 @@ export class DaysOfWork {
 
   readonly length: number;
 
-  constructor(month: number, startValue = false) {
+  constructor(month: number, startValue = false, readonly isDailyWorker: boolean = false) {
     this.days = new Array(getNumOfDaysInMonth(month)).fill(startValue);
 
     this.length = this.days.length;
@@ -52,10 +52,10 @@ export class DaysOfWork {
     const monthHolidays = holidays.get(month);
 
     for (const holiday of monthHolidays) {
-      const dayIndex = holiday.day - 1;
+      const day = holiday.day - 1;
 
-      if (dayIndex >= 0 && dayIndex < this.days.length) {
-        this.days[dayIndex] = false;
+      if (day >= 0 && day < this.days.length) {
+        this.notWork(day);
       }
     }
   }
@@ -90,11 +90,11 @@ export class DaysOfWork {
     return this.days.at(day) === true;
   }
 
-  static fromAllDays(month = getMonth()) {
+  static fromAllDays(month: number) {
     return new this(month, true);
   }
 
-  static fromDays(days: number[], month = getMonth()): DaysOfWork {
+  static fromDays(days: number[], month: number): DaysOfWork {
     const daysOfWork = new this(month);
 
     for (const day of days) {
@@ -106,7 +106,7 @@ export class DaysOfWork {
 
   static fromDailyWorker(month: number) {
     const daysInThisMonth = getNumOfDaysInMonth(month);
-    const daysOfWork = new this(month);
+    const daysOfWork = new this(month, false, true);
 
     for (let i = 0; i < daysInThisMonth; i++) {
       if (isBusinessDay(thisMonthFirstMonday, i)) {
@@ -117,7 +117,7 @@ export class DaysOfWork {
     return daysOfWork;
   }
 
-  static parsePeriodic(text: string, month = getMonth()): DaysOfWork | undefined {
+  static parsePeriodic(text: string, month: number): DaysOfWork | undefined {
     const matches = DAYS_OF_WORK_REGEXP.exec(text);
     if (!matches) return;
 
@@ -129,9 +129,9 @@ export class DaysOfWork {
     return this.fromDays(days, month);
   }
 
-  static parse(text: string, month = getMonth()): DaysOfWork | undefined {
+  static parse(text: string, month: number): DaysOfWork | undefined {
     if (text.includes('2ª/6ª')) return this.fromDailyWorker(month);
 
-    return this.parsePeriodic(text);
+    return this.parsePeriodic(text, month);
   }
 }

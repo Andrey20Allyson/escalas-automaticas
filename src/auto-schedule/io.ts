@@ -7,6 +7,7 @@ import { BookHandler } from "../xlsx-handlers/book";
 import { CellHandler } from '../xlsx-handlers/cell';
 import { LineHander } from '../xlsx-handlers/line';
 import { MainTableFactory } from './table-factories/main-factory';
+import { WorkerRegistriesMap } from '../extra-duty-table/worker-registries';
 
 export namespace utils {
   export function toInterval(start: number, end: number) {
@@ -40,6 +41,9 @@ export namespace utils {
   }
 }
 
+/**
+ * @deprecated
+ */
 export async function saveTable(file: string, table: ExtraDutyTable, sortByName = false) {
   const patternBuffer = await fs.readFile('./input/output-pattern.xlsx');
 
@@ -48,7 +52,7 @@ export async function saveTable(file: string, table: ExtraDutyTable, sortByName 
   await fs.writeFile(file.endsWith('.xlsx') ? file : file + '.xlsx', outputBuffer);
 }
 
-export function scrappeWorkersFromBook(book: XLSX.WorkBook, options: ScrappeWorkersOptions = {}) {
+export function scrappeWorkersFromBook(book: XLSX.WorkBook, options: ScrappeWorkersOptions) {
   return Result.unwrap(safeScrappeWorkersFromBook(book, options));
 }
 
@@ -77,21 +81,13 @@ const cellsTypeTuple = CellHandler.typeTuple([
 ]);
 
 export interface ScrappeWorkersOptions {
-  month?: number;
+  month: number;
   sheetName?: string;
   holidays?: Holidays;
-  workerRegistryMap?: ReadonlyMap<string, WorkerRegistries>;
+  workerRegistryMap?: WorkerRegistriesMap;
 }
 
-function safeGetIndividualRegistry(map: ReadonlyMap<string, WorkerRegistries> | undefined, workerID: string): ResultType<string> {
-  if (map) {
-    return map.get(workerID)?.individualID ?? '0' ?? new ResultError(`Can't find individual registry result of worker with id '${workerID}'`);
-  }
-
-  return '0';
-}
-
-export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: ScrappeWorkersOptions = {}): ResultType<WorkerInfo[]> {
+export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: ScrappeWorkersOptions): ResultType<WorkerInfo[]> {
   const book = new BookHandler(workBook);
 
   const sheet = book.safeGetSheet(options.sheetName);
@@ -108,7 +104,7 @@ export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: Scr
 
     const [nameCell, hourlyCell, patentCell, postCell, registrationCell] = typedCellsResult;
 
-    const individualRegistry = safeGetIndividualRegistry(options.workerRegistryMap, registrationCell.value);
+    const individualRegistry = options.workerRegistryMap?.get(registrationCell.value);
     if (ResultError.isError(individualRegistry)) return individualRegistry;
 
     try {
@@ -116,14 +112,15 @@ export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: Scr
         name: nameCell.value,
         hourly: hourlyCell.value,
         registration: registrationCell.value,
-        individualRegistry,
+        individualRegistry: individualRegistry?.individualID ?? '0',
         patent: patentCell.value ?? '',
         post: postCell.value ?? '',
+        month: options.month,
       });
 
       if (!worker) continue;
 
-      if (options.month && options.holidays) {
+      if (options.month && options.holidays && worker.daysOfWork.isDailyWorker) {
         worker.daysOfWork.addHolidays(options.holidays, options.month);
       }
 
@@ -134,71 +131,6 @@ export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: Scr
   }
 
   return workerInfos;
-}
-
-export interface WorkerRegistries {
-  individualID: string;
-  workerID: string;
-}
-
-export interface ScrappeRegistriesOptions {
-  sheetName?: string;
-}
-
-const registriesCollumns = LineHander.collumnTuple([
-  'c', // worker id
-  'd', // individual id
-]);
-
-const registriesCellTypes = CellHandler.typeTuple([
-  'string', // workder id cell type
-  'string', // individual id cell type
-]);
-
-function registryToEntry(registries: WorkerRegistries): [string, WorkerRegistries] {
-  return [registries.workerID, registries];
-}
-
-export function parseRegistryMap(buffer: Buffer, options?: ScrappeRegistriesOptions) {
-  return Result.unwrap(safeParseRegistryMap(buffer, options));
-}
-
-export function safeParseRegistryMap(buffer: Buffer, options?: ScrappeRegistriesOptions): ResultType<Map<string, WorkerRegistries>> {
-  const registries = safeScrappeRegistries(buffer, options);
-  if (ResultError.isError(registries)) return registries;
-
-  return new Map(registries.map(registryToEntry));
-}
-
-export function scrappeRegistries(buffer: Buffer, options: ScrappeRegistriesOptions) {
-  return Result.unwrap(safeScrappeRegistries(buffer, options));
-}
-
-const pointRGX = /\./g;
-
-export function safeScrappeRegistries(buffer: Buffer, options: ScrappeRegistriesOptions = {}): ResultType<WorkerRegistries[]> {
-  const book = BookHandler.parse(buffer);
-
-  const sheet = book.safeGetSheet(options.sheetName);
-  if (ResultError.isError(sheet)) return sheet;
-
-  const registries: WorkerRegistries[] = [];
-
-  for (const [_line, cells] of LineHander.safeIterCells(sheet.iterLines(3), registriesCollumns)) {
-    if (ResultError.isError(cells)) return cells;
-
-    const typedCells = CellHandler.safeTypeAll(cells, registriesCellTypes);
-    if (ResultError.isError(typedCells)) return typedCells;
-
-    const [workerIDCell, individualIDCell] = typedCells;
-
-    registries.push({
-      individualID: individualIDCell.value,
-      workerID: workerIDCell.value.replace(pointRGX, ''),
-    });
-  }
-
-  return registries;
 }
 
 export async function loadBook(path: string, options?: XLSX.ParsingOptions) {

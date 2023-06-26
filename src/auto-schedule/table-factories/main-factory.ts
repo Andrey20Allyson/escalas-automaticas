@@ -36,7 +36,7 @@ function* iterRows(entries: Iterable<ExtraDutyTableEntry>): Iterable<ExtraXLSXTa
       const workerConfig = entry.worker.config;
       
       const name = workerConfig.name;
-      const registration = workerConfig.registration;
+      const registration = workerConfig.registration * 10 + workerConfig.postResistration;
       const grad = workerConfig.patent;
       const individualRegistry = workerConfig.individualRegistry;
 

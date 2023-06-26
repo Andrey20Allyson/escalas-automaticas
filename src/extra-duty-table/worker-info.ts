@@ -1,3 +1,4 @@
+import { getMonth } from "../utils";
 import { DaysOfWork, WorkTime } from "./parsers"; 
 
 export interface WorkerInfoConfig {
@@ -15,6 +16,7 @@ export interface WorkerInfoConfig {
 export interface WorkerParseData {
   name: string;
   post: string;
+  month: number;
   patent: string;
   hourly: string;
   registration: string;
@@ -77,7 +79,7 @@ export class WorkerInfo implements Worker {
     const workTime = WorkTime.parse(data.hourly);
     if (!workTime) throw new Error(`Can't parse workTime of "${data.name}"`);
 
-    const daysOfWork = DaysOfWork.parse(data.hourly);
+    const daysOfWork = DaysOfWork.parse(data.hourly, data.month);
     if (!daysOfWork) throw new Error(`Can't parse daysOfWork of "${data.name}"!`);
 
     const splitedRegistration = data.registration.split('-');
@@ -106,7 +108,7 @@ export class WorkerInfo implements Worker {
       postResistration: 0,
       individualRegistry: 0,
       workTime: new WorkTime(7, 8),
-      daysOfWork: DaysOfWork.fromDays([]),
+      daysOfWork: DaysOfWork.fromDays([], getMonth()),
     });
   }
 }
