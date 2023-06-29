@@ -1,5 +1,5 @@
 import zod from 'zod';
-import { ResultError, ResultType } from '../utils';
+import { ResultError, ResultType } from '../../utils';
 import { WorkerInfo } from './worker-info';
 
 const holidaySchema = zod.object({

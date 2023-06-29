@@ -1,8 +1,8 @@
-import { DaySearch } from './parsers';
-import { DayOfExtraDuty } from './structs/day-of-extra-duty';
-import { getMonth, getNumOfDaysInMonth, randomIntFromInterval } from '../utils';
-import { WorkerInfo } from './worker-info';
-import { ExtraDuty } from './structs/extra-duty';
+import { DaySearch } from '../structs';
+import { DayOfExtraDuty } from '../structs/day-of-extra-duty';
+import { getMonth, getNumOfDaysInMonth, randomIntFromInterval } from '../../utils';
+import { WorkerInfo } from '../structs/worker-info';
+import { ExtraDuty } from '../structs/extra-duty';
 
 export interface ExtraDutyTableConfig {
   readonly dutyPositionSize: number;
@@ -60,6 +60,7 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
     return this.days.at(day) ?? new DayOfExtraDuty(day, this);
   }
 
+  /**@deprecated */
   assign(worker: WorkerInfo) {
     const randDay = randomIntFromInterval(0, this.width - 1);
 
@@ -81,6 +82,7 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
     return false;
   }
 
+  /**@deprecated */
   tryAssignArray(workers: WorkerInfo[]): boolean {
     let workersSet: Set<WorkerInfo> = new Set(workers);
 
@@ -112,7 +114,3 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
     };
   }
 }
-
-export * from './parsers';
-export * from './structs';
-export * from './holidays';

@@ -1,7 +1,6 @@
 import chalk from "chalk";
 import { Text } from './text';
-import { ExtraDutyTable } from "../extra-duty-table";
-import { WorkerInfo } from "../extra-duty-table/worker-info";
+import type { ExtraDutyTable, WorkerInfo } from "../extra-duty-lib";
 
 export function numberToColoredString(value: number) {
   switch (value) {

@@ -1,6 +1,6 @@
-import { ResultType, Result, ResultError } from "../utils/result";
-import type { CellHandler, CellTypeMap, CellTypes } from "./cell";
-import type { SheetHandler } from "./sheet";
+import { ResultType, Result, ResultError } from "../utils";
+import { CellHandler } from "./cell";
+import { SheetHandler } from "./sheet";
 
 export class LineHander {
   constructor(

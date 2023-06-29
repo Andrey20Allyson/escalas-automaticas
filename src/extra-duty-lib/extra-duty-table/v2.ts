@@ -1,6 +1,6 @@
-import { ExtraDutyTable } from ".";
-import { forkArray, iterRandom, thisMonthWeekends } from "../utils";
-import { WorkerInfo } from "./worker-info";
+import { ExtraDutyTable } from "./v1";
+import { forkArray, iterRandom, thisMonthWeekends } from "../../utils";
+import { WorkerInfo } from "../structs/worker-info";
 
 export function filterBusyWorkers(worker: WorkerInfo) {
   return !worker.isCompletelyBusy();

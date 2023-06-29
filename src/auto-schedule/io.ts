@@ -1,13 +1,11 @@
 import fs from 'fs/promises';
 import * as XLSX from 'xlsx';
-import { ExtraDutyTable, ExtraDutyTableEntry, Holidays } from "../extra-duty-table";
-import { WorkerInfo } from "../extra-duty-table/worker-info";
 import { Result, ResultError, ResultType } from "../utils/result";
 import { BookHandler } from "../xlsx-handlers/book";
 import { CellHandler } from '../xlsx-handlers/cell';
 import { LineHander } from '../xlsx-handlers/line';
 import { MainTableFactory } from './table-factories/main-factory';
-import { WorkerRegistriesMap } from '../extra-duty-table/worker-registries';
+import { ExtraDutyTableEntry, ExtraDutyTable, Holidays, WorkerRegistriesMap, WorkerInfo } from '../extra-duty-lib';
 
 export namespace utils {
   export function toInterval(start: number, end: number) {

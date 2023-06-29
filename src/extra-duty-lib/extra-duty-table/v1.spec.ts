@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { ExtraDutyTableV2 } from './v2';
-import { WorkerInfo } from './worker-info';
+import { WorkerInfo } from '../structs/worker-info';
 
 test(`#clear shold restart all workers positionsLeft`, () => {
   const worker0 = WorkerInfo.fakeFromName('Jose');

@@ -1,5 +1,5 @@
 import ExcelJS from 'exceljs';
-import { ExtraDutyTable, ExtraDutyTableEntry } from "../../extra-duty-table";
+import { ExtraDutyTable, ExtraDutyTableEntry } from '../../extra-duty-lib';
 import { enumerate } from "../../utils";
 import { TableFactory, TableFactoryOptions } from "../io";
 
@@ -32,9 +32,9 @@ function* iterRows(entries: Iterable<ExtraDutyTableEntry>): Iterable<ExtraXLSXTa
       const startTime = ((entry.duty.start + 6 * j) % 24) / 24;
       const endTime = ((entry.duty.start + 6 * (j + 1)) % 24) / 24;
       const date = 365.25 * (2023 - 1900) + (365.25 / 12) * entry.day.config.month + entry.day.day + 1;
-      
+
       const workerConfig = entry.worker.config;
-      
+
       const name = workerConfig.name;
       const registration = workerConfig.registration * 10 + workerConfig.postResistration;
       const grad = workerConfig.patent;
@@ -72,11 +72,39 @@ function sortByRegistration(a: ExtraDutyTableEntry, b: ExtraDutyTableEntry) {
 }
 
 export class MainTableFactory implements TableFactory {
+  private cachedBook?: ExcelJS.Workbook;
+
   constructor(readonly buffer: Buffer | ArrayBuffer) { }
 
-  async generate(table: ExtraDutyTable, options: TableFactoryOptions): Promise<Buffer> {
+  async createBook() {
     const book = new ExcelJS.Workbook();
     await book.xlsx.load(this.buffer);
+
+    return book;
+  }
+
+  async createCache() {
+    this.cachedBook = await this.createBook();
+  }
+
+  getCachedBook() {
+    if (!this.cachedBook) return;
+
+    const book = this.cachedBook;
+    delete this.cachedBook;
+
+    return book;
+  }
+
+  async getBook() {
+    const cachedBook = this.getCachedBook();
+    if (cachedBook) return cachedBook;
+
+    return await this.createBook();
+  }
+
+  async generate(table: ExtraDutyTable, options: TableFactoryOptions): Promise<Buffer> {
+    const book = await this.getBook();
 
     const entries = Array.from(table.entries());
 
@@ -99,7 +127,7 @@ export class MainTableFactory implements TableFactory {
       const dateCell = row.getCell(OutputCollumns.DATE);
       const startTimeCell = row.getCell(OutputCollumns.START_TIME);
       const endTimeCell = row.getCell(OutputCollumns.END_TIME);
-      
+
       const eventCell = row.getCell(OutputCollumns.EVENT);
       const detailsCell = row.getCell(OutputCollumns.DETAILS);
       const IRCell = row.getCell(OutputCollumns.ITIN);
@@ -109,9 +137,9 @@ export class MainTableFactory implements TableFactory {
       eventCell.value = 'PARQUE DO JIQUIÁ';
       detailsCell.value = 'SEGURANÇA E APOIO A SMAS';
 
-      nameCell.value =  rowData.name;
+      nameCell.value = rowData.name;
       registrationCell.value = rowData.registration;
-      gradCell.value =  rowData.grad;
+      gradCell.value = rowData.grad;
       dateCell.value = rowData.date;
       startTimeCell.value = rowData.startTime;
       endTimeCell.value = rowData.endTime;

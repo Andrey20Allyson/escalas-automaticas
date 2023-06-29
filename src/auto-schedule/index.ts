@@ -1,6 +1,4 @@
-import { Holidays } from '../extra-duty-table';
-import { ExtraDutyTableV2 } from '../extra-duty-table/v2';
-import { WorkerRegistriesMap } from '../extra-duty-table/worker-registries';
+import { ExtraDutyTable, ExtraDutyTableV2, Holidays, WorkerInfo, WorkerRegistriesMap } from '../extra-duty-lib';
 import { getMonth } from '../utils';
 import { analyseResult } from '../utils/analyser';
 import { Benchmarker } from '../utils/benchmark';
@@ -63,23 +61,15 @@ export async function execute(options: ExecutionOptions) {
   }
 }
 
-export interface GenerateOptions {
-  patternData?: Buffer;
-  month?: number;
-  tries?: number;
+export interface GenerateOptions extends GenerateFromWorkersOptions {
   holidays?: Holidays;
-  sortByName?: boolean;
-  benchmarker?: Benchmarker;
   inputSheetName?: string;
-  outputSheetName?: string;
   workerRegistryMap?: WorkerRegistriesMap;
-
-  onAnalyse?: (message: string) => void;
 }
 
-export async function generate(data: Buffer, options: GenerateOptions = {}): Promise<Buffer> {
+export function generate(data: Buffer, options: GenerateOptions = {}): Promise<Buffer> {
   const month = options.month ?? getMonth();
-  
+
   const workersParseProcess = options.benchmarker?.start('parse workers');
   const workers = parseWorkers(data, {
     workerRegistryMap: options.workerRegistryMap,
@@ -88,6 +78,19 @@ export async function generate(data: Buffer, options: GenerateOptions = {}): Pro
     month,
   });
   workersParseProcess?.end();
+
+  return generateFromWorkers(workers, options);
+}
+
+export interface GenerateFromWorkersOptions extends GenerateFromTableOptions {
+  month?: number;
+  tries?: number;
+
+  onAnalyse?: (message: string) => void;
+}
+
+export function generateFromWorkers(workers: WorkerInfo[], options: GenerateFromWorkersOptions = {}): Promise<Buffer> {
+  const month = options.month ?? getMonth();
 
   const assignArrayProcess = options.benchmarker?.start('assign workers to table');
   const table = new ExtraDutyTableV2({ month });
@@ -98,9 +101,20 @@ export async function generate(data: Buffer, options: GenerateOptions = {}): Pro
     const analysisResult = analyseResult(table, workers);
     options.onAnalyse(analysisResult);
   }
-  
+
+  return generateFromTable(table, options);
+}
+
+export interface GenerateFromTableOptions {
+  patternBuffer?: Buffer;
+  sortByName?: boolean;
+  benchmarker?: Benchmarker;
+  outputSheetName?: string;
+}
+
+export async function generateFromTable(table: ExtraDutyTable, options: GenerateFromTableOptions = {}): Promise<Buffer> {
   const serializeTableProcess = options.benchmarker?.start('serialize table');
-  const serializationPattern = options.patternData && new MainTableFactory(options.patternData);
+  const serializationPattern = options.patternBuffer && new MainTableFactory(options.patternBuffer);
   const serializedTable = await serializeTable(table, {
     sheetName: options.outputSheetName ?? 'Main',
     pattern: serializationPattern,

@@ -1,5 +1,5 @@
-import { getMonth } from "../utils";
-import { DaysOfWork, WorkTime } from "./parsers"; 
+import { getMonth } from "../../utils";
+import { DaysOfWork, WorkTime } from '.';
 
 export interface WorkerInfoConfig {
   name: string;

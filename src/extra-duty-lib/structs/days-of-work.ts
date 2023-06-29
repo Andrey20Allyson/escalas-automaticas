@@ -1,5 +1,5 @@
-import { getMonth, getNumOfDaysInMonth, isBusinessDay, thisMonthFirstMonday } from "../../utils";
-import { Holidays } from "../holidays";
+import { enumerate, getMonth, getNumOfDaysInMonth, isBusinessDay, thisMonthFirstMonday } from "../../utils";
+import { Holidays } from "./holidays";
 
 export const DAYS_OF_WORK_REGEXP = /\(DIAS:[^\d]*([^]*)\)/;
 
@@ -7,9 +7,7 @@ export class DaySearch {
   constructor(
     public past: number = 0,
     public next: number = 0,
-  ) {
-
-  }
+  ) { }
 
   step() {
     this.past--;
@@ -21,13 +19,18 @@ export class DaySearch {
   }
 }
 
+export interface DayOfWork {
+  day: number;
+  work: boolean;
+}
+
 export class DaysOfWork {
   private readonly days: boolean[];
   private numOfDaysOff: number;
 
   readonly length: number;
 
-  constructor(month: number, startValue = false, readonly isDailyWorker: boolean = false) {
+  constructor(readonly month: number, startValue = false, readonly isDailyWorker: boolean = false) {
     this.days = new Array(getNumOfDaysInMonth(month)).fill(startValue);
 
     this.length = this.days.length;
@@ -40,12 +43,28 @@ export class DaysOfWork {
   }
 
   work(day: number) {
-    if (day >= this.length) return;
+    this.setDayOfWork(day, true);
+  }
 
-    if (this.days[day] === false) {
-      this.numOfDaysOff--;
-      this.days[day] = true;
+  setDayOfWork(day: number, work: boolean) {
+    if (day < 0 || day >= this.length || this.days[day] === work) return;
+
+    this.numOfDaysOff += work ? -1 : 1;
+    this.days[day] = work;
+  }
+
+  switchDayOfWork(day: number) {
+    this.setDayOfWork(day, !this.workOn(day));
+  }
+
+  *entries(): Iterable<DayOfWork> {
+    for (const [day, work] of enumerate(this.days)) {
+      yield { day, work };
     }
+  }
+
+  values(): Iterable<boolean> {
+    return this.days.values();
   }
 
   addHolidays(holidays: Holidays, month: number): void {
@@ -78,12 +97,7 @@ export class DaysOfWork {
   }
 
   notWork(day: number) {
-    if (day >= this.length) return;
-
-    if (this.days[day] === true) {
-      this.numOfDaysOff++;
-      this.days[day] = false;
-    }
+    this.setDayOfWork(day, false);
   }
 
   workOn(day: number): boolean {

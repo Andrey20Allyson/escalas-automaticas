@@ -1,5 +1,5 @@
-import type { ExtraDutyTableConfig } from "..";
-import { WorkerInfo } from "../worker-info";
+import type { ExtraDutyTableConfig } from "../extra-duty-table/v1";
+import { WorkerInfo } from "./worker-info";
 import type { DayOfExtraDuty } from "./day-of-extra-duty";
 
 export class ExtraDuty implements Iterable<[string, WorkerInfo]> {

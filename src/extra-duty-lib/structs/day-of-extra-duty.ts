@@ -1,5 +1,5 @@
-import type { ExtraDutyTable, ExtraDutyTableConfig } from '..';
-import { WorkerInfo } from '../worker-info';
+import type { ExtraDutyTable, ExtraDutyTableConfig } from '../extra-duty-table/v1';
+import { WorkerInfo } from './worker-info';
 import { ExtraDuty } from './extra-duty';
 
 export interface DayOfExtraDutyFillOptions {

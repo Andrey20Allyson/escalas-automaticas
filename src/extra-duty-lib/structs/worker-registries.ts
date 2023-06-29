@@ -1,8 +1,8 @@
 import zod from 'zod';
-import { Result, ResultError, ResultType } from '../utils';
-import { BookHandler } from '../xlsx-handlers/book';
-import { LineHander } from '../xlsx-handlers/line';
-import { CellHandler } from '../xlsx-handlers/cell';
+import { ResultError, ResultType } from '../../utils';
+import { BookHandler } from '../../xlsx-handlers/book';
+import { CellHandler } from '../../xlsx-handlers/cell';
+import { LineHander } from '../../xlsx-handlers/line';
 
 const registriesCollumns = LineHander.collumnTuple([
   'c', // worker id
@@ -31,6 +31,13 @@ function workerRegistriesToEntry(registries: WorkerRegistries): [string, WorkerR
   return [registries.workerID, registries];
 }
 
+function normalizeWorkerRegistries(registries: WorkerRegistries): WorkerRegistries {
+  return {
+    individualID: registries.individualID,
+    workerID: registries.workerID.replace(pointRGX, ''),
+  };
+}
+
 export class WorkerRegistriesMap {
   private map: Map<string, WorkerRegistries>;
   
@@ -51,12 +58,7 @@ export class WorkerRegistriesMap {
 
     if (!result.success) return ResultError.create(result.error);
 
-    const outputData: WorkerRegistries[] = result.data.map(({individualID, workerID}) => {
-      return {
-        individualID,
-        workerID: workerID.replace(pointRGX, ''),
-      };
-    });
+    const outputData: WorkerRegistries[] = result.data.map(normalizeWorkerRegistries);
 
     return new this(outputData);
   }

@@ -1,8 +1,7 @@
 import fs from 'fs/promises';
 import { execute, generate } from '.';
-import { WorkerRegistriesMap } from './extra-duty-table/worker-registries';
-import { Benchmarker } from './utils/benchmark';
-import { Result, ResultError } from './utils/result';
+import { WorkerRegistriesMap } from './extra-duty-lib';
+import { Benchmarker, Result, ResultError } from './utils';
 import { BookHandler } from './xlsx-handlers/book';
 
 async function programTest() {
@@ -57,10 +56,10 @@ async function generateTest() {
   parseRegistriesProcess.end();
 
   const outdata = await generate(inputBuffer, {
-    patternData: patternBuffer,
     outputSheetName: 'DADOS',
     onAnalyse: console.log,
     workerRegistryMap,
+    patternBuffer,
     benchmarker,
   });
 
