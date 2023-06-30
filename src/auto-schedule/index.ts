@@ -123,3 +123,7 @@ export async function generateFromTable(table: ExtraDutyTable, options: Generate
 
   return serializedTable;
 }
+
+export function tableFrom(buffer: Buffer): ExtraDutyTable {
+  throw new Error('Method not implemented');
+}

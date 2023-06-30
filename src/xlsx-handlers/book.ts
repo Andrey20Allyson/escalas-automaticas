@@ -1,4 +1,4 @@
-import XLSX from 'xlsx';
+import * as XLSX from 'xlsx';
 import { Result, ResultError, ResultType } from '../utils/result';
 import { SheetHandler } from './sheet';
 

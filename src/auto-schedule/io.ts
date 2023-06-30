@@ -1,11 +1,25 @@
-import fs from 'fs/promises';
+import type { readFile, writeFile } from 'fs/promises';
 import * as XLSX from 'xlsx';
+import { ExtraDutyTable, ExtraDutyTableEntry, Holidays, WorkerInfo, WorkerRegistriesMap } from '../extra-duty-lib';
 import { Result, ResultError, ResultType } from "../utils/result";
-import { BookHandler } from "../xlsx-handlers/book";
-import { CellHandler } from '../xlsx-handlers/cell';
-import { LineHander } from '../xlsx-handlers/line';
-import { MainTableFactory } from './table-factories/main-factory';
-import { ExtraDutyTableEntry, ExtraDutyTable, Holidays, WorkerRegistriesMap, WorkerInfo } from '../extra-duty-lib';
+import { BookHandler, CellHandler, LineHander } from "../xlsx-handlers";
+import { MainTableFactory } from './table-factories';
+
+export interface IOFileSystem {
+  readFile: typeof readFile;
+  writeFile: typeof writeFile;
+}
+
+let _fs: IOFileSystem | undefined;
+
+export function getFileSystem() {
+  if (!_fs) throw new Error(`File system not implemented, please set a file system with 'setFileSystem' function`);
+  return _fs;
+} 
+
+export function setFileSystem(fs: IOFileSystem) {
+  _fs = fs;
+}
 
 export namespace utils {
   export function toInterval(start: number, end: number) {
@@ -43,6 +57,8 @@ export namespace utils {
  * @deprecated
  */
 export async function saveTable(file: string, table: ExtraDutyTable, sortByName = false) {
+  const fs = getFileSystem();
+
   const patternBuffer = await fs.readFile('./input/output-pattern.xlsx');
 
   const outputBuffer = await serializeTable(table, { sheetName: 'DADOS', sortByName, pattern: new MainTableFactory(patternBuffer) });
@@ -132,12 +148,16 @@ export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: Scr
 }
 
 export async function loadBook(path: string, options?: XLSX.ParsingOptions) {
+  const fs = getFileSystem();
+
   const data = await fs.readFile(path);
 
   return XLSX.read(data, options);
 }
 
 export async function loadSheetNames(path: string): Promise<string[]> {
+  const fs = getFileSystem();
+
   const buffer = await fs.readFile(path);
 
   return parseSheetNames(buffer);

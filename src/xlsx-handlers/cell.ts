@@ -1,4 +1,4 @@
-import XLSX from 'xlsx';
+import * as XLSX from 'xlsx';
 import { ResultType, Result, ResultError } from '../utils/result';
 import { CellFormatHandler } from './cell-format';
 

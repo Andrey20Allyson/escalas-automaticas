@@ -3,7 +3,7 @@ import { CellAddress } from "./address";
 import { CellHandler } from "./cell";
 import { LineHander } from "./line";
 import { SheetRange } from "./sheet-range";
-import XLSX from 'xlsx';
+import * as XLSX from 'xlsx';
 
 export class SheetHandler {
   private cellMap: Map<string, CellHandler>;
