@@ -1,13 +1,15 @@
 import fs from 'fs/promises';
-import { execute, generate } from '.';
+import { execute, generate, io } from '.';
 import { WorkerRegistriesMap } from './extra-duty-lib';
 import { Benchmarker, Result, ResultError } from './utils';
 import { BookHandler } from './xlsx-handlers/book';
 
+io.setFileSystem(fs);
+
 async function programTest() {
   const INPUT_FILE = './input/data.xlsx';
   const OUTPUT_FILE = './output/out-data.xlsx';
-
+  
   await execute({
     input: INPUT_FILE,
     output: OUTPUT_FILE,

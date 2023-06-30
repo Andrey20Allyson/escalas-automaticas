@@ -127,3 +127,6 @@ export async function generateFromTable(table: ExtraDutyTable, options: Generate
 export function tableFrom(buffer: Buffer): ExtraDutyTable {
   throw new Error('Method not implemented');
 }
+
+export * as io from './io';
+export * as serializers from './table-factories';
