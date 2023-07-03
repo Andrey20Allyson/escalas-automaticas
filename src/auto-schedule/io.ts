@@ -1,8 +1,8 @@
 import type { readFile, writeFile } from 'fs/promises';
 import * as XLSX from 'xlsx';
-import { ExtraDutyTable, WorkerInfo } from '../extra-duty-lib';
+import { ExtraDutyTable, ExtraDutyTableV2, WorkerInfo } from '../extra-duty-lib';
 import { Result } from "../utils/result";
-import { ScrappeWorkersOptions, scrappeWorkersFromBook } from './io.utils';
+import { ScrappeTableOptions, ScrappeWorkersOptions, scrappeTable, scrappeWorkersFromBook } from './io.utils';
 import { DefaultTableFactory, MainTableFactory, TableFactory, TableFactoryOptions } from './table-factories';
 
 export interface IOFileSystem {
@@ -66,6 +66,10 @@ export function parseWorkers(data: Buffer, options: ScrappeWorkersOptions): Work
   const book = XLSX.read(data);
 
   return scrappeWorkersFromBook(book, options);
+}
+
+export function parseTable(data: Buffer, workers: WorkerInfo[], options: ScrappeTableOptions): ExtraDutyTableV2 {
+  return scrappeTable(data, workers, options);
 }
 
 export interface SerializeTableOptions extends TableFactoryOptions {

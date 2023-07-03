@@ -1,4 +1,4 @@
-import { enumerate, getMonth, getNumOfDaysInMonth, isBusinessDay, thisMonthFirstMonday } from "../../utils";
+import { enumerate, getNumOfDaysInMonth, isBusinessDay, thisMonthFirstMonday } from "../../utils";
 import { Holidays } from "./holidays";
 
 export const DAYS_OF_WORK_REGEXP = /\(DIAS:[^\d]*([^]*)\)/;
@@ -30,8 +30,8 @@ export class DaysOfWork {
 
   readonly length: number;
 
-  constructor(readonly month: number, startValue = false, readonly isDailyWorker: boolean = false) {
-    this.days = new Array(getNumOfDaysInMonth(month)).fill(startValue);
+  constructor(readonly year: number, readonly month: number, startValue = false, readonly isDailyWorker: boolean = false) {
+    this.days = new Array(getNumOfDaysInMonth(month, year)).fill(startValue);
 
     this.length = this.days.length;
 
@@ -104,12 +104,12 @@ export class DaysOfWork {
     return this.days.at(day) === true;
   }
 
-  static fromAllDays(month: number) {
-    return new this(month, true);
+  static fromAllDays(year: number, month: number) {
+    return new this(year, month, true);
   }
 
-  static fromDays(days: number[], month: number): DaysOfWork {
-    const daysOfWork = new this(month);
+  static fromDays(days: number[], year: number, month: number): DaysOfWork {
+    const daysOfWork = new this(year, month);
 
     for (const day of days) {
       daysOfWork.work(day);
@@ -118,9 +118,9 @@ export class DaysOfWork {
     return daysOfWork;
   }
 
-  static fromDailyWorker(month: number) {
-    const daysInThisMonth = getNumOfDaysInMonth(month);
-    const daysOfWork = new this(month, false, true);
+  static fromDailyWorker(year: number, month: number) {
+    const daysInThisMonth = getNumOfDaysInMonth(month, year);
+    const daysOfWork = new this(year, month, false, true);
 
     for (let i = 0; i < daysInThisMonth; i++) {
       if (isBusinessDay(thisMonthFirstMonday, i)) {
@@ -131,7 +131,7 @@ export class DaysOfWork {
     return daysOfWork;
   }
 
-  static parsePeriodic(text: string, month: number): DaysOfWork | undefined {
+  static parsePeriodic(text: string, year: number, month: number): DaysOfWork | undefined {
     const matches = DAYS_OF_WORK_REGEXP.exec(text);
     if (!matches) return;
 
@@ -140,12 +140,12 @@ export class DaysOfWork {
 
     const days = numbersString.split(';').map(val => Number(val) - 1);
 
-    return this.fromDays(days, month);
+    return this.fromDays(days, year, month);
   }
 
-  static parse(text: string, month: number): DaysOfWork | undefined {
-    if (text.includes('2ª/6ª')) return this.fromDailyWorker(month);
+  static parse(text: string, year: number, month: number): DaysOfWork | undefined {
+    if (text.includes('2ª/6ª')) return this.fromDailyWorker(year, month);
 
-    return this.parsePeriodic(text, month);
+    return this.parsePeriodic(text, year, month);
   }
 }

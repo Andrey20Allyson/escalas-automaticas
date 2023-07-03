@@ -1,7 +1,8 @@
-import { Holidays, WorkerRegistriesMap, WorkerInfo } from "../extra-duty-lib";
+import { Holidays, WorkerRegistriesMap, WorkerInfo, ExtraDutyTable, ExtraDutyTableV2 } from "../extra-duty-lib";
 import { Result, ResultType, ResultError } from "../utils";
 import { LineHander, CellHandler, BookHandler } from "../xlsx-handlers";
 import * as XLSX from 'xlsx';
+import { ExcelDate, ExcelTime } from "../xlsx-handlers/utils";
 
 export enum WorkerInfoCollumns {
   NAME = 'd',
@@ -11,7 +12,7 @@ export enum WorkerInfoCollumns {
   REGISTRATION = 'c',
 }
 
-export const collumnsTuple = LineHander.collumnTuple([
+export const workersTableCollumns = LineHander.collumnTuple([
   WorkerInfoCollumns.NAME,
   WorkerInfoCollumns.HOURLY,
   WorkerInfoCollumns.PATENT,
@@ -19,7 +20,7 @@ export const collumnsTuple = LineHander.collumnTuple([
   WorkerInfoCollumns.REGISTRATION
 ]);
 
-export const cellsTypeTuple = CellHandler.typeTuple([
+export const workersTableCellTypes = CellHandler.typeTuple([
   'string',
   'string',
   'string?',
@@ -32,6 +33,7 @@ export function scrappeWorkersFromBook(book: XLSX.WorkBook, options: ScrappeWork
 }
 
 export interface ScrappeWorkersOptions {
+  year: number;
   month: number;
   sheetName?: string;
   holidays?: Holidays;
@@ -47,10 +49,10 @@ export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: Scr
   const workerInfos: WorkerInfo[] = [];
 
   for (const line of sheet.iterLines(2)) {
-    const cellsResult = line.safeGetCells(collumnsTuple);
+    const cellsResult = line.safeGetCells(workersTableCollumns);
     if (ResultError.isError(cellsResult)) return cellsResult;
 
-    const typedCellsResult = CellHandler.safeTypeAll(cellsResult, cellsTypeTuple);
+    const typedCellsResult = CellHandler.safeTypeAll(cellsResult, workersTableCellTypes);
     if (ResultError.isError(typedCellsResult)) return typedCellsResult;
 
     const [nameCell, hourlyCell, patentCell, postCell, registrationCell] = typedCellsResult;
@@ -64,9 +66,10 @@ export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: Scr
         hourly: hourlyCell.value,
         registration: registrationCell.value,
         individualRegistry: individualRegistry?.individualID ?? '0',
-        patent: patentCell.value ?? '',
+        grad: patentCell.value ?? '',
         post: postCell.value ?? '',
         month: options.month,
+        year: options.year,
       });
 
       if (!worker) continue;
@@ -82,4 +85,67 @@ export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: Scr
   }
 
   return workerInfos;
+}
+
+export const finalTableCollumns = LineHander.collumnTuple([
+  'c', // registration
+  'i', // date
+  'j', // start time
+  'k', // end time
+]);
+
+export const finalTableCellTypes = CellHandler.typeTuple([
+  'number',
+  'number',
+  'number',
+]);
+
+export interface ScrappeTableOptions {
+  sheetName?: string;
+}
+
+export function scrappeTable(buffer: Buffer, workers: WorkerInfo[], options: ScrappeTableOptions): ExtraDutyTableV2 {
+  const book = BookHandler.parse(buffer);
+
+  const sheet = book.getSheet(options.sheetName);
+
+  const month = sheet.at('c', 7).as('number').value - 1;
+  const year = sheet.at('c', 6).as('number').value;
+
+  const table = new ExtraDutyTableV2({
+    month,
+    year,
+  });
+
+  const workerMap = WorkerInfo.createMap(workers);
+
+  for (const line of sheet.iterLines(15)) {
+    const selectionResult = CellHandler.safeTypeAll(line.getCells(finalTableCollumns), finalTableCellTypes);
+    if (ResultError.isError(selectionResult)) break;
+
+    const [registrationCell, dateCell, startTimeCell] = selectionResult;
+
+    const workerID = registrationCell.value;
+
+    const worker = workerMap.get(workerID);
+    if (!worker) throw new Error(`Can't find worker with id "${workerID}"`);
+
+    const date = ExcelDate.parse(dateCell.value);
+    const startTime = ExcelTime.parse(startTimeCell.value);
+
+    const dayOfDuty = table.getDay(date.day);
+
+    const { firstDutyTime, dutyDuration } = dayOfDuty.config;
+    const startHour = startTime.hours;
+
+    const duty = dayOfDuty.getDuty(Math.floor((startHour < firstDutyTime ? startHour + 24 - firstDutyTime : startTime.hours - firstDutyTime) / dutyDuration));
+
+    if (!duty.has(worker)) duty.add(worker, true);
+  }
+
+  return table;
+}
+
+function exit() {
+  process.exit();
 }

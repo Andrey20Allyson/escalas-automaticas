@@ -1,5 +1,5 @@
 import { ExtraDutyTable, ExtraDutyTableV2, Holidays, WorkerInfo, WorkerRegistriesMap } from '../extra-duty-lib';
-import { getMonth } from '../utils';
+import { getMonth, getYear } from '../utils';
 import { analyseResult } from '../utils/analyser';
 import { Benchmarker } from '../utils/benchmark';
 import { loadWorkers, parseWorkers, saveTable, serializeTable } from './io';
@@ -10,6 +10,7 @@ export interface ExecutionOptions {
   output?: string;
   sheetName?: string;
   month?: number;
+  year?: number;
   analyse?: boolean;
   benchmark?: boolean;
   sortByName?: boolean;
@@ -22,13 +23,14 @@ export interface ExecutionOptions {
  */
 export async function execute(options: ExecutionOptions) {
   const month = options.month ?? getMonth();
+  const year = options.year ?? getYear();
 
   const benchmarker = new Benchmarker();
   const programProcess = benchmarker.start('full process');
 
   // loads workers from specified file
   const loadWorkersProcess = benchmarker.start('load workers from file');
-  const workers = await loadWorkers(options.input, { ...options, month });
+  const workers = await loadWorkers(options.input, { ...options, month, year });
   loadWorkersProcess.end();
 
   // assign workers to table
@@ -69,6 +71,7 @@ export interface GenerateOptions extends GenerateFromWorkersOptions {
 
 export function generate(data: Buffer, options: GenerateOptions = {}): Promise<Buffer> {
   const month = options.month ?? getMonth();
+  const year = options.year ?? getYear();
 
   const workersParseProcess = options.benchmarker?.start('parse workers');
   const workers = parseWorkers(data, {
@@ -76,6 +79,7 @@ export function generate(data: Buffer, options: GenerateOptions = {}): Promise<B
     sheetName: options.inputSheetName,
     holidays: options.holidays,
     month,
+    year,
   });
   workersParseProcess?.end();
 
@@ -85,15 +89,17 @@ export function generate(data: Buffer, options: GenerateOptions = {}): Promise<B
 export interface GenerateFromWorkersOptions extends GenerateFromTableOptions {
   month?: number;
   tries?: number;
+  year?: number;
 
   onAnalyse?: (message: string) => void;
 }
 
 export function generateFromWorkers(workers: WorkerInfo[], options: GenerateFromWorkersOptions = {}): Promise<Buffer> {
   const month = options.month ?? getMonth();
+  const year = options.year ?? getYear();
 
   const assignArrayProcess = options.benchmarker?.start('assign workers to table');
-  const table = new ExtraDutyTableV2({ month });
+  const table = new ExtraDutyTableV2({ month, year });
   table.tryAssignArrayMultipleTimes(workers, options.tries ?? 500);
   assignArrayProcess?.end();
 

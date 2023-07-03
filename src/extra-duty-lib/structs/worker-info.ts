@@ -1,56 +1,52 @@
-import { getMonth } from "../../utils";
 import { DaysOfWork, WorkTime } from '.';
+import { getMonth, parseNumberOrThrow } from "../../utils";
 
-export interface WorkerInfoConfig {
-  name: string;
-  post: string;
-  patent: string;
-  workTime: WorkTime;
-  registration: number;
-  daysOfWork: DaysOfWork;
-  postResistration: number;
-  individualRegistry: number;
+export interface WorkerInfoConfig extends Worker {
+  readonly post: string;
+  readonly grad: string;
+  readonly workerID: number;
+  readonly postWorkerID: number;
+  readonly individualRegistry: number;
   startPositionsLeft?: number;
 }
 
 export interface WorkerParseData {
   name: string;
   post: string;
+  grad: string;
+  year: number;
   month: number;
-  patent: string;
   hourly: string;
   registration: string;
   individualRegistry: string;
 }
 
 export interface Worker {
-  name: string;
-  daysOfWork: DaysOfWork;
-  workTime: WorkTime;
+  readonly name: string;
+  readonly daysOfWork: DaysOfWork;
+  readonly workTime: WorkTime;
 }
+
+export type WorkerToMapEntryCallback = (this: typeof WorkerInfo, worker: WorkerInfo) => [number, WorkerInfo];
 
 export class WorkerInfo implements Worker {
   positionsLeft: number;
-  readonly config: WorkerInfoConfig;
   readonly startPositionsLeft: number;
 
-  constructor(config: WorkerInfoConfig) {
-    this.config = config;
+  readonly name: string;
+  readonly daysOfWork: DaysOfWork;
+  readonly workTime: WorkTime;
+  readonly fullWorkerID: number;
 
-    this.startPositionsLeft = config.startPositionsLeft ?? 10;
+  constructor(readonly config: WorkerInfoConfig) {
+    this.name = this.config.name;
+    this.daysOfWork = this.config.daysOfWork;
+    this.workTime = this.config.workTime;
+
+    this.fullWorkerID = WorkerInfo.workerIDToNumber(this.config.workerID, this.config.postWorkerID);
+
+    this.startPositionsLeft = this.config.startPositionsLeft ?? 10;
     this.positionsLeft = this.startPositionsLeft;
-  }
-
-  get name() {
-    return this.config.name;
-  }
-
-  get daysOfWork() {
-    return this.config.daysOfWork;
-  }
-
-  get workTime() {
-    return this.config.workTime;
   }
 
   resetPositionsLeft() {
@@ -79,7 +75,7 @@ export class WorkerInfo implements Worker {
     const workTime = WorkTime.parse(data.hourly);
     if (!workTime) throw new Error(`Can't parse workTime of "${data.name}"`);
 
-    const daysOfWork = DaysOfWork.parse(data.hourly, data.month);
+    const daysOfWork = DaysOfWork.parse(data.hourly, data.year, data.month);
     if (!daysOfWork) throw new Error(`Can't parse daysOfWork of "${data.name}"!`);
 
     const splitedRegistration = data.registration.split('-');
@@ -87,11 +83,11 @@ export class WorkerInfo implements Worker {
 
     const [registration, postResistration] = splitedRegistration.map(parseNumberOrThrow);
     
-    return new this({
+    return new WorkerInfo({
       name: data.name,
-      postResistration,
-      registration,
-      patent: data.patent,
+      postWorkerID: postResistration,
+      workerID: registration,
+      grad: data.grad,
       post: data.post,
       workTime,
       daysOfWork,
@@ -103,18 +99,31 @@ export class WorkerInfo implements Worker {
     return new WorkerInfo({
       name,
       post: 'N/A',
-      patent: 'N/A',
-      registration: 0,
-      postResistration: 0,
+      grad: 'N/A',
+      workerID: 0,
+      postWorkerID: 0,
       individualRegistry: 0,
       workTime: new WorkTime(7, 8),
-      daysOfWork: DaysOfWork.fromDays([], getMonth()),
+      daysOfWork: DaysOfWork.fromDays([], 2023, getMonth()),
     });
   }
-}
 
-function parseNumberOrThrow(value?: unknown) {
-  const num = Number(value);
-  if (isNaN(num)) throw new Error(`Can't parse "${value}" because results in NaN!`);
-  return num;
+  static parseWorkerID(value: number): [number, number] {
+    const id = Math.trunc(value / 10);
+    const postID = value - id * 10;
+  
+    return [id, postID];
+  }
+
+  static workerIDToNumber(id: number, postID: number): number {
+    return id * 10 + postID;
+  }
+
+  static createMap(workers: WorkerInfo[]) {
+    return new Map(workers.map(this.workerToMapEntry));
+  }
+
+  static workerToMapEntry: WorkerToMapEntryCallback = (worker) => {
+    return [worker.fullWorkerID, worker];
+  };
 }

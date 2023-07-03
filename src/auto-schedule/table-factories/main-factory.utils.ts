@@ -1,4 +1,5 @@
 import { ExtraDutyTableEntry } from "../../extra-duty-lib";
+import { ExcelDate } from "../../xlsx-handlers/utils";
 
 export enum OutputCollumns {
   NAME = 'B',
@@ -34,13 +35,17 @@ export function* iterRows(entries: Iterable<ExtraDutyTableEntry>): Iterable<Extr
     for (let j = 0; j < 2; j++) {
       const startTime = ((entry.duty.start + 6 * j) % 24) / 24;
       const endTime = ((entry.duty.start + 6 * (j + 1)) % 24) / 24;
-      const date = 365.25 * (2023 - 1900) + (365.25 / 12) * entry.day.config.month + entry.day.day + 1;
+      const date = ExcelDate.normalize(
+        entry.day.config.year,
+        entry.day.config.month,
+        entry.day.day,
+      );
 
       const workerConfig = entry.worker.config;
 
       const name = workerConfig.name;
-      const registration = workerConfig.registration * 10 + workerConfig.postResistration;
-      const grad = workerConfig.patent;
+      const registration = workerConfig.workerID * 10 + workerConfig.postWorkerID;
+      const grad = workerConfig.grad;
       const individualRegistry = workerConfig.individualRegistry;
 
       yield {
@@ -61,9 +66,9 @@ export function getGradNum(grad: string) {
 }
 
 export function sortByGrad(a: ExtraDutyTableEntry, b: ExtraDutyTableEntry) {
-  return getGradNum(a.worker.config.patent) - getGradNum(b.worker.config.patent);
+  return getGradNum(a.worker.config.grad) - getGradNum(b.worker.config.grad);
 }
 
 export function sortByRegistration(a: ExtraDutyTableEntry, b: ExtraDutyTableEntry) {
-  return a.worker.config.registration - b.worker.config.registration;
+  return a.worker.config.workerID - b.worker.config.workerID;
 }

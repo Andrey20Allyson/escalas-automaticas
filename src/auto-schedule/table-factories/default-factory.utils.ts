@@ -13,8 +13,8 @@ export function toStringTuple(entry: ExtraDutyTableEntry, index: number): string
     (entry.day.day + 1).toString(),
     toInterval((entry.duty.start + 6 * index) % 24, (entry.duty.start + 6 * (index + 1)) % 24),
     entry.worker.name,
-    `${entry.worker.config.registration}-${entry.worker.config.postResistration}`,
-    entry.worker.config.patent,
+    `${entry.worker.config.workerID}-${entry.worker.config.postWorkerID}`,
+    entry.worker.config.grad,
     entry.worker.config.post,
   ];
 }

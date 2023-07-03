@@ -1,9 +1,9 @@
 import type { ExtraDutyTableConfig } from "../extra-duty-table/v1";
-import { WorkerInfo } from "./worker-info";
 import type { DayOfExtraDuty } from "./day-of-extra-duty";
+import { WorkerInfo } from "./worker-info";
 
 export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
-  readonly workers: Map<string, WorkerInfo>;
+  readonly workers: Map<number, WorkerInfo>;
   readonly offTimeEnd: number;
   readonly start: number;
   readonly end: number;
@@ -53,8 +53,10 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     return this.offTimeEnd > tomorrowWorkStart;
   }
 
-  [Symbol.iterator](): Iterator<[string, WorkerInfo]> {
-    return this.workers[Symbol.iterator]();
+  *[Symbol.iterator](): Iterator<[string, WorkerInfo]> {
+    for (const [_, worker] of this.workers) {
+      yield [worker.name, worker];
+    } 
   }
 
   isFull() {
@@ -62,7 +64,11 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
   }
 
   has(worker: WorkerInfo) {
-    return this.workers.has(worker.name);
+    return this.workers.has(this.keyFrom(worker));
+  }
+
+  keyFrom(worker: WorkerInfo) {
+    return worker.fullWorkerID;
   }
 
   getSize() {
@@ -78,11 +84,19 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
   add(worker: WorkerInfo, force = false): boolean {
     if (!force && !this.canAdd(worker)) return false;
 
-    this.workers.set(worker.name, worker);
+    this.workers.set(this.keyFrom(worker), worker);
 
     worker.occupyPositions(this.config.dutyPositionSize);
 
     return true;
+  }
+
+  delete(worker: WorkerInfo) {
+    const existed = this.workers.delete(this.keyFrom(worker));
+
+    if (!existed) return;
+
+    worker.leavePositions(this.config.dutyPositionSize);
   }
 
   clear() {

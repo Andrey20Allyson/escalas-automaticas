@@ -1,8 +1,5 @@
-import { DaySearch } from '../structs';
-import { DayOfExtraDuty } from '../structs/day-of-extra-duty';
-import { getMonth, getNumOfDaysInMonth, randomIntFromInterval } from '../../utils';
-import { WorkerInfo } from '../structs/worker-info';
-import { ExtraDuty } from '../structs/extra-duty';
+import { getNumOfDaysInMonth, randomIntFromInterval, thisMonth, thisYear } from '../../utils';
+import { DayOfExtraDuty, DaySearch, ExtraDuty, WorkerInfo } from '../structs';
 
 export interface ExtraDutyTableConfig {
   readonly dutyPositionSize: number;
@@ -10,6 +7,7 @@ export interface ExtraDutyTableConfig {
   readonly dutyInterval: number;
   readonly dutyDuration: number;
   readonly month: number;
+  readonly year: number;
   dutyMinDistance: number;
   dutyCapacity: number;
 }
@@ -28,7 +26,7 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
   constructor(config?: Partial<ExtraDutyTableConfig>) {
     this.config = ExtraDutyTable.createConfigFrom(config);
 
-    this.width = getNumOfDaysInMonth(this.config.month);
+    this.width = getNumOfDaysInMonth(this.config.month, this.config.year);
     this.days = DayOfExtraDuty.daysFrom(this);
   }
 
@@ -110,7 +108,8 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
       dutyInterval: partialConfig?.dutyInterval ?? 12,
       dutyDuration: partialConfig?.dutyDuration ?? 12,
       dutyCapacity: partialConfig?.dutyCapacity ?? 2,
-      month: partialConfig?.month ?? getMonth(),
+      month: partialConfig?.month ?? thisMonth,
+      year: partialConfig?.year ?? thisYear,
     };
   }
 }

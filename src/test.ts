@@ -1,8 +1,10 @@
 import fs from 'fs/promises';
 import { execute, generate, io } from '.';
-import { WorkerRegistriesMap } from './extra-duty-lib';
-import { Benchmarker, Result, ResultError } from './utils';
+import { Holidays, WorkerRegistriesMap } from './extra-duty-lib';
+import { Benchmarker, Result, ResultError, analyseResult, getMonth, getYear } from './utils';
 import { BookHandler } from './xlsx-handlers/book';
+import { parseTable, parseWorkers } from './auto-schedule/io';
+import { MainTableFactory } from './auto-schedule/table-factories';
 
 io.setFileSystem(fs);
 
@@ -51,11 +53,14 @@ async function generateTest() {
   const inputBuffer = await fs.readFile('input/data.xlsx');
   const patternBuffer = await fs.readFile('input/output-pattern.xlsx');
   const registriesFileBuffer = await fs.readFile('input/registries.json');
+  const holidaysFileBuffer = await fs.readFile('./input/feriados.json');
   readInputFilesProcess.end();
 
   const parseRegistriesProcess = benchmarker.start('parse registries');
   const workerRegistryMap = Result.unwrap(WorkerRegistriesMap.parseJSON(registriesFileBuffer));
   parseRegistriesProcess.end();
+
+  const holidays = Result.unwrap(Holidays.safeParse(holidaysFileBuffer));
 
   const outdata = await generate(inputBuffer, {
     outputSheetName: 'DADOS',
@@ -63,6 +68,7 @@ async function generateTest() {
     workerRegistryMap,
     patternBuffer,
     benchmarker,
+    holidays,
   });
 
   const writeOutputFileProcess = benchmarker.start('write output file'); 
@@ -75,8 +81,43 @@ async function generateTest() {
   console.log(benchmarkMessage);
 }
 
-generateTest();
+async function parseTableTest() {
+  const month = getMonth();
+  const year = getYear();
+
+  const patternBuffer = await fs.readFile('input/output-pattern.xlsx');
+
+  const factory = new MainTableFactory(patternBuffer);
+  factory.createCache();
+  
+  const tableBuffer = await fs.readFile('./output/data.xlsx');
+  const workersBuffer = await fs.readFile('./input/data.xlsx');
+  const registriesFileBuffer = await fs.readFile('input/registries.json');
+
+  const workerRegistryMap = Result.unwrap(WorkerRegistriesMap.parseJSON(registriesFileBuffer));
+
+  const workers = parseWorkers(workersBuffer, {
+    workerRegistryMap,
+    month,
+    year,
+  });
+  
+  const table = parseTable(tableBuffer, workers, {
+    sheetName: 'DADOS',
+  });
+
+  const analysisResult = analyseResult(table, workers);
+  console.log(analysisResult);
+
+  const outputBuffer = await factory.generate(table, { sheetName: 'DADOS' });
+
+  await fs.writeFile('./output/parsed-table.xlsx', outputBuffer);
+}
+
+// generateTest();
 
 // programTest();
 
 // XLSXHandersTest();
+
+parseTableTest();

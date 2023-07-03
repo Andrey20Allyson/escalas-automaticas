@@ -5,3 +5,5 @@ export * from './cell-format';
 export * from './line';
 export * from './sheet';
 export * from './sheet-range';
+
+export * as utils from './utils';

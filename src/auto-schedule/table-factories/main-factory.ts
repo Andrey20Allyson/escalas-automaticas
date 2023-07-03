@@ -5,7 +5,7 @@ import { enumerate } from "../../utils";
 import { sortByRegistration, sortByGrad, iterRows, OutputCollumns } from './main-factory.utils';
 
 export class MainTableFactory implements TableFactory {
-  private cachedBook?: ExcelJS.Workbook;
+  private cachedBook?: Promise<ExcelJS.Workbook>;
 
   constructor(readonly buffer: Buffer | ArrayBuffer) { }
 
@@ -17,7 +17,9 @@ export class MainTableFactory implements TableFactory {
   }
 
   async createCache() {
-    this.cachedBook = await this.createBook();
+    this.cachedBook = this.createBook();
+    
+    return this.cachedBook;
   }
 
   getCachedBook() {
@@ -33,7 +35,7 @@ export class MainTableFactory implements TableFactory {
     const cachedBook = this.getCachedBook();
     if (cachedBook) return cachedBook;
 
-    return await this.createBook();
+    return this.createBook();
   }
 
   async generate(table: ExtraDutyTable, options: TableFactoryOptions): Promise<Buffer> {
@@ -46,6 +48,10 @@ export class MainTableFactory implements TableFactory {
     entries.sort(sortByGrad);
 
     const sheet = book.getWorksheet(options.sheetName);
+
+    const yearCell = sheet.getCell('C6');
+
+    yearCell.value = table.config.year;
 
     const monthCell = sheet.getCell('C7');
 
