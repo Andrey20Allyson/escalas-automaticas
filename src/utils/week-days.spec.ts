@@ -1,9 +1,9 @@
 import { test, expect } from 'vitest';
-import { firtMonday, isBusinessDay } from './week-days';
+import { firstMonday, isBusinessDay } from './week-days';
 
 function runFirstMondayTest(weekDay: number, monthDay: number, sholdReturn: number) {
-  test(`${firtMonday.name} shold return ${sholdReturn} if weekDay is ${weekDay} and monthDay is ${monthDay}`, () => {
-    const _firstMonday = firtMonday(weekDay, monthDay);
+  test(`${firstMonday.name} shold return ${sholdReturn} if weekDay is ${weekDay} and monthDay is ${monthDay}`, () => {
+    const _firstMonday = firstMonday(weekDay, monthDay);
   
     expect(_firstMonday).toStrictEqual(sholdReturn);
   });

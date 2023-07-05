@@ -3,7 +3,7 @@ import { numOfDaysInThisMonth } from "./month";
 export const DAYS_IN_ONE_WEEK = 7;
 export const MONDAY = 1;
 const date = new Date();
-export const thisMonthFirstMonday = firtMonday(date.getDay(), date.getDate() - 1);
+export const thisMonthFirstMonday = firstMonday(date.getDay(), date.getDate() - 1);
 export const thisMonthWeekends = Array.from(iterWeekendsFromThisMonth());
 
 export enum DaysOfWeek {
@@ -16,6 +16,16 @@ export enum DaysOfWeek {
   SATURDAY
 }
 
+export function firstMondayFromYearAndMonth(year: number, month: number) {
+  const date = new Date(year, month, 1);
+
+  return firstMondayFromDate(date);
+}
+
+export function firstMondayFromDate(date: Date) {
+  return firstMonday(date.getDay(), date.getDate() - 1);
+}
+
 export function dayOfWeekFrom(firstMondayDate: number, date: number): number {
   return date > firstMondayDate ?
     ((date - firstMondayDate + 1) % DAYS_IN_ONE_WEEK) :
@@ -26,7 +36,7 @@ export function daysUntilWeekDay(now: number, weekDay: number): number {
   return now > weekDay ? (weekDay + DAYS_IN_ONE_WEEK - now) % DAYS_IN_ONE_WEEK : (weekDay - now) % DAYS_IN_ONE_WEEK;
 }
 
-export function firtMonday(weekDay: number, monthDay: number): number {
+export function firstMonday(weekDay: number, monthDay: number): number {
   return (monthDay + daysUntilWeekDay(weekDay, MONDAY)) % DAYS_IN_ONE_WEEK;
 }
 
