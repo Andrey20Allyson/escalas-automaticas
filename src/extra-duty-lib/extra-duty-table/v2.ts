@@ -13,13 +13,13 @@ export function filterDiarists(worker: WorkerInfo) {
 export class ExtraDutyTableV2 extends ExtraDutyTable {
   tryAssignArrayMultipleTimes(workers: WorkerInfo[], times: number): boolean {
     for (let i = 0; i < times; i++) {
-      if (this.tryAssignArray(workers)) return true;
+      if (this.tryAssignArray(workers, i === times - 1)) return true;
     }
 
     return false;
   }
 
-  tryAssignArray(workers: WorkerInfo[]): boolean {
+  tryAssignArray(workers: WorkerInfo[], isLast = false): boolean {
     const [
       diarists,
       periodics,
@@ -49,7 +49,7 @@ export class ExtraDutyTableV2 extends ExtraDutyTable {
           }
 
           if (i < 3 && !duty.isFull()) {
-            this.clear();
+            if (!isLast) this.clear();
 
             return false;
           }

@@ -8,6 +8,8 @@ export function* iterRange(start: number, end: number): Generator<number> {
 
 export function* enumerate<T>(iter: Iterable<T>): Iterable<[number, T]> {
   let i = 0;
+  if (!iter) return;
+
   for (const entry of iter) {
     yield [i++, entry];
   }
@@ -20,6 +22,8 @@ export function iterRandomInRange(start: number, end: number): Iterable<number> 
 }
 
 export function* iterRandom<T>(iter: Iterable<T> | ArrayLike<T>): Iterable<T> {
+  if (!iter) return;
+
   if ('length' in iter) {
     for (const i of iterRandomInRange(0, iter.length)) {
       yield iter[i];
