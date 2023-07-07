@@ -1,6 +1,6 @@
 {
   "name": "@andrey-allyson/escalas-automaticas",
-  "version": "1.5.2",
+  "version": "1.5.5",
   "main": "./dist/index.js",
   "publishConfig": {
     "access": "public"
@@ -20,7 +20,9 @@
     "README.md"
   ],
   "dependencies": {
+    "@types/clone": "^2.1.1",
     "chalk": "4.1.2",
+    "clone": "^2.1.2",
     "commander": "^10.0.1",
     "exceljs": "^4.3.0",
     "xlsx": "^0.18.5",

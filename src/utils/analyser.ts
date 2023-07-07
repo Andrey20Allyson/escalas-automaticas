@@ -19,7 +19,6 @@ export function analyseResult(table: ExtraDutyTable, workers: WorkerInfo[], colo
   let analysisText = new Text();
 
   let positionsLeft = workers.length * 10;
-  let success = true;
 
   analysisText.writeLn(chalk.underline(`[ Numero de funcionários em cada turno do dia ]`));
 
@@ -30,16 +29,12 @@ export function analyseResult(table: ExtraDutyTable, workers: WorkerInfo[], colo
     for (const duty of day) {
       const size = duty.getSize();
 
-      if (success && size > 0 && size !== 2 && size !== 3) success = false;
-
       numOfWorkersInThisDay += size;
       numOfWorkersMap[duty.index * 2] += size;
       numOfWorkersMap[duty.index * 2 + 1] += size;
     }
 
     positionsLeft -= positionsLeft;
-
-    if (numOfWorkersInThisDay <= 0) continue;
 
     const formatedDay = chalk.white(String(day.day + 1).padStart(2, '0'));
     const formatedDutySizes = numOfWorkersMap.map(numberToColoredString).join(', ');
@@ -48,12 +43,6 @@ export function analyseResult(table: ExtraDutyTable, workers: WorkerInfo[], colo
   }
 
   analysisText.writeLn(chalk.underline(`[ Turnos ]`));
-
-  if (success) {
-    analysisText.writeLn(chalk.green(`  Todos turnos foram ocupados corretamente!`));
-  } else {
-    analysisText.writeLn(chalk.red(`  Alguns turnos não possuem o número correto de funcionários!`));
-  }
 
   analysisText.writeLn(chalk.underline(`[ Plantões ]`));
 

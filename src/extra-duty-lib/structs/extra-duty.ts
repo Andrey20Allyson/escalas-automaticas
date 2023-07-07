@@ -3,7 +3,7 @@ import type { DayOfExtraDuty } from "./day-of-extra-duty";
 import { WorkerInfo } from "./worker-info";
 
 export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
-  readonly workers: Map<number, WorkerInfo>;
+  workers: Map<number, WorkerInfo>;
   readonly offTimeEnd: number;
   readonly start: number;
   readonly end: number;

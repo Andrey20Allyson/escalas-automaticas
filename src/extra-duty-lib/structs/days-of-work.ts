@@ -1,5 +1,6 @@
-import { enumerate, firstMondayFromYearAndMonth, getNumOfDaysInMonth, isBusinessDay } from "../../utils";
+import { dayOfWeekFrom, enumerate, firstMondayFromYearAndMonth, getNumOfDaysInMonth, isBusinessDay } from "../../utils";
 import { Holidays } from "./holidays";
+import { Clonable } from "./worker-info";
 
 export const DAYS_OF_WORK_REGEXP = /\(DIAS:[^\d]*([^]*)\)/;
 
@@ -24,7 +25,7 @@ export interface DayOfWork {
   work: boolean;
 }
 
-export class DaysOfWork {
+export class DaysOfWork implements Clonable<DaysOfWork> {
   private readonly days: boolean[];
   private numOfDaysOff: number;
 
@@ -36,6 +37,18 @@ export class DaysOfWork {
     this.length = this.days.length;
 
     this.numOfDaysOff = startValue ? 0 : this.length;
+  }
+
+  clone() {
+    const clone = new DaysOfWork(this.year, this.month, false, this.isDailyWorker);
+
+    for (let i = 0; i < this.days.length; i++) {
+      clone.setDayOfWork(i, this.workOn(i));
+    }
+
+    clone.numOfDaysOff = this.numOfDaysOff;
+
+    return clone;
   }
 
   getNumOfDaysOff() {

@@ -24,7 +24,7 @@ export interface ExtraXLSXTableRow {
   name: string;
   grad: string;
   registration: number;
-  date: number;
+  date: Date;
   startTime: number;
   endTime: number
   individualRegistry: number;
@@ -35,10 +35,10 @@ export function* iterRows(entries: Iterable<ExtraDutyTableEntry>): Iterable<Extr
     for (let j = 0; j < 2; j++) {
       const startTime = ((entry.duty.start + 6 * j) % 24) / 24;
       const endTime = ((entry.duty.start + 6 * (j + 1)) % 24) / 24;
-      const date = ExcelDate.normalize(
+      const date = new Date(
         entry.day.config.year,
         entry.day.config.month,
-        entry.day.day,
+        entry.day.day + 1,
       );
 
       const workerConfig = entry.worker.config;

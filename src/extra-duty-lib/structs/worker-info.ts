@@ -27,9 +27,13 @@ export interface Worker {
   readonly workTime: WorkTime;
 }
 
+export interface Clonable<T> {
+  clone(): T;
+}
+
 export type WorkerToMapEntryCallback = (this: typeof WorkerInfo, worker: WorkerInfo) => [number, WorkerInfo];
 
-export class WorkerInfo implements Worker {
+export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
   positionsLeft: number;
   readonly startPositionsLeft: number;
 
@@ -67,6 +71,29 @@ export class WorkerInfo implements Worker {
 
   isCompletelyBusy(positions = 1) {
     return this.positionsLeft - positions < 0;
+  }
+
+  clone() {
+    const { daysOfWork, grad, individualRegistry, name, post, postWorkerID, workTime, workerID, startPositionsLeft } = this.config;
+
+    const config: WorkerInfoConfig = {
+      daysOfWork: daysOfWork.clone(),
+      workTime: workTime.clone(),
+
+      startPositionsLeft,
+      individualRegistry,
+      postWorkerID,
+      workerID,
+      grad,
+      name,
+      post,
+    };
+
+    const clone = new WorkerInfo(config);
+
+    clone.positionsLeft = this.positionsLeft;
+
+    return clone;
   }
 
   static parse(data: WorkerParseData) {

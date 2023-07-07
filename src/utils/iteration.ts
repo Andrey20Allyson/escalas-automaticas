@@ -21,6 +21,12 @@ export function iterRandomInRange(start: number, end: number): Iterable<number> 
   return randomizeArray(array, true)[Symbol.iterator]();
 }
 
+export function* iterReverse<T>(array: ArrayLike<T>): Iterable<T> {
+  for (let i = 0; i < array.length; i++) {
+    yield array[array.length - i - 1];
+  }
+}
+
 export function* iterRandom<T>(iter: Iterable<T> | ArrayLike<T>): Iterable<T> {
   if (!iter) return;
 

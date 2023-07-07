@@ -1,6 +1,8 @@
 import { ExtraDutyTable } from "./v1";
-import { forkArray, iterRandom, thisMonthWeekends } from "../../utils";
-import { WorkerInfo } from "../structs/worker-info";
+import { DaysOfWeek, dayOfWeekFrom, firstMondayFromYearAndMonth, forkArray, isBusinessDay, iterRandom, thisMonthWeekends } from "../../utils";
+import { Clonable, WorkerInfo } from "../structs/worker-info";
+import clone from "clone";
+import { ExtraDuty } from "../structs";
 
 export function filterBusyWorkers(worker: WorkerInfo) {
   return !worker.isCompletelyBusy();
@@ -10,56 +12,112 @@ export function filterDiarists(worker: WorkerInfo) {
   return worker.daysOfWork.getNumOfDaysOff() <= 10
 }
 
-export class ExtraDutyTableV2 extends ExtraDutyTable {
+type PointGetter = (day: number, firstMonday: number) => number;
+
+const pointGetterMap: PointGetter[] = [
+  (day, firstMonday) => -(isMonday(day, firstMonday) ? 1 : 2),
+  () => -100,
+];
+
+function isMonday(day: number, firstMonday: number): boolean {
+  return day % 7 === firstMonday
+}
+
+function calculateDutyPontuation(duty: ExtraDuty, firstMonday: number): number {
+  const pointGetter = pointGetterMap.at(duty.getSize());
+  const isNightDuty = duty.index > 0;
+
+  return (pointGetter?.(duty.day, firstMonday) ?? 0) * (isNightDuty ? 2 : 1);
+}
+
+export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDutyTableV2> {
   tryAssignArrayMultipleTimes(workers: WorkerInfo[], times: number): boolean {
+    let bestTable: ExtraDutyTableV2 | undefined;
+    let bestPontuation = -Infinity;
+    const firstMonday = firstMondayFromYearAndMonth(this.config.year, this.config.month);
+
     for (let i = 0; i < times; i++) {
-      if (this.tryAssignArray(workers, i === times - 1)) return true;
+      this.tryAssignArrayV2(workers);
+
+      const points = this.calculatePontuation(firstMonday);
+
+      if (points >= 0) {
+        bestTable = this.clone();
+        this.clear();
+
+        break;
+      }
+
+      if (points > bestPontuation) {
+        bestTable = this.clone();
+        bestPontuation = points;
+      }
+
+      this.clear();
     }
 
-    return false;
+    if (bestTable) {
+      for (const day of bestTable) {
+        for (const bestDuty of day) {
+          const thisDuty = this.getDay(day.day).getDuty(bestDuty.index);
+
+          thisDuty.workers = bestDuty.workers;
+        }
+      }
+    }
+
+    return bestPontuation >= 0;
   }
 
-  tryAssignArray(workers: WorkerInfo[], isLast = false): boolean {
+  clone(): ExtraDutyTableV2 {
+    return clone(this);
+  }
+
+  tryAssignArrayV2(workers: WorkerInfo[]) {
     const [
       diarists,
       periodics,
     ] = forkArray(workers, filterDiarists);
 
-    const diaristsResult = this.tryAssignArrayToAllWeekEnds(diarists);
-
-    if (!diaristsResult) {
-      this.clear();
-
-      return false;
-    }
+    this.tryAssignArrayToAllWeekEnds(diarists);
 
     const oldDutyCapacity = this.config.dutyCapacity;
 
-    for (let i = 1; i <= 3; i++) {
+    for (let i = 2; i <= 3; i++) {
       this.config.dutyCapacity = i;
 
       for (const day of iterRandom(this)) {
         let filteredWorkers = periodics.filter(filterBusyWorkers);
 
-        for (const duty of iterRandom(day)) {
-          if (duty.isFull()) continue;
+        // for (const duty of iterRandom(day)) {
+        for (let i = day.size - 1; i >= 0; i--) {
+          const duty = day.getDuty(i);
+
+          const passDuty = duty.isFull();
+          if (passDuty) continue;
 
           for (const worker of iterRandom(filteredWorkers)) {
-            if (day.insert(worker, duty)) break;
-          }
+            day.insert(worker, duty);
 
-          if (i < 3 && !duty.isFull()) {
-            if (!isLast) this.clear();
-
-            return false;
+            if (duty.isFull()) break;
           }
         }
       }
     }
-
+    
     this.config.dutyCapacity = oldDutyCapacity;
+  }
 
-    return true;
+  calculatePontuation(firstMonday: number) {
+    let points = 0;
+
+    for (const day of this) {
+      for (const duty of day) {
+        points += calculateDutyPontuation(duty, firstMonday);
+      }
+    }
+
+    return points;
   }
 
   tryAssignOnAllWeekEnds(worker: WorkerInfo): boolean {

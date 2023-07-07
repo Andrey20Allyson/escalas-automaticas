@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import { execute, generate, io } from '.';
-import { Holidays, WorkerRegistriesMap } from './extra-duty-lib';
-import { Benchmarker, Result, ResultError, analyseResult, getMonth, getYear } from './utils';
+import { ExtraDutyTableV2, Holidays, WorkerRegistriesMap } from './extra-duty-lib';
+import { Benchmarker, Result, ResultError, analyseResult, getMonth, getYear, iterRange, randomIntFromInterval } from './utils';
 import { BookHandler } from './xlsx-handlers/book';
 import { parseTable, parseWorkers } from './auto-schedule/io';
 import { MainTableFactory } from './auto-schedule/table-factories';
@@ -114,10 +114,10 @@ async function parseTableTest() {
   await fs.writeFile('./output/parsed-table.xlsx', outputBuffer);
 }
 
-// generateTest();
+generateTest();
 
 // programTest();
 
 // XLSXHandersTest();
 
-parseTableTest();
+// parseTableTest();

@@ -130,10 +130,10 @@ export function scrappeTable(buffer: Buffer, workers: WorkerInfo[], options: Scr
     const worker = workerMap.get(workerID);
     if (!worker) throw new Error(`Can't find worker with id "${workerID}"`);
 
-    const date = ExcelDate.parse(dateCell.value);
+    const date = new Date(1900, 0, dateCell.value);
     const startTime = ExcelTime.parse(startTimeCell.value);
 
-    const dayOfDuty = table.getDay(date.day);
+    const dayOfDuty = table.getDay(date.getDate() - 1);
 
     const { firstDutyTime, dutyDuration } = dayOfDuty.config;
     const startHour = startTime.hours;
@@ -144,8 +144,4 @@ export function scrappeTable(buffer: Buffer, workers: WorkerInfo[], options: Scr
   }
 
   return table;
-}
-
-function exit() {
-  process.exit();
 }

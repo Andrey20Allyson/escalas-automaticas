@@ -1,10 +1,16 @@
+import { Clonable } from "./worker-info";
+
 export const WORK_TIME_REGEXP = /^(\d{2})[^\d]*(\d{2})/;
 
-export class WorkTime {
+export class WorkTime implements Clonable<WorkTime> {
   constructor(
     readonly startTime: number,
     readonly totalTime: number,
   ) { }
+
+  clone() {
+    return new WorkTime(this.startTime, this.totalTime);
+  }
 
   static parse(text: string): WorkTime | undefined {
     const matches = WORK_TIME_REGEXP.exec(text);
@@ -17,9 +23,9 @@ export class WorkTime {
     const parsedStart = Number(start);
     const parsedEnd = Number(end);
 
-    return {
-      startTime: parsedStart,
-      totalTime: parsedEnd < parsedStart ? parsedStart - parsedEnd : parsedEnd - parsedStart,
-    }
+    return new WorkTime(
+      parsedStart,
+      parsedEnd < parsedStart ? parsedStart - parsedEnd : parsedEnd - parsedStart,
+    );
   }
 }
