@@ -10,7 +10,7 @@ const registriesCollumns = LineHander.collumnTuple([
 ]);
 
 const registriesCellTypes = CellHandler.typeTuple([
-  'string', // workder id cell type
+  'string', // worker id cell type
   'string', // individual id cell type
 ]);
 
@@ -22,6 +22,7 @@ export interface ScrappeRegistriesOptions {
 
 export const WORKER_REGISTRIES_SCHEMA = zod.object({
   workerID: zod.string(),
+  gender: zod.enum(['F', 'M', 'U']),
   individualID: zod.string(),
 });
 
@@ -33,6 +34,7 @@ function workerRegistriesToEntry(registries: WorkerRegistries): [string, WorkerR
 
 function normalizeWorkerRegistries(registries: WorkerRegistries): WorkerRegistries {
   return {
+    gender: registries.gender,
     individualID: registries.individualID,
     workerID: registries.workerID.replace(pointRGX, ''),
   };
@@ -92,6 +94,7 @@ export class WorkerRegistriesMap {
       const [workerIDCell, individualIDCell] = typedCells;
   
       registries.push({
+        gender: 'U',
         individualID: individualIDCell.value,
         workerID: workerIDCell.value.replace(pointRGX, ''),
       });

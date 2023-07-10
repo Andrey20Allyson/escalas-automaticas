@@ -4,6 +4,7 @@ import { getMonth, parseNumberOrThrow } from "../../utils";
 export interface WorkerInfoConfig extends Worker {
   readonly post: string;
   readonly grad: string;
+  readonly gender: Gender;
   readonly workerID: number;
   readonly postWorkerID: number;
   readonly individualRegistry: number;
@@ -17,8 +18,9 @@ export interface WorkerParseData {
   year: number;
   month: number;
   hourly: string;
+  gender?: string;
   registration: string;
-  individualRegistry: string;
+  individualRegistry?: string;
 }
 
 export interface Worker {
@@ -33,12 +35,37 @@ export interface Clonable<T> {
 
 export type WorkerToMapEntryCallback = (this: typeof WorkerInfo, worker: WorkerInfo) => [number, WorkerInfo];
 
+export enum Graduation {
+  SI = 'sub-insp',
+  INSP = 'insp',
+  GCM = 'gcm',
+}
+
+export enum Gender {
+  UNDEFINED = 'N/A',
+  FEMALE = 'female',
+  MALE = 'male',
+}
+
 export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
+  static readonly genderMap: NodeJS.Dict<Gender> = {
+    'F': Gender.FEMALE,
+    'M': Gender.MALE,
+  };
+
+  static readonly graduationMap: NodeJS.Dict<Graduation> = {
+    'INSP': Graduation.INSP,
+    'GCM': Graduation.GCM,
+    'SI': Graduation.SI,
+  };
+
   positionsLeft: number;
   readonly startPositionsLeft: number;
 
   readonly name: string;
+  readonly gender: Gender;
   readonly daysOfWork: DaysOfWork;
+  readonly graduation: Graduation;
   readonly workTime: WorkTime;
   readonly fullWorkerID: number;
 
@@ -48,6 +75,9 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
     this.workTime = this.config.workTime;
 
     this.fullWorkerID = WorkerInfo.workerIDToNumber(this.config.workerID, this.config.postWorkerID);
+    this.graduation = WorkerInfo.parseGradutation(config.grad);
+
+    this.gender = Gender.UNDEFINED;
 
     this.startPositionsLeft = this.config.startPositionsLeft ?? 10;
     this.positionsLeft = this.startPositionsLeft;
@@ -74,16 +104,17 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
   }
 
   clone() {
-    const { daysOfWork, grad, individualRegistry, name, post, postWorkerID, workTime, workerID, startPositionsLeft } = this.config;
+    const { daysOfWork, grad, individualRegistry, name, post, postWorkerID, workTime, workerID, startPositionsLeft, gender } = this.config;
 
     const config: WorkerInfoConfig = {
       daysOfWork: daysOfWork.clone(),
       workTime: workTime.clone(),
-
+      
       startPositionsLeft,
       individualRegistry,
       postWorkerID,
       workerID,
+      gender,
       grad,
       name,
       post,
@@ -109,7 +140,7 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
     if (splitedRegistration.length !== 2) throw new Error(`Can't parse registration "${data.registration}"`);
 
     const [registration, postResistration] = splitedRegistration.map(parseNumberOrThrow);
-    
+
     return new WorkerInfo({
       name: data.name,
       postWorkerID: postResistration,
@@ -118,7 +149,8 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
       post: data.post,
       workTime,
       daysOfWork,
-      individualRegistry: parseNumberOrThrow(data.individualRegistry.replace(/\.|\-/g, '')),
+      gender: WorkerInfo.parseGender(data.gender),
+      individualRegistry: data.individualRegistry !== undefined ? parseNumberOrThrow(data.individualRegistry.replace(/\.|\-/g, '')) : 0,
     });
   }
 
@@ -130,6 +162,7 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
       workerID: 0,
       postWorkerID: 0,
       individualRegistry: 0,
+      gender: Gender.UNDEFINED,
       workTime: new WorkTime(7, 8),
       daysOfWork: DaysOfWork.fromDays([], 2023, getMonth()),
     });
@@ -138,12 +171,22 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
   static parseWorkerID(value: number): [number, number] {
     const id = Math.trunc(value / 10);
     const postID = value - id * 10;
-  
+
     return [id, postID];
   }
 
   static workerIDToNumber(id: number, postID: number): number {
     return id * 10 + postID;
+  }
+
+  static parseGender(gender?: string): Gender {
+    if (!gender) return Gender.UNDEFINED;
+
+    return this.genderMap[gender] ?? Gender.UNDEFINED;
+  }
+
+  static parseGradutation(grad: string): Graduation {
+    return this.graduationMap[grad] ?? raise(new Error(`Unknow graduation named '${grad}'!`));
   }
 
   static createMap(workers: WorkerInfo[]) {
@@ -153,4 +196,8 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
   static workerToMapEntry: WorkerToMapEntryCallback = (worker) => {
     return [worker.fullWorkerID, worker];
   };
+}
+
+function raise(error: unknown): never {
+  throw error;
 }

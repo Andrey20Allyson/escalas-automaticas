@@ -1,8 +1,8 @@
-import { ExtraDutyTable } from "./v1";
-import { DaysOfWeek, dayOfWeekFrom, firstMondayFromYearAndMonth, forkArray, isBusinessDay, iterRandom, thisMonthWeekends } from "../../utils";
-import { Clonable, WorkerInfo } from "../structs/worker-info";
 import clone from "clone";
+import { firstMondayFromYearAndMonth, forkArray, iterRandom, thisMonthWeekends } from "../../utils";
 import { ExtraDuty } from "../structs";
+import { Clonable, Graduation, WorkerInfo } from "../structs/worker-info";
+import { ExtraDutyTable } from "./v1";
 
 export function filterBusyWorkers(worker: WorkerInfo) {
   return !worker.isCompletelyBusy();
@@ -14,9 +14,10 @@ export function filterDiarists(worker: WorkerInfo) {
 
 type PointGetter = (day: number, firstMonday: number) => number;
 
+const isInsp = (worker: WorkerInfo) => worker.graduation === Graduation.INSP
 const pointGetterMap: PointGetter[] = [
   (day, firstMonday) => -(isMonday(day, firstMonday) ? 1 : 2),
-  () => -100,
+  () => -50,
 ];
 
 function isMonday(day: number, firstMonday: number): boolean {
@@ -58,8 +59,10 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
 
     if (bestTable) {
       for (const day of bestTable) {
+        const thisDay = this.getDay(day.day);
+
         for (const bestDuty of day) {
-          const thisDuty = this.getDay(day.day).getDuty(bestDuty.index);
+          const thisDuty = thisDay.getDuty(bestDuty.index);
 
           thisDuty.workers = bestDuty.workers;
         }
@@ -73,26 +76,58 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
     return clone(this);
   }
 
+  calculatePontuation(firstMonday: number) {
+    let points = 0;
+    const workerSet = new Set<WorkerInfo>()
+
+    for (const day of this) {
+      for (const duty of day) {
+        for (const [_, worker] of duty.workers) {
+          workerSet.add(worker);
+        }
+
+        points += calculateDutyPontuation(duty, firstMonday);
+      }
+    }
+
+    for (const worker of workerSet) {
+      if (worker.positionsLeft > 0) {
+        points += -100 * 1.4 * worker.positionsLeft ** 2;
+      }
+    }
+
+    return points;
+  }
+
   tryAssignArrayV2(workers: WorkerInfo[]) {
     const [
       diarists,
       periodics,
     ] = forkArray(workers, filterDiarists);
 
-    this.tryAssignArrayToAllWeekEnds(diarists);
+    this._assignDiaristArray(diarists);
+    this._assignInspArray(periodics);
+    this._assignArray(periodics, 2, 3);
+  }
 
+  private _assignInspArray(workers: WorkerInfo[]) {
+    const inspWorkers = workers.filter(isInsp);
+
+    this._assignArray(inspWorkers, 1, 1);
+  }
+
+  private _assignArray(workers: WorkerInfo[], min: number, max: number) {
     const oldDutyCapacity = this.config.dutyCapacity;
 
-    for (let i = 2; i <= 3; i++) {
+    for (let i = min; i <= max; i++) {
       this.config.dutyCapacity = i;
 
       for (const day of iterRandom(this)) {
-        let filteredWorkers = periodics.filter(filterBusyWorkers);
+        let filteredWorkers = workers.filter(filterBusyWorkers);
 
-        // for (const duty of iterRandom(day)) {
-        for (let i = day.size - 1; i >= 0; i--) {
-          const duty = day.getDuty(i);
+        if (filteredWorkers.length === 0) break;
 
+        for (const duty of iterRandom(day)) {
           const passDuty = duty.isFull();
           if (passDuty) continue;
 
@@ -104,23 +139,11 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
         }
       }
     }
-    
+
     this.config.dutyCapacity = oldDutyCapacity;
   }
 
-  calculatePontuation(firstMonday: number) {
-    let points = 0;
-
-    for (const day of this) {
-      for (const duty of day) {
-        points += calculateDutyPontuation(duty, firstMonday);
-      }
-    }
-
-    return points;
-  }
-
-  tryAssignOnAllWeekEnds(worker: WorkerInfo): boolean {
+  private _assignOnAllWeekEnds(worker: WorkerInfo): boolean {
     const oldDutyMinDistance = this.config.dutyMinDistance;
     this.config.dutyMinDistance = 1;
 
@@ -143,11 +166,11 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
     return worker.isCompletelyBusy();
   }
 
-  tryAssignArrayToAllWeekEnds(workers: WorkerInfo[]): boolean {
+  private _assignDiaristArray(workers: WorkerInfo[]): boolean {
     const workersSet = new Set(workers);
 
     for (const worker of workersSet) {
-      this.tryAssignOnAllWeekEnds(worker);
+      this._assignOnAllWeekEnds(worker);
 
       if (worker.isCompletelyBusy()) workersSet.delete(worker);
     }

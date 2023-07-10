@@ -1,9 +1,20 @@
 import type { ExtraDutyTableConfig } from "../extra-duty-table/v1";
 import type { DayOfExtraDuty } from "./day-of-extra-duty";
-import { WorkerInfo } from "./worker-info";
+import { Gender, Graduation, WorkerInfo } from "./worker-info";
+
+export type GraduationQuantityMap = {
+  [K in Graduation]: number;
+};
+
+export type GenderQuantityMap = {
+  [K in Gender]: number;
+};
 
 export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
+  graduationQuantityMap: GraduationQuantityMap;
+  genderQuantityMap: GenderQuantityMap;
   workers: Map<number, WorkerInfo>;
+
   readonly offTimeEnd: number;
   readonly start: number;
   readonly end: number;
@@ -18,9 +29,31 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     this.start = config.firstDutyTime + config.dutyInterval * index;
     this.end = this.start + this.config.dutyDuration;
     this.offTimeEnd = this.end + this.config.dutyDuration;
+
+    this.graduationQuantityMap = {
+      [Graduation.INSP]: 0,
+      [Graduation.GCM]: 0,
+      [Graduation.SI]: 0,
+    };
+
+    this.genderQuantityMap = {
+      [Gender.UNDEFINED]: 0,
+      [Gender.FEMALE]: 0,
+      [Gender.MALE]: 0,
+    };
+  }
+
+  gradQuantity(grad: Graduation) {
+    return this.graduationQuantityMap[grad];
+  }
+
+  genderQuantity(gender: Gender) {
+    return this.genderQuantityMap[gender];
   }
 
   collidesWithWork(worker: WorkerInfo) {
+    // TODO add feature: daily workers can work at extra in same day of ordinary work, but just at night.
+
     return this.collidesWithTodayWork(worker)
       || this.collidesWithYesterdayWork(worker)
       || this.collidesWithTommorowWork(worker);
@@ -53,10 +86,18 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     return this.offTimeEnd > tomorrowWorkStart;
   }
 
+  breaksInspRule(worker: WorkerInfo) {
+    return worker.graduation === Graduation.INSP && this.gradQuantity(Graduation.INSP) > 0;
+  }
+
+  breaksGenderRule(worker: WorkerInfo) {
+    return worker.gender === Gender.FEMALE && this.genderQuantity(Gender.FEMALE) > 0;
+  }
+
   *[Symbol.iterator](): Iterator<[string, WorkerInfo]> {
     for (const [_, worker] of this.workers) {
       yield [worker.name, worker];
-    } 
+    }
   }
 
   isFull() {
@@ -75,16 +116,23 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     return this.workers.size;
   }
 
-  canAdd(worker: WorkerInfo) {
-    return !worker.isCompletelyBusy(this.config.dutyPositionSize)
-      && !this.isFull()
-      && !this.has(worker);
+  canAdd(worker: WorkerInfo, force = false) {
+    return !this.has(worker)
+      && (force
+        || !worker.isCompletelyBusy(this.config.dutyPositionSize)
+        && !this.isFull()
+        && !this.breaksInspRule(worker)
+        && !this.breaksGenderRule(worker)
+      );
   }
 
   add(worker: WorkerInfo, force = false): boolean {
-    if (!force && !this.canAdd(worker)) return false;
+    if (!this.canAdd(worker, force)) return false;
 
     this.workers.set(this.keyFrom(worker), worker);
+
+    this.graduationQuantityMap[worker.graduation]++;
+    this.genderQuantityMap[worker.gender]++;
 
     worker.occupyPositions(this.config.dutyPositionSize);
 
@@ -96,6 +144,9 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
 
     if (!existed) return;
 
+    this.graduationQuantityMap[worker.graduation]--;
+    this.genderQuantityMap[worker.gender]--;
+
     worker.leavePositions(this.config.dutyPositionSize);
   }
 
@@ -105,6 +156,18 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     }
 
     this.workers.clear();
+
+    this._clearQuantityMap();
+  }
+  
+  private _clearQuantityMap() {
+    this.genderQuantityMap[Gender.UNDEFINED] = 0;
+    this.genderQuantityMap[Gender.FEMALE] = 0;
+    this.genderQuantityMap[Gender.MALE] = 0;
+  
+    this.graduationQuantityMap[Graduation.INSP] = 0;
+    this.graduationQuantityMap[Graduation.GCM] = 0;
+    this.graduationQuantityMap[Graduation.SI] = 0;  
   }
 
   static dutiesFrom(day: DayOfExtraDuty): readonly ExtraDuty[] {

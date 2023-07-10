@@ -1,13 +1,13 @@
-import { Holidays, WorkerRegistriesMap, WorkerInfo, ExtraDutyTable, ExtraDutyTableV2 } from "../extra-duty-lib";
-import { Result, ResultType, ResultError } from "../utils";
-import { LineHander, CellHandler, BookHandler } from "../xlsx-handlers";
 import * as XLSX from 'xlsx';
-import { ExcelDate, ExcelTime } from "../xlsx-handlers/utils";
+import { ExtraDutyTableV2, Holidays, WorkerInfo, WorkerRegistriesMap } from "../extra-duty-lib";
+import { Result, ResultError, ResultType } from "../utils";
+import { BookHandler, CellHandler, LineHander } from "../xlsx-handlers";
+import { ExcelTime } from "../xlsx-handlers/utils";
 
 export enum WorkerInfoCollumns {
   NAME = 'd',
   HOURLY = 'f',
-  PATENT = 'b',
+  GRAD = 'b',
   POST = 'e',
   REGISTRATION = 'c',
 }
@@ -15,7 +15,7 @@ export enum WorkerInfoCollumns {
 export const workersTableCollumns = LineHander.collumnTuple([
   WorkerInfoCollumns.NAME,
   WorkerInfoCollumns.HOURLY,
-  WorkerInfoCollumns.PATENT,
+  WorkerInfoCollumns.GRAD,
   WorkerInfoCollumns.POST,
   WorkerInfoCollumns.REGISTRATION
 ]);
@@ -23,7 +23,7 @@ export const workersTableCollumns = LineHander.collumnTuple([
 export const workersTableCellTypes = CellHandler.typeTuple([
   'string',
   'string',
-  'string?',
+  'string',
   'string?',
   'string'
 ]);
@@ -55,18 +55,19 @@ export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: Scr
     const typedCellsResult = CellHandler.safeTypeAll(cellsResult, workersTableCellTypes);
     if (ResultError.isError(typedCellsResult)) return typedCellsResult;
 
-    const [nameCell, hourlyCell, patentCell, postCell, registrationCell] = typedCellsResult;
+    const [nameCell, hourlyCell, gradCell, postCell, registrationCell] = typedCellsResult;
 
-    const individualRegistry = options.workerRegistryMap?.get(registrationCell.value);
-    if (ResultError.isError(individualRegistry)) return individualRegistry;
+    const workerData = options.workerRegistryMap?.get(registrationCell.value);
+    if (ResultError.isError(workerData)) return workerData;
 
     try {
       const worker = WorkerInfo.parse({
         name: nameCell.value,
         hourly: hourlyCell.value,
         registration: registrationCell.value,
-        individualRegistry: individualRegistry?.individualID ?? '0',
-        grad: patentCell.value ?? '',
+        individualRegistry: workerData?.individualID,
+        gender: workerData?.gender,
+        grad: gradCell.value,
         post: postCell.value ?? '',
         month: options.month,
         year: options.year,
@@ -130,7 +131,7 @@ export function scrappeTable(buffer: Buffer, workers: WorkerInfo[], options: Scr
     const worker = workerMap.get(workerID);
     if (!worker) throw new Error(`Can't find worker with id "${workerID}"`);
 
-    const date = new Date(1900, 0, dateCell.value);
+    const date = new Date(1900, 0, dateCell.value - 1);
     const startTime = ExcelTime.parse(startTimeCell.value);
 
     const dayOfDuty = table.getDay(date.getDate() - 1);

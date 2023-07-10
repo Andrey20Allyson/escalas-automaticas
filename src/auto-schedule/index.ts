@@ -2,7 +2,8 @@ import { ExtraDutyTable, ExtraDutyTableV2, Holidays, WorkerInfo, WorkerRegistrie
 import { getMonth, getYear } from '../utils';
 import { analyseResult } from '../utils/analyser';
 import { Benchmarker } from '../utils/benchmark';
-import { loadWorkers, parseWorkers, saveTable, serializeTable } from './io';
+import { loadWorkers, parseTable, parseWorkers, saveTable, serializeTable } from './io';
+import { ScrappeTableOptions } from './io.utils';
 import { MainTableFactory } from './table-factories/main-factory';
 
 export interface ExecutionOptions {
@@ -130,8 +131,8 @@ export async function generateFromTable(table: ExtraDutyTable, options: Generate
   return serializedTable;
 }
 
-export function tableFrom(buffer: Buffer): ExtraDutyTable {
-  throw new Error('Method not implemented');
+export function tableFrom(buffer: Buffer, workers: WorkerInfo[], options: ScrappeTableOptions): ExtraDutyTableV2 {
+  return parseTable(buffer, workers, options);
 }
 
 export * as io from './io';

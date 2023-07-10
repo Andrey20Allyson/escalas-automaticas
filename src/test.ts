@@ -114,10 +114,10 @@ async function parseTableTest() {
   await fs.writeFile('./output/parsed-table.xlsx', outputBuffer);
 }
 
-generateTest();
+// generateTest();
 
 // programTest();
 
 // XLSXHandersTest();
 
-// parseTableTest();
+parseTableTest();

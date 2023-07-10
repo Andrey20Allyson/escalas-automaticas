@@ -1,4 +1,4 @@
-import { dayOfWeekFrom, enumerate, firstMondayFromYearAndMonth, getNumOfDaysInMonth, isBusinessDay } from "../../utils";
+import { enumerate, firstMondayFromYearAndMonth, getNumOfDaysInMonth, isBusinessDay } from "../../utils";
 import { Holidays } from "./holidays";
 import { Clonable } from "./worker-info";
 

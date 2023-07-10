@@ -44,6 +44,16 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
     }
   }
 
+  workers() {
+    const workersSet = new Set<WorkerInfo>();
+
+    for (const entry of this.entries()) {
+      workersSet.add(entry.worker);
+    }
+
+    return Array.from(workersSet);
+  }
+
   clear() {
     for (const day of this) {
       day.clear();
