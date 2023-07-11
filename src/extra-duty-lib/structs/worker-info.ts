@@ -4,7 +4,7 @@ import { getMonth, parseNumberOrThrow } from "../../utils";
 export interface WorkerInfoConfig extends Worker {
   readonly post: string;
   readonly grad: string;
-  readonly gender: Gender;
+  readonly gender: string;
   readonly workerID: number;
   readonly postWorkerID: number;
   readonly individualRegistry: number;
@@ -76,8 +76,7 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
 
     this.fullWorkerID = WorkerInfo.workerIDToNumber(this.config.workerID, this.config.postWorkerID);
     this.graduation = WorkerInfo.parseGradutation(config.grad);
-
-    this.gender = Gender.UNDEFINED;
+    this.gender = WorkerInfo.parseGender(this.config.gender);
 
     this.startPositionsLeft = this.config.startPositionsLeft ?? 10;
     this.positionsLeft = this.startPositionsLeft;
@@ -149,7 +148,7 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
       post: data.post,
       workTime,
       daysOfWork,
-      gender: WorkerInfo.parseGender(data.gender),
+      gender: data.gender ?? 'U',
       individualRegistry: data.individualRegistry !== undefined ? parseNumberOrThrow(data.individualRegistry.replace(/\.|\-/g, '')) : 0,
     });
   }
