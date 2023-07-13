@@ -14,7 +14,8 @@ export function filterDiarists(worker: WorkerInfo) {
 
 type PointGetter = (day: number, firstMonday: number) => number;
 
-const isInsp = (worker: WorkerInfo) => worker.graduation === Graduation.INSP
+const isInsp = (worker: WorkerInfo) => worker.graduation === Graduation.INSP;
+const isSubInsp = (worker: WorkerInfo) => worker.graduation === Graduation.SI;
 const pointGetterMap: PointGetter[] = [
   (day, firstMonday) => -(isMonday(day, firstMonday) ? 1 : 2),
   () => -50,
@@ -82,10 +83,17 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
 
     for (const day of this) {
       for (const duty of day) {
+        let haveInspOrSub = false;
+        
         for (const [_, worker] of duty.workers) {
           workerSet.add(worker);
+
+          if (worker.graduation === Graduation.SI || worker.graduation === Graduation.INSP) {
+            haveInspOrSub = true;
+          }
         }
 
+        points += haveInspOrSub ? 0 : -30;
         points += calculateDutyPontuation(duty, firstMonday);
       }
     }
@@ -107,6 +115,7 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
 
     this._assignDiaristArray(diarists);
     this._assignInspArray(periodics);
+    this._assignSubInspArray(periodics);
     this._assignArray(periodics, 2, 3);
   }
 
@@ -114,6 +123,12 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
     const inspWorkers = workers.filter(isInsp);
 
     this._assignArray(inspWorkers, 1, 1);
+  }
+
+  private _assignSubInspArray(workers: WorkerInfo[]) {
+    const subInspWorkers = workers.filter(isSubInsp);
+
+    this._assignArray(subInspWorkers, 1, 3);
   }
 
   private _assignArray(workers: WorkerInfo[], min: number, max: number) {
