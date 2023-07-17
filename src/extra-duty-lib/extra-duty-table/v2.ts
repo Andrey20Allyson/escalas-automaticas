@@ -17,7 +17,7 @@ type PointGetter = (day: number, firstMonday: number) => number;
 const isInsp = (worker: WorkerInfo) => worker.graduation === Graduation.INSP;
 const isSubInsp = (worker: WorkerInfo) => worker.graduation === Graduation.SI;
 const pointGetterMap: PointGetter[] = [
-  (day, firstMonday) => -(isMonday(day, firstMonday) ? 1 : 2),
+  (day, firstMonday) => -(isMonday(day, firstMonday) ? 1 : 20),
   () => -50,
 ];
 
@@ -99,7 +99,7 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
     }
 
     for (const worker of workerSet) {
-      if (worker.positionsLeft > 0) {
+      if (!worker.isCompletelyBusy()) {
         points += -100 * 1.4 * worker.positionsLeft ** 2;
       }
     }
@@ -116,11 +116,12 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
     this._assignDiaristArray(diarists);
     this._assignInspArray(periodics);
     this._assignSubInspArray(periodics);
+    this._assignArray(periodics, 2, 2, true);
     this._assignArray(periodics, 2, 3);
   }
 
   private _assignInspArray(workers: WorkerInfo[]) {
-    const inspWorkers = workers.filter(isInsp);
+    const inspWorkers = workers.filter(isInsp, true);
 
     this._assignArray(inspWorkers, 1, 1);
   }
@@ -128,10 +129,10 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
   private _assignSubInspArray(workers: WorkerInfo[]) {
     const subInspWorkers = workers.filter(isSubInsp);
 
-    this._assignArray(subInspWorkers, 1, 3);
+    this._assignArray(subInspWorkers, 1, 2, true);
   }
 
-  private _assignArray(workers: WorkerInfo[], min: number, max: number) {
+  private _assignArray(workers: WorkerInfo[], min: number, max: number, excludeMondays = false) {
     const oldDutyCapacity = this.config.dutyCapacity;
 
     for (let i = min; i <= max; i++) {
@@ -143,7 +144,7 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
         if (filteredWorkers.length === 0) break;
 
         for (const duty of iterRandom(day)) {
-          const passDuty = duty.isFull();
+          const passDuty = duty.isFull() || (excludeMondays && isMonday(duty.day, this.firstMonday)); 
           if (passDuty) continue;
 
           for (const worker of iterRandom(filteredWorkers)) {

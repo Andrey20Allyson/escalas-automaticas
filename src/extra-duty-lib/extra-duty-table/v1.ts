@@ -1,4 +1,4 @@
-import { getNumOfDaysInMonth, randomIntFromInterval, thisMonth, thisYear } from '../../utils';
+import { firstMondayFromYearAndMonth, getNumOfDaysInMonth, randomIntFromInterval, thisMonth, thisYear } from '../../utils';
 import { DayOfExtraDuty, DaySearch, ExtraDuty, WorkerInfo } from '../structs';
 
 export interface ExtraDutyTableConfig {
@@ -21,6 +21,7 @@ export interface ExtraDutyTableEntry {
 export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
   readonly days: readonly DayOfExtraDuty[];
   readonly config: ExtraDutyTableConfig;
+  readonly firstMonday: number;
   readonly width: number;
 
   constructor(config?: Partial<ExtraDutyTableConfig>) {
@@ -28,6 +29,8 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
 
     this.width = getNumOfDaysInMonth(this.config.month, this.config.year);
     this.days = DayOfExtraDuty.daysFrom(this);
+    
+    this.firstMonday = firstMondayFromYearAndMonth(this.config.year, this.config.month);
   }
 
   [Symbol.iterator](): Iterator<DayOfExtraDuty> {
