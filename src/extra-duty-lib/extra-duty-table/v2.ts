@@ -14,8 +14,8 @@ export function filterDiarists(worker: WorkerInfo) {
 
 type PointGetter = (day: number, firstMonday: number) => number;
 
-const isInsp = (worker: WorkerInfo) => worker.graduation === Graduation.INSP;
-const isSubInsp = (worker: WorkerInfo) => worker.graduation === Graduation.SI;
+const isInsp = (worker: WorkerInfo) => worker.graduation === 'insp';
+const isSubInsp = (worker: WorkerInfo) => worker.graduation === 'sub-insp';
 const pointGetterMap: PointGetter[] = [
   (day, firstMonday) => -(isMonday(day, firstMonday) ? 1 : 20),
   () => -50,
@@ -88,7 +88,7 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
         for (const [_, worker] of duty.workers) {
           workerSet.add(worker);
 
-          if (worker.graduation === Graduation.SI || worker.graduation === Graduation.INSP) {
+          if (worker.graduation === 'sub-insp' || worker.graduation === 'insp') {
             haveInspOrSub = true;
           }
         }

@@ -1,5 +1,5 @@
 import { DaysOfWork, WorkTime } from '.';
-import { getMonth, parseNumberOrThrow } from "../../utils";
+import { getMonth, parseNumberOrThrow, thisMonthWeekends } from "../../utils";
 
 export interface WorkerInfoConfig extends Worker {
   readonly post: string;
@@ -35,28 +35,19 @@ export interface Clonable<T> {
 
 export type WorkerToMapEntryCallback = (this: typeof WorkerInfo, worker: WorkerInfo) => [number, WorkerInfo];
 
-export enum Graduation {
-  SI = 'sub-insp',
-  INSP = 'insp',
-  GCM = 'gcm',
-}
-
-export enum Gender {
-  UNDEFINED = 'N/A',
-  FEMALE = 'female',
-  MALE = 'male',
-}
+export type Graduation = 'sub-insp' | 'insp' | 'gcm';
+export type Gender = 'N/A' | 'female' | 'male';
 
 export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
   static readonly genderMap: NodeJS.Dict<Gender> = {
-    'F': Gender.FEMALE,
-    'M': Gender.MALE,
+    'F': 'female',
+    'M': 'male',
   };
 
   static readonly graduationMap: NodeJS.Dict<Graduation> = {
-    'INSP': Graduation.INSP,
-    'GCM': Graduation.GCM,
-    'SI': Graduation.SI,
+    'INSP': 'insp',
+    'GCM': 'gcm',
+    'SI': 'sub-insp',
   };
 
   positionsLeft: number;
@@ -108,7 +99,7 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
     const config: WorkerInfoConfig = {
       daysOfWork: daysOfWork.clone(),
       workTime: workTime.clone(),
-      
+
       startPositionsLeft,
       individualRegistry,
       postWorkerID,
@@ -161,7 +152,7 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
       workerID: 0,
       postWorkerID: 0,
       individualRegistry: 0,
-      gender: Gender.UNDEFINED,
+      gender: 'U',
       workTime: new WorkTime(7, 8),
       daysOfWork: DaysOfWork.fromDays([], 2023, getMonth()),
     });
@@ -179,9 +170,9 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
   }
 
   static parseGender(gender?: string): Gender {
-    if (!gender) return Gender.UNDEFINED;
+    if (!gender) return 'N/A';
 
-    return this.genderMap[gender] ?? Gender.UNDEFINED;
+    return this.genderMap[gender] ?? 'N/A';
   }
 
   static parseGradutation(grad: string): Graduation {

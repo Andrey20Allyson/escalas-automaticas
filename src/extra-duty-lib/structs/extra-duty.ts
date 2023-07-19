@@ -31,15 +31,15 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     this.offTimeEnd = this.end + this.config.dutyDuration;
 
     this.graduationQuantityMap = {
-      [Graduation.INSP]: 0,
-      [Graduation.GCM]: 0,
-      [Graduation.SI]: 0,
+      'sub-insp': 0,
+      'insp': 0,
+      'gcm': 0,
     };
 
     this.genderQuantityMap = {
-      [Gender.UNDEFINED]: 0,
-      [Gender.FEMALE]: 0,
-      [Gender.MALE]: 0,
+      'female': 0,
+      'male': 0,
+      'N/A': 0,
     };
   }
 
@@ -87,11 +87,11 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
   }
 
   breaksInspRule(worker: WorkerInfo) {
-    return worker.graduation === Graduation.INSP && this.gradQuantity(Graduation.INSP) > 0;
+    return worker.graduation === 'insp' && this.gradQuantity('insp') > 0;
   }
 
   breaksGenderRule(worker: WorkerInfo) {
-    return worker.gender === Gender.FEMALE && this.genderQuantity(Gender.FEMALE) > 0;
+    return worker.gender === 'female' && this.genderQuantity('female') > 0 && this.genderQuantity('male') < 1;
   }
 
   *[Symbol.iterator](): Iterator<[string, WorkerInfo]> {
@@ -161,13 +161,8 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
   }
   
   private _clearQuantityMap() {
-    this.genderQuantityMap[Gender.UNDEFINED] = 0;
-    this.genderQuantityMap[Gender.FEMALE] = 0;
-    this.genderQuantityMap[Gender.MALE] = 0;
-  
-    this.graduationQuantityMap[Graduation.INSP] = 0;
-    this.graduationQuantityMap[Graduation.GCM] = 0;
-    this.graduationQuantityMap[Graduation.SI] = 0;  
+    resetMap(this.genderQuantityMap);
+    resetMap(this.graduationQuantityMap);
   }
 
   static dutiesFrom(day: DayOfExtraDuty): readonly ExtraDuty[] {
@@ -178,5 +173,11 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     }
 
     return duties;
+  }
+}
+
+function resetMap(map: Record<string, number>) {
+  for (const key in map) {
+    map[key] = 0;
   }
 }
