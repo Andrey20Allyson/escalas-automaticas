@@ -1,6 +1,6 @@
 {
   "name": "@andrey-allyson/escalas-automaticas",
-  "version": "1.5.9",
+  "version": "1.5.10",
   "main": "./dist/index.js",
   "publishConfig": {
     "access": "public"

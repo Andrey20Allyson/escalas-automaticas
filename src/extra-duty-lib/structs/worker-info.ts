@@ -1,4 +1,5 @@
-import { DaysOfWork, WorkTime } from '.';
+import { DaysOfWork } from './days-of-work';
+import { WorkTime } from './work-time';
 import { getMonth, parseNumberOrThrow, thisMonthWeekends } from "../../utils";
 
 export interface WorkerInfoConfig extends Worker {
