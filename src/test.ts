@@ -1,10 +1,10 @@
 import fs from 'fs/promises';
 import { execute, generate, io } from '.';
-import { ExtraDutyTableV2, Holidays, WorkerRegistriesMap } from './extra-duty-lib';
-import { Benchmarker, Result, ResultError, analyseResult, getMonth, getYear, iterRange, randomIntFromInterval } from './utils';
-import { BookHandler } from './xlsx-handlers/book';
 import { parseTable, parseWorkers } from './auto-schedule/io';
-import { MainTableFactory } from './auto-schedule/table-factories';
+import { DefaultTableFactory } from './auto-schedule/table-factories';
+import { Holidays, WorkerRegistriesMap } from './extra-duty-lib';
+import { Benchmarker, Result, ResultError, analyseResult, getMonth, getYear } from './utils';
+import { BookHandler } from './xlsx-handlers/book';
 
 io.setFileSystem(fs);
 
@@ -85,10 +85,7 @@ async function parseTableTest() {
   const month = getMonth();
   const year = getYear();
 
-  const patternBuffer = await fs.readFile('input/output-pattern.xlsx');
-
-  const factory = new MainTableFactory(patternBuffer);
-  factory.createCache();
+  const factory = new DefaultTableFactory();
   
   const tableBuffer = await fs.readFile('./output/data.xlsx');
   const workersBuffer = await fs.readFile('./input/data.xlsx');
@@ -114,10 +111,10 @@ async function parseTableTest() {
   await fs.writeFile('./output/parsed-table.xlsx', outputBuffer);
 }
 
-generateTest();
+// generateTest();
 
 // programTest();
 
 // XLSXHandersTest();
 
-// parseTableTest();
+parseTableTest();
