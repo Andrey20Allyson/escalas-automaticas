@@ -1,3 +1,4 @@
+import ExcelJS from 'exceljs';
 import { DayOfExtraDuty, ExtraDuty, ExtraDutyTable, ExtraDutyTableEntry, Graduation, WorkerInfo } from "../../extra-duty-lib";
 import { dayOfWeekFrom, enumerate, iterReverse } from "../../utils";
 
@@ -69,8 +70,11 @@ const weekDayNames = [
   'Sábado',
 ];
 
-export function* iterGrids(table: ExtraDutyTable): Iterable<DayGrid> {
+function fromExcelDim(dim: number) {
+  return dim ** 2 / (dim - .71);
+}
 
+export function* iterGrids(table: ExtraDutyTable): Iterable<DayGrid> {
   for (const day of table) {
     const weekDay = dayOfWeekFrom(table.firstMonday, day.day);
 
@@ -83,7 +87,7 @@ export function* iterGrids(table: ExtraDutyTable): Iterable<DayGrid> {
     for (const duty of day) {
       for (const [_, worker] of duty) {
         grid.entries.push(toDayGridEntry(day, duty, worker));
-        
+
         if (duty.start < 18 && duty.start >= 7) {
           grid.numOfDiurnal++;
         } else {
@@ -96,8 +100,6 @@ export function* iterGrids(table: ExtraDutyTable): Iterable<DayGrid> {
   }
 }
 
-import ExcelJS from 'exceljs';
-
 const label = ['TURNO', 'NOME', 'MATRÍCULA'];
 const titleFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDDDDDD' } };
 const labelFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFEFEF' } };
@@ -106,23 +108,50 @@ const secondaryFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor
 
 const boldFont: Partial<ExcelJS.Font> = { bold: true };
 const centerHorizontalAlignment: Partial<ExcelJS.Alignment> = { horizontal: 'center' };
+const defaultRowPerPage = 47;
 
-export async function serializeTable2(table: ExtraDutyTable, sheetName: string) {
+function pageFromRow(row: number) {
+  return Math.floor((row - 1) / defaultRowPerPage);
+}
+
+function firstRowFromPage(page: number) {
+  return Math.ceil(page * defaultRowPerPage) + 1;
+}
+
+export async function serializeTableToDivugation(table: ExtraDutyTable, sheetName: string) {
   const book = new ExcelJS.Workbook();
   const sheet = book.addWorksheet(sheetName);
 
   let rowStartI = 1;
   for (const grid of iterGrids(table)) {
-    const lastRow = rowStartI + grid.entries.length + 3;
+    let lastRow = rowStartI + grid.entries.length + 3;
+
+    const startPage = pageFromRow(rowStartI);
+    const endPage = pageFromRow(lastRow - 2);
+
+    if (startPage < endPage) {
+      rowStartI = firstRowFromPage(endPage);
+
+      lastRow = rowStartI + grid.entries.length + 3;
+    }
+
+    const pageFirstRow = firstRowFromPage(startPage);
+
+    if (rowStartI - pageFirstRow <= 1) {
+      rowStartI = pageFirstRow;
+
+      lastRow = rowStartI + grid.entries.length + 3;
+    }
+
     let actualRow = rowStartI;
 
     const titleCell = sheet.getCell(actualRow++, 1);
     titleCell.value = grid.title;
     titleCell.style.font = boldFont;
     titleCell.style.fill = titleFill;
-    
+
     sheet.mergeCells([actualRow - 1, 1, actualRow - 1, 3]);
-    
+
     const labelRow = sheet.getRow(actualRow++);
     for (const [i, value] of enumerate(label)) {
       const cell = labelRow.getCell(i + 1);
@@ -160,19 +189,19 @@ export async function serializeTable2(table: ExtraDutyTable, sheetName: string) 
 
     const dutySeparationRow = lastRow - grid.numOfNightly - 2;
 
-    makeGridBorders({ sheet, start: {col: 1, row: rowStartI }, end: { col: 3, row: lastRow - 2}, dutySeparationRow });
+    makeGridBorders({ sheet, start: { col: 1, row: rowStartI }, end: { col: 3, row: lastRow - 2 }, dutySeparationRow });
 
     rowStartI = lastRow;
   }
 
   const dutyCollumn = sheet.getColumn(1);
-  dutyCollumn.width = 20;
+  dutyCollumn.width = fromExcelDim(20);
 
   const nameCollumn = sheet.getColumn(2);
-  nameCollumn.width = 50;
+  nameCollumn.width = fromExcelDim(55);
 
   const idCollumn = sheet.getColumn(3);
-  idCollumn.width = 12;
+  idCollumn.width = fromExcelDim(14);
 
   const arrayBuffer = await book.xlsx.writeBuffer();
 

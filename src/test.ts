@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import { execute, generate, io } from '.';
 import { parseTable, parseWorkers } from './auto-schedule/io';
-import { DefaultTableFactory } from './auto-schedule/table-factories';
+import { DivugationTableFactory } from './auto-schedule/table-factories';
 import { Holidays, WorkerRegistriesMap } from './extra-duty-lib';
 import { Benchmarker, Result, ResultError, analyseResult, getMonth, getYear } from './utils';
 import { BookHandler } from './xlsx-handlers/book';
@@ -85,7 +85,7 @@ async function parseTableTest() {
   const month = getMonth();
   const year = getYear();
 
-  const factory = new DefaultTableFactory();
+  const factory = new DivugationTableFactory();
   
   const tableBuffer = await fs.readFile('./output/data.xlsx');
   const workersBuffer = await fs.readFile('./input/data.xlsx');
@@ -106,7 +106,7 @@ async function parseTableTest() {
   const analysisResult = analyseResult(table, workers);
   console.log(analysisResult);
 
-  const outputBuffer = await factory.generate(table, { sheetName: 'DADOS' });
+  const outputBuffer = await factory.generate(table, { sheetName: 'Divulgação' });
 
   await fs.writeFile('./output/parsed-table.xlsx', outputBuffer);
 }

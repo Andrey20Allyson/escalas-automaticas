@@ -1,4 +1,4 @@
-export * from './default-factory';
+export * from './divugation-factory';
 export * from './factory';
 export * from './main-factory';
 

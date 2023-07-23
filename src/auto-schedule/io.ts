@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 import { ExtraDutyTable, ExtraDutyTableV2, WorkerInfo } from '../extra-duty-lib';
 import { Result } from "../utils/result";
 import { ScrappeTableOptions, ScrappeWorkersOptions, scrappeTable, scrappeWorkersFromBook } from './io.utils';
-import { DefaultTableFactory, MainTableFactory, TableFactory, TableFactoryOptions } from './table-factories';
+import { DivugationTableFactory, MainTableFactory, TableFactory, TableFactoryOptions } from './table-factories';
 
 export interface IOFileSystem {
   readFile: typeof readFile;
@@ -77,7 +77,7 @@ export interface SerializeTableOptions extends TableFactoryOptions {
 }
 
 export async function serializeTable(table: ExtraDutyTable, options: SerializeTableOptions): Promise<Buffer> {
-  const factory = options.pattern ?? new DefaultTableFactory();
+  const factory = options.pattern ?? new DivugationTableFactory();
 
   return Result.unwrap(await factory.generate(table, options));
 }

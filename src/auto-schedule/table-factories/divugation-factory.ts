@@ -1,9 +1,9 @@
 import { TableFactory, TableFactoryOptions } from ".";
 import { ExtraDutyTable } from "../../extra-duty-lib";
-import { serializeTable2 } from './default-factory.utils';
+import { serializeTableToDivugation } from './divugation-factory.utils';
 
-export class DefaultTableFactory implements TableFactory {
+export class DivugationTableFactory implements TableFactory {
   async generate(table: ExtraDutyTable, options: TableFactoryOptions): Promise<Buffer> {
-    return serializeTable2(table, options.sheetName);
+    return serializeTableToDivugation(table, options.sheetName);
   }
 }

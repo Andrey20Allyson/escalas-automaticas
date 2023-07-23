@@ -1,2 +1,2 @@
-export * from './default-factory.utils';
+export * from './divugation-factory.utils';
 export * from './main-factory.utils';
