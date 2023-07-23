@@ -5,6 +5,7 @@ import { DivugationTableFactory } from './auto-schedule/table-factories';
 import { Holidays, WorkerRegistriesMap } from './extra-duty-lib';
 import { Benchmarker, Result, ResultError, analyseResult, getMonth, getYear } from './utils';
 import { BookHandler } from './xlsx-handlers/book';
+import { DayListTableFactory } from './auto-schedule/table-factories/day-list-factory';
 
 io.setFileSystem(fs);
 
@@ -85,7 +86,7 @@ async function parseTableTest() {
   const month = getMonth();
   const year = getYear();
 
-  const factory = new DivugationTableFactory();
+  const factory = new DayListTableFactory();
   
   const tableBuffer = await fs.readFile('./output/data.xlsx');
   const workersBuffer = await fs.readFile('./input/data.xlsx');

@@ -47,20 +47,20 @@ export function parseDayIndex(index: number) {
   return (index + 1).toString().padStart(2, '0');
 }
 
-interface DayGridEntry {
+export interface DayGridEntry {
   duty: string;
   name: string;
   id: string;
 }
 
-interface DayGrid {
+export interface DayGrid {
   title: string;
   entries: DayGridEntry[];
   numOfDiurnal: number;
   numOfNightly: number;
 }
 
-const weekDayNames = [
+export const weekDayNames = [
   'Domingo',
   'Segunda',
   'Terça',
@@ -70,7 +70,7 @@ const weekDayNames = [
   'Sábado',
 ];
 
-function fromExcelDim(dim: number) {
+export function fromExcelDim(dim: number) {
   return dim ** 2 / (dim - .71);
 }
 
@@ -100,21 +100,21 @@ export function* iterGrids(table: ExtraDutyTable): Iterable<DayGrid> {
   }
 }
 
-const label = ['TURNO', 'NOME', 'MATRÍCULA'];
-const titleFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDDDDDD' } };
-const labelFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFEFEF' } };
-const primaryFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEEEEE' } };
-const secondaryFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEFEFE' } };
+export const label = ['TURNO', 'NOME', 'MATRÍCULA'];
+export const titleFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDDDDDD' } };
+export const labelFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFEFEF' } };
+export const primaryFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEEEEE' } };
+export const secondaryFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEFEFE' } };
 
-const boldFont: Partial<ExcelJS.Font> = { bold: true };
-const centerHorizontalAlignment: Partial<ExcelJS.Alignment> = { horizontal: 'center' };
-const defaultRowPerPage = 47;
+export const boldFont: Partial<ExcelJS.Font> = { bold: true };
+export const centerHorizontalAlignment: Partial<ExcelJS.Alignment> = { horizontal: 'center' };
+export const defaultRowPerPage = 47;
 
-function pageFromRow(row: number) {
+export function pageFromRow(row: number) {
   return Math.floor((row - 1) / defaultRowPerPage);
 }
 
-function firstRowFromPage(page: number) {
+export function firstRowFromPage(page: number) {
   return Math.ceil(page * defaultRowPerPage) + 1;
 }
 
@@ -213,23 +213,23 @@ export interface SheetAddress {
   col: number;
 }
 
-function createNormalBorder(): ExcelJS.Border {
+export function createNormalBorder(): ExcelJS.Border {
   return { color: { argb: 'FF000000' }, style: 'thin' };
 }
 
-function createMediumBorder(): ExcelJS.Border {
+export function createMediumBorder(): ExcelJS.Border {
   return { color: { argb: 'FF000000' }, style: 'medium' };
 }
 
-interface MakeGridBordersParams {
+export interface MakeGridBordersParams {
   dutySeparationRow: number;
   sheet: ExcelJS.Worksheet;
   start: SheetAddress;
   end: SheetAddress;
 }
 
-const mediumBorder = createMediumBorder();
-const normalBorder = createNormalBorder();
+export const mediumBorder = createMediumBorder();
+export const normalBorder = createNormalBorder();
 
 export function makeGridBorders(params: MakeGridBordersParams) {
   const { dutySeparationRow, end, sheet, start } = params;
