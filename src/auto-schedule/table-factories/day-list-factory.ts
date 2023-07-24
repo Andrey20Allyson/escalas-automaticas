@@ -1,8 +1,45 @@
-import { Workbook, Worksheet } from 'exceljs';
+import { Alignment, Workbook, Worksheet } from 'exceljs';
 import { DayOfExtraDuty, ExtraDutyTable, WorkerInfo } from "../../extra-duty-lib";
 import { iterRange } from "../../utils";
-import { SheetAddress, boldFont, centerHorizontalAlignment, fromExcelDim, graduationPrefixMap, normalBorder, parseWorkerID, primaryFill, secondaryFill, titleFill } from "./divugation-factory.utils";
+import {
+  SheetAddress,
+  boldFont,
+  centerHorizontalAlignment,
+  fromExcelDim,
+  graduationPrefixMap,
+  normalBorder,
+  parseDayIndex,
+  parseWorkerID,
+  primaryFill,
+  secondaryFill,
+  titleFill,
+} from "./divugation-factory.utils";
 import { TableFactory, TableFactoryOptions } from "./factory";
+import { getGradNum } from './main-factory.utils';
+
+enum DayListTableCollumn {
+  INDEX = 1,
+  NAME = 2,
+  WORKER_ID = 3,
+  DAY_LIST = 4,
+}
+
+const monthNames = [
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro'
+];
+
+const rightHorizontalAlignment: Partial<Alignment> = { horizontal: 'right' };
 
 export class DayListTableFactory implements TableFactory {
   async generate(table: ExtraDutyTable, options: TableFactoryOptions): Promise<Buffer> {
@@ -20,61 +57,92 @@ export class DayListTableFactory implements TableFactory {
       set.add(entry.day);
     }
 
+    const sortedWorkersAndDays = Array.from(workerDaysMap)
+      .sort(([workerA], [workerB]) => workerA.fullWorkerID - workerB.fullWorkerID)
+      .sort(([workerA], [workerB]) => getGradNum(workerA.config.grad) - getGradNum(workerB.config.grad));
+
     const book = new Workbook();
 
     const sheet = book.addWorksheet(options.sheetName);
 
     let actualRow = 1;
-    const headRow = sheet.getRow(actualRow++);
-    
-    const nameLabelCell = headRow.getCell(1);
+
+    const { year, month } = table.config;
+
+    const monthName = monthNames.at(month)?.toUpperCase();
+    if (!monthName) throw new Error(`Invalid month index '${month}'`);
+
+    const titleCell = sheet.getCell(actualRow++, 1);
+    titleCell.value = `EXTRA JIQUIÁ BRIGADA AMBIENTAL DE 1 Á ${table.width} DE ${monthName} - ${year}`;
+    titleCell.style.alignment = centerHorizontalAlignment;
+    titleCell.style.fill = titleFill;
+    titleCell.style.font = boldFont;
+
+    sheet.mergeCells([actualRow - 1, 1, actualRow - 1, 4]);
+
+    const labelsRow = sheet.getRow(actualRow++);
+
+    const indexLabelCell = labelsRow.getCell(DayListTableCollumn.INDEX);
+    indexLabelCell.style.fill = titleFill;
+
+    const nameLabelCell = labelsRow.getCell(DayListTableCollumn.NAME);
     nameLabelCell.value = 'NOME';
-    nameLabelCell.style.alignment = centerHorizontalAlignment;
     nameLabelCell.style.font = boldFont;
     nameLabelCell.style.fill = titleFill;
 
-    const workerIDLabelCell = headRow.getCell(2);
+    const workerIDLabelCell = labelsRow.getCell(DayListTableCollumn.WORKER_ID);
     workerIDLabelCell.value = 'MAT.';
     workerIDLabelCell.style.alignment = centerHorizontalAlignment;
     workerIDLabelCell.style.font = boldFont;
     workerIDLabelCell.style.fill = titleFill;
 
-    const dayListLabelCell = headRow.getCell(3);
+    const dayListLabelCell = labelsRow.getCell(DayListTableCollumn.DAY_LIST);
     dayListLabelCell.value = 'DIAS';
     dayListLabelCell.style.alignment = centerHorizontalAlignment;
     dayListLabelCell.style.font = boldFont;
     dayListLabelCell.style.fill = titleFill;
 
-    for (const [worker, daySet] of workerDaysMap) {
+    let indexCellValue = 1;
+
+    for (const [worker, daySet] of sortedWorkersAndDays) {
       const rowFill = actualRow % 2 === 0 ? primaryFill : secondaryFill;
       const row = sheet.getRow(actualRow++);
-      const days = Array.from(daySet, day => day.day + 1).sort((a, b) => a - b);
+      const days = Array.from(daySet, day => day.day).sort((a, b) => a - b).map(parseDayIndex);
 
-      const nameCell = row.getCell(1);
-      nameCell.value =  `${graduationPrefixMap[worker.graduation]} ${worker.name}`;
+      const indexCell = row.getCell(DayListTableCollumn.INDEX);
+      indexCell.value = `${indexCellValue++}.`;
+      indexCell.style.fill = rowFill;
+      indexCell.alignment = rightHorizontalAlignment;
+
+      const nameCell = row.getCell(DayListTableCollumn.NAME);
+      nameCell.value = `${graduationPrefixMap[worker.graduation]} ${worker.name}`;
       nameCell.style.fill = rowFill;
-      
-      const workerIDCell = row.getCell(2);
+
+      const workerIDCell = row.getCell(DayListTableCollumn.WORKER_ID);
       workerIDCell.value = parseWorkerID(worker.fullWorkerID);
       workerIDCell.style.fill = rowFill;
       workerIDCell.style.alignment = centerHorizontalAlignment;
 
-      const dayListCell = row.getCell(3);
-      dayListCell.value = days.join(', ');
+      const dayListCell = row.getCell(DayListTableCollumn.DAY_LIST);
+      dayListCell.value = days.join(',');
       dayListCell.style.fill = rowFill;
+      dayListCell.style.alignment = centerHorizontalAlignment;
     }
 
-    borders(sheet, { col: 1, row: 1 }, { col: 3, row: actualRow - 1 });
+    borders(sheet, { col: 1, row: 1 }, { col: 4, row: actualRow - 1 });
 
-    const nameCollumn = sheet.getColumn(1);
-    nameCollumn.width = fromExcelDim(49);
+    const indexCollumn = sheet.getColumn(DayListTableCollumn.INDEX);
+    indexCollumn.width = fromExcelDim(3)
 
-    const idCollumn = sheet.getColumn(2);
-    idCollumn.width = fromExcelDim(12);
+    const nameCollumn = sheet.getColumn(DayListTableCollumn.NAME);
+    nameCollumn.width = fromExcelDim(51);
 
-    const dayListCollumn = sheet.getColumn(3);
-    dayListCollumn.width = fromExcelDim(28);
-    
+    const idCollumn = sheet.getColumn(DayListTableCollumn.WORKER_ID);
+    idCollumn.width = fromExcelDim(9);
+
+    const dayListCollumn = sheet.getColumn(DayListTableCollumn.DAY_LIST);
+    dayListCollumn.width = fromExcelDim(25);
+
     const arrayBuffer = await book.xlsx.writeBuffer();
 
     return Buffer.from(arrayBuffer);
