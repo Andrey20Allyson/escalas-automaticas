@@ -27,7 +27,14 @@ export class Holidays {
 
       if (!result.success) return new ResultError(`Can't parse data to a array of Holidays!\n${result.error.toString()}`);
 
-      return this.from(result.data);
+      const holidays = result.data;
+
+      for (const holiday of holidays) {
+        holiday.day--;
+        holiday.month--;
+      }
+
+      return this.from(holidays);
     } catch (e) {
       return ResultError.create(e);
     }

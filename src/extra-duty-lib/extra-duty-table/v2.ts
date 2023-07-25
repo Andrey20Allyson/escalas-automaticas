@@ -17,8 +17,8 @@ type PointGetter = (day: number, firstMonday: number) => number;
 const isInsp = (worker: WorkerInfo) => worker.graduation === 'insp';
 const isSubInsp = (worker: WorkerInfo) => worker.graduation === 'sub-insp';
 const pointGetterMap: PointGetter[] = [
-  (day, firstMonday) => -(isMonday(day, firstMonday) ? 50 : 100),
-  () => -150,
+  (day, firstMonday) => -(isMonday(day, firstMonday) ? 50 : 500),
+  () => -500,
 ];
 
 function isMonday(day: number, firstMonday: number): boolean {
@@ -29,7 +29,7 @@ function calculateDutyPontuation(duty: ExtraDuty, firstMonday: number): number {
   const pointGetter = pointGetterMap.at(duty.getSize());
   const isNightDuty = duty.index > 0;
 
-  return (pointGetter?.(duty.day, firstMonday) ?? 0) * (isNightDuty ? 2 : 1);
+  return (pointGetter?.(duty.day, firstMonday) ?? 0) * (isNightDuty ? 1 : 3);
 }
 
 export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDutyTableV2> {
@@ -51,6 +51,7 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
       }
 
       if (points > bestPontuation) {
+        console.log(points);
         bestTable = this.clone();
         bestPontuation = points;
       }
@@ -80,28 +81,39 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
   calculatePontuation(firstMonday: number) {
     let points = 0;
     const workerSet = new Set<WorkerInfo>()
+    let numOfGraduatePair = 0;
+    let allDutiesHasGraduate = true;
 
     for (const day of this) {
       for (const duty of day) {
-        let haveInspOrSub = false;
-        
+        let haveGraduate = false;
+        let numOfGraduate = 0;
+
         for (const [_, worker] of duty.workers) {
           workerSet.add(worker);
 
           if (worker.graduation === 'sub-insp' || worker.graduation === 'insp') {
-            haveInspOrSub = true;
+            haveGraduate = true;
+            numOfGraduate++;
           }
         }
 
+        if (!haveGraduate) allDutiesHasGraduate = false;
+
+        if (numOfGraduate >= 2) numOfGraduatePair++;
+
         points += duty.getSize() > 0 && duty.genderQuantity('female') === duty.getSize() ? -50000 : 0;
 
-        points += haveInspOrSub ? 0 : -30;
         points += calculateDutyPontuation(duty, firstMonday);
       }
     }
 
+    if (!allDutiesHasGraduate) {
+      points -= numOfGraduatePair * 5000;
+    }
+
     for (const worker of workerSet) {
-      if (!worker.isCompletelyBusy()) {
+      if (!worker.isCompletelyBusy() && worker.daysOfWork.getNumOfDaysOff() > 0) {
         points += -100 * 1.4 * worker.positionsLeft ** 2;
       }
     }
@@ -110,16 +122,16 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
   }
 
   tryAssignArrayV2(workers: WorkerInfo[]) {
-    const [
-      diarists,
-      periodics,
-    ] = forkArray(workers, filterDiarists);
+    // const [
+    //   diarists,
+    //   periodics,
+    // ] = forkArray(workers, filterDiarists);
 
-    this._assignDiaristArray(diarists);
-    this._assignInspArray(periodics);
-    this._assignSubInspArray(periodics);
-    this._assignArray(periodics, 2, 2, true);
-    this._assignArray(periodics, 2, 3);
+    // this._assignDiaristArray(diarists);
+    this._assignInspArray(workers);
+    this._assignSubInspArray(workers);
+    this._assignArray(workers, 2, 2, true);
+    this._assignArray(workers, 2, 3);
   }
 
   private _assignInspArray(workers: WorkerInfo[]) {
@@ -145,7 +157,9 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
 
         if (filteredWorkers.length === 0) break;
 
-        for (const duty of iterRandom(day)) {
+        const duties = isMonday(day.day, this.firstMonday) ? day : iterRandom(day);
+
+        for (const duty of duties) {
           const passDuty = duty.isFull() || (excludeMondays && isMonday(duty.day, this.firstMonday)); 
           if (passDuty) continue;
 

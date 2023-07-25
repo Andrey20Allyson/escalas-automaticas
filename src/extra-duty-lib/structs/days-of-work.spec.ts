@@ -1,4 +1,4 @@
-import { test, expect } from 'vitest';
+import { expect, test } from 'vitest';
 import { DaySearch, DaysOfWork } from './days-of-work';
 
 test(`shold return a number if has a day off`, () => {

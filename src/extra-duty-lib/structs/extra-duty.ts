@@ -16,6 +16,7 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
   workers: Map<number, WorkerInfo>;
 
   readonly offTimeEnd: number;
+  readonly isNightly: boolean;
   readonly start: number;
   readonly end: number;
 
@@ -29,6 +30,7 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     this.start = config.firstDutyTime + config.dutyInterval * index;
     this.end = this.start + this.config.dutyDuration;
     this.offTimeEnd = this.end + this.config.dutyDuration;
+    this.isNightly = this.start >= 18 || this.start < 7;
 
     this.graduationQuantityMap = {
       'sub-insp': 0,
@@ -51,8 +53,12 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     return this.genderQuantityMap[gender];
   }
 
+  isDailyWorkerAtNight(worker: WorkerInfo) {
+    return worker.daysOfWork.isDailyWorker && this.isNightly;
+  }
+
   collidesWithWork(worker: WorkerInfo) {
-    // TODO add feature: daily workers can work at extra in same day of ordinary work, but just at night.
+    if (this.isDailyWorkerAtNight(worker)) return false;
 
     return this.collidesWithTodayWork(worker)
       || this.collidesWithYesterdayWork(worker)
@@ -159,7 +165,7 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
 
     this._clearQuantityMap();
   }
-  
+
   private _clearQuantityMap() {
     resetMap(this.genderQuantityMap);
     resetMap(this.graduationQuantityMap);

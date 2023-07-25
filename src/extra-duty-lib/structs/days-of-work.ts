@@ -84,7 +84,7 @@ export class DaysOfWork implements Clonable<DaysOfWork> {
     const monthHolidays = holidays.get(month);
 
     for (const holiday of monthHolidays) {
-      const day = holiday.day - 1;
+      const day = holiday.day;
 
       if (day >= 0 && day < this.days.length) {
         this.notWork(day);

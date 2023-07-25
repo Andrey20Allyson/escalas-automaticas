@@ -145,12 +145,14 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
     });
   }
 
+  private static _fakeCount = 0;
+
   static fakeFromName(name: string) {
     return new WorkerInfo({
       name,
       post: 'N/A',
-      grad: 'N/A',
-      workerID: 0,
+      grad: 'GCM',
+      workerID: WorkerInfo._fakeCount++,
       postWorkerID: 0,
       individualRegistry: 0,
       gender: 'U',

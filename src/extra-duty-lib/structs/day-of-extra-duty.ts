@@ -42,17 +42,20 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
     const maxDuties = this.getMaxDuties();
 
     if (index < 0) {
-      const dayOfExtraDuty = this.dutyTable.getDay(this.day + Math.floor(index / maxDuties));
+      const dayIndex = this.day + Math.floor(index / maxDuties);
+      if (dayIndex < 0) return; 
 
-      if (index + maxDuties < 0) return;
+      const dayOfExtraDuty = this.dutyTable.getDay(dayIndex);
 
-      return dayOfExtraDuty.getDuty(maxDuties + index);
+      return dayOfExtraDuty.getDuty(-index % maxDuties);
     } else if (index >= maxDuties) {
-      const dayOfExtraDuty = this.dutyTable.getDay(this.day + Math.ceil((index - maxDuties + 1) / maxDuties));
+      const nextIndex = index - maxDuties;
+      const dayIndex = this.day + Math.ceil((nextIndex + 1) / maxDuties);
+      if (dayIndex >= this.dutyTable.width) return;
 
-      if (index - maxDuties >= maxDuties) return;
+      const dayOfExtraDuty = this.dutyTable.getDay(dayIndex);
 
-      return dayOfExtraDuty.getDuty(index - maxDuties);
+      return dayOfExtraDuty.getDuty(nextIndex % maxDuties);
     }
 
     return this.getDuty(index);

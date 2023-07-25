@@ -116,7 +116,7 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
   static createConfigFrom(partialConfig?: Partial<ExtraDutyTableConfig>): ExtraDutyTableConfig {
     return {
       dutyPositionSize: partialConfig?.dutyPositionSize ?? 2,
-      dutyMinDistance: partialConfig?.dutyMinDistance ?? 1,
+      dutyMinDistance: partialConfig?.dutyMinDistance ?? 4,
       firstDutyTime: partialConfig?.firstDutyTime ?? 7,
       dutyInterval: partialConfig?.dutyInterval ?? 12,
       dutyDuration: partialConfig?.dutyDuration ?? 12,
