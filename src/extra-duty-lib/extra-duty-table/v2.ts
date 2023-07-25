@@ -17,8 +17,8 @@ type PointGetter = (day: number, firstMonday: number) => number;
 const isInsp = (worker: WorkerInfo) => worker.graduation === 'insp';
 const isSubInsp = (worker: WorkerInfo) => worker.graduation === 'sub-insp';
 const pointGetterMap: PointGetter[] = [
-  (day, firstMonday) => -(isMonday(day, firstMonday) ? 1 : 20),
-  () => -50,
+  (day, firstMonday) => -(isMonday(day, firstMonday) ? 50 : 100),
+  () => -150,
 ];
 
 function isMonday(day: number, firstMonday: number): boolean {
@@ -92,6 +92,8 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
             haveInspOrSub = true;
           }
         }
+
+        points += duty.getSize() > 0 && duty.genderQuantity('female') === duty.getSize() ? -50000 : 0;
 
         points += haveInspOrSub ? 0 : -30;
         points += calculateDutyPontuation(duty, firstMonday);

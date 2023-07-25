@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-import { execute, generate, io } from '.';
+import { execute, generate, generateFromWorkers, io } from '.';
 import { parseTable, parseWorkers } from './auto-schedule/io';
 import { DivugationTableFactory } from './auto-schedule/table-factories';
 import { Holidays, WorkerRegistriesMap } from './extra-duty-lib';
@@ -12,7 +12,7 @@ io.setFileSystem(fs);
 async function programTest() {
   const INPUT_FILE = './input/data.xlsx';
   const OUTPUT_FILE = './output/out-data.xlsx';
-  
+
   await execute({
     input: INPUT_FILE,
     output: OUTPUT_FILE,
@@ -63,16 +63,26 @@ async function generateTest() {
 
   const holidays = Result.unwrap(Holidays.safeParse(holidaysFileBuffer));
 
-  const outdata = await generate(inputBuffer, {
+  const month = getMonth();
+  const year = getYear();
+
+  const workersParseProcess = benchmarker.start('parse workers');
+  const workers = parseWorkers(inputBuffer, {
+    workerRegistryMap,
+    holidays,
+    month,
+    year,
+  });
+  workersParseProcess.end();
+
+  const outdata = await generateFromWorkers(workers, {
     outputSheetName: 'DADOS',
     onAnalyse: console.log,
-    workerRegistryMap,
     patternBuffer,
     benchmarker,
-    holidays,
   });
 
-  const writeOutputFileProcess = benchmarker.start('write output file'); 
+  const writeOutputFileProcess = benchmarker.start('write output file');
   await fs.writeFile('./output/data.xlsx', outdata);
   writeOutputFileProcess.end();
 
@@ -87,7 +97,7 @@ async function parseTableTest() {
   const year = getYear();
 
   const factory = new DayListTableFactory();
-  
+
   const tableBuffer = await fs.readFile('./output/data.xlsx');
   const workersBuffer = await fs.readFile('./input/data.xlsx');
   const registriesFileBuffer = await fs.readFile('input/registries.json');
@@ -99,12 +109,12 @@ async function parseTableTest() {
     month,
     year,
   });
-  
+
   const table = parseTable(tableBuffer, workers, {
     sheetName: 'DADOS',
   });
 
-  const analysisResult = analyseResult(table, workers);
+  const analysisResult = analyseResult(table);
   console.log(analysisResult);
 
   const outputBuffer = await factory.generate(table, { sheetName: 'Divulgação' });
@@ -112,10 +122,15 @@ async function parseTableTest() {
   await fs.writeFile('./output/parsed-table.xlsx', outputBuffer);
 }
 
-// generateTest();
+const command = process.argv.slice(2).find(str => !str.startsWith('--'));
 
-// programTest();
-
-// XLSXHandersTest();
-
-parseTableTest();
+switch (command) {
+  case 'parser':
+    parseTableTest();
+    break;
+  case 'generator':
+    generateTest();
+    break;
+  default:
+    throw new Error(`Unknow command named '${command}'`);
+}

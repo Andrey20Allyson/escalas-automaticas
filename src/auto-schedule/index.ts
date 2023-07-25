@@ -44,7 +44,7 @@ export async function execute(options: ExecutionOptions) {
   if (options.analyse) {
     // analyse the result
     const analysisProcess = benchmarker.start('analyse result');
-    const analysisResult = analyseResult(table, workers);
+    const analysisResult = analyseResult(table);
     console.log(analysisResult);
     analysisProcess.end();
   }
@@ -101,11 +101,11 @@ export function generateFromWorkers(workers: WorkerInfo[], options: GenerateFrom
 
   const assignArrayProcess = options.benchmarker?.start('assign workers to table');
   const table = new ExtraDutyTableV2({ month, year });
-  table.tryAssignArrayMultipleTimes(workers, options.tries ?? 2000);
+  table.tryAssignArrayMultipleTimes(workers, options.tries ?? 5000);
   assignArrayProcess?.end();
 
   if (options.onAnalyse) {
-    const analysisResult = analyseResult(table, workers);
+    const analysisResult = analyseResult(table);
     options.onAnalyse(analysisResult);
   }
 

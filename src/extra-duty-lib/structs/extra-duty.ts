@@ -91,7 +91,7 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
   }
 
   breaksGenderRule(worker: WorkerInfo) {
-    return worker.gender === 'female' && (this.getSize() === 0 || this.genderQuantity('female') > 0 && this.genderQuantity('male') < 1);
+    return worker.gender === 'female' && (this.genderQuantity('female') > 0 && this.genderQuantity('male') < 1);
   }
 
   *[Symbol.iterator](): Iterator<[string, WorkerInfo]> {

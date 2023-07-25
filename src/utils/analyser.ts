@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import { Text } from './text';
-import type { ExtraDutyTable, WorkerInfo } from "../extra-duty-lib";
+import { ExtraDutyTable, WorkerInfo } from "../extra-duty-lib";
 
 export function numberToColoredString(value: number) {
   switch (value) {
@@ -15,12 +15,12 @@ export function numberToColoredString(value: number) {
   return chalk.red(value);
 }
 
-export function analyseResult(table: ExtraDutyTable, workers: WorkerInfo[], colors = true) {
+export function analyseResult(table: ExtraDutyTable, colors = true) {
   let analysisText = new Text();
 
-  let positionsLeft = workers.length * 10;
-
   analysisText.writeLn(chalk.underline(`[ Numero de funcionários em cada turno do dia ]`));
+
+  const workersWithPositionsLeft = new Set<WorkerInfo>();
 
   for (const day of table) {
     const numOfWorkersMap: [number, number, number, number] = [0, 0, 0, 0];
@@ -29,12 +29,14 @@ export function analyseResult(table: ExtraDutyTable, workers: WorkerInfo[], colo
     for (const duty of day) {
       const size = duty.getSize();
 
+      for (const [_, worker] of duty) {
+        if (worker.positionsLeft > 0) workersWithPositionsLeft.add(worker);
+      }
+
       numOfWorkersInThisDay += size;
       numOfWorkersMap[duty.index * 2] += size;
       numOfWorkersMap[duty.index * 2 + 1] += size;
     }
-
-    positionsLeft -= positionsLeft;
 
     const formatedDay = chalk.white(String(day.day + 1).padStart(2, '0'));
     const formatedDutySizes = numOfWorkersMap.map(numberToColoredString).join(', ');
@@ -42,12 +44,12 @@ export function analyseResult(table: ExtraDutyTable, workers: WorkerInfo[], colo
     analysisText.writeLn(chalk.gray(`  Dia(${formatedDay}) => [${formatedDutySizes}]`));
   }
 
-  analysisText.writeLn(chalk.underline(`[ Turnos ]`));
-
   analysisText.writeLn(chalk.underline(`[ Plantões ]`));
 
-  if (positionsLeft > 0) {
-    analysisText.writeLn(chalk.red(`  Restam ${positionsLeft} plantões para serem ocupados!`));
+  if (workersWithPositionsLeft.size > 0) {
+    const totalOfPositionsLeft = Array.from(workersWithPositionsLeft).reduce((prev, worker) => prev + worker.positionsLeft, 0);
+
+    analysisText.writeLn(chalk.red(`  Restam ${totalOfPositionsLeft} plantões para serem ocupados!`));
   } else {
     analysisText.writeLn(chalk.green(`  Todos os funcionários estão ocupando 10 plantões!`));
   }
