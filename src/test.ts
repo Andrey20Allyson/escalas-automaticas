@@ -75,10 +75,6 @@ async function generateTest() {
   });
   workersParseProcess.end();
 
-  for (const worker of workers) {
-    if (worker.fullWorkerID === 1044443) worker.positionsLeft = 0;
-  }
-
   const outdata = await generateFromWorkers(workers, {
     outputSheetName: 'DADOS',
     onAnalyse: console.log,

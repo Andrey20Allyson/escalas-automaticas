@@ -51,7 +51,6 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
       }
 
       if (points > bestPontuation) {
-        console.log(points);
         bestTable = this.clone();
         bestPontuation = points;
       }
