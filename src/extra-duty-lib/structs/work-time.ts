@@ -1,6 +1,6 @@
 import { Clonable } from "./worker-info";
 
-export const WORK_TIME_REGEXP = /^(\d{2})[^\d]*(\d{2})/;
+export const WORK_TIME_REGEXP = /(\d{2}) ÀS (\d{2})h/;
 
 export class WorkTime implements Clonable<WorkTime> {
   constructor(
@@ -16,9 +16,7 @@ export class WorkTime implements Clonable<WorkTime> {
     const matches = WORK_TIME_REGEXP.exec(text);
     if (!matches) return;
 
-    const start = matches.at(1);
-    const end = matches.at(2);
-    if (!start || !end) return undefined;
+    const [_, start, end] = matches as unknown as [string, ...(string | undefined)[]];
 
     const parsedStart = Number(start);
     const parsedEnd = Number(end);

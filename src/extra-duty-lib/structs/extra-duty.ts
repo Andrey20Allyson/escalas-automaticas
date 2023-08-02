@@ -58,7 +58,7 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
   }
 
   collidesWithWork(worker: WorkerInfo) {
-    if (this.isDailyWorkerAtNight(worker)) return false;
+    // if (this.isDailyWorkerAtNight(worker)) return false;
 
     return this.collidesWithTodayWork(worker)
       || this.collidesWithYesterdayWork(worker)

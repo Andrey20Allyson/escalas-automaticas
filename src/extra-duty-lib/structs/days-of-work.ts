@@ -1,8 +1,9 @@
-import { enumerate, firstMondayFromYearAndMonth, getNumOfDaysInMonth, isBusinessDay } from "../../utils";
+import { enumerate, firstMondayFromYearAndMonth, getNumOfDaysInMonth, isBusinessDay, parseNumberOrThrow } from "../../utils";
 import { Holidays } from "./holidays";
 import { Clonable } from "./worker-info";
 
 export const DAYS_OF_WORK_REGEXP = /\(DIAS:[^\d]*([^]*)\)/;
+export const MEDICAL_DISCHARGE_REGEXP = /DISP\. MÉDICA DE (\d{2}) À (\d{2})/;
 
 export class DaySearch {
   constructor(
@@ -158,9 +159,31 @@ export class DaysOfWork implements Clonable<DaysOfWork> {
     return this.fromDays(days, year, month);
   }
 
-  static parse(text: string, year: number, month: number): DaysOfWork | undefined {
-    if (text.includes('2ª/6ª')) return this.fromDailyWorker(year, month);
+  static *iterMedicalDischargeDays(text: string): Iterable<number> {
+    const matches = MEDICAL_DISCHARGE_REGEXP.exec(text);
+    if (!matches) return;
 
-    return this.parsePeriodic(text, year, month);
+    const [_, startDay, endDay] = matches as [string, string?, string?];
+
+    const startDayNumber = parseNumberOrThrow(startDay) - 1;
+    const endDayNumber = parseNumberOrThrow(endDay) - 1;
+
+    for (let i = startDayNumber; i <= endDayNumber; i++) {
+      yield i;
+    }
+  }
+
+  static parse(text: string, year: number, month: number): DaysOfWork | undefined {
+    const daysOfWork = text.includes('2ª/6ª')
+      ? this.fromDailyWorker(year, month)
+      : this.parsePeriodic(text, year, month);
+
+    if (!daysOfWork) return;
+
+    for (const medicalDischargeDay of this.iterMedicalDischargeDays(text)) {
+      daysOfWork.work(medicalDischargeDay);
+    }
+
+    return daysOfWork;
   }
 }

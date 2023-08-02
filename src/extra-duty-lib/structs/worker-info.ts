@@ -119,13 +119,13 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
   }
 
   static parse(data: WorkerParseData) {
-    if (data.hourly.includes('FÉRIAS')) return;
+    if (['FÉRIAS', 'LIC. PRÊMIO', 'DISP. MÉDICA MÊS INTEIRO'].some(skipLabel => data.hourly.includes(skipLabel))) return;
 
     const workTime = WorkTime.parse(data.hourly);
     if (!workTime) throw new Error(`Can't parse workTime of "${data.name}"`);
 
     const daysOfWork = DaysOfWork.parse(data.hourly, data.year, data.month);
-    if (!daysOfWork) throw new Error(`Can't parse daysOfWork of "${data.name}"!`);
+    if (!daysOfWork) throw new Error(`Can't parse daysOfWork of "${data.name}", unknow hourly: "${data.hourly}"`);
 
     const splitedRegistration = data.registration.split('-');
     if (splitedRegistration.length !== 2) throw new Error(`Can't parse registration "${data.registration}"`);

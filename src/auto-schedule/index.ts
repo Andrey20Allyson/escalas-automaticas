@@ -101,7 +101,8 @@ export function generateFromWorkers(workers: WorkerInfo[], options: GenerateFrom
 
   const assignArrayProcess = options.benchmarker?.start('assign workers to table');
   const table = new ExtraDutyTableV2({ month, year });
-  table.tryAssignArrayMultipleTimes(workers, options.tries ?? 7000);
+  // TODO return the number of tries to 7000
+  table.tryAssignArrayMultipleTimes(workers, options.tries ?? 1 /*7000*/);
   assignArrayProcess?.end();
 
   if (options.onAnalyse) {
