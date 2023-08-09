@@ -2,7 +2,7 @@ import clone from "clone";
 import { firstMondayFromYearAndMonth, iterRandom, randomizeArray, thisMonthWeekends } from "../../utils";
 import { ExtraDuty } from "../structs";
 import { Clonable, WorkerInfo } from "../structs/worker-info";
-import { ExtraDutyTable } from "./v1";
+import { ExtraDutyTable, ExtraDutyTableConfig } from "./v1";
 
 export function workerIsCompletelyBusy(worker: WorkerInfo) {
   return !worker.isCompletelyBusy();
@@ -33,44 +33,66 @@ function calculateDutyPontuation(duty: ExtraDuty, firstMonday: number): number {
 }
 
 export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDutyTableV2> {
+  private _pontuation: number | null;
+
+  constructor(config?: Partial<ExtraDutyTableConfig>) {
+    super(config);
+
+    this._pontuation = null;
+  }
+
+  /**
+   * @throws If pontuation hasn't calculated yet
+   */
+  getPontuation() {
+    if (this._pontuation === null) throw new Error(`Pontuation hasn't calculated yet!`);
+
+    return this._pontuation;
+  }
+
+  clear() {
+    this.resetPontuation()
+
+    super.clear();
+  }
+
   tryAssignArrayMultipleTimes(workers: WorkerInfo[], times: number): boolean {
     let bestTable: ExtraDutyTableV2 | undefined;
-    let bestPontuation = -Infinity;
     const firstMonday = firstMondayFromYearAndMonth(this.config.year, this.config.month);
 
     for (let i = 0; i < times; i++) {
       this.tryAssignArrayV2(workers);
 
-      const points = this.calculatePontuation(firstMonday);
+      this.calculatePontuation(firstMonday);
+      const bestPontuation = bestTable?.getPontuation() ?? -Infinity;
 
-      if (points >= 0) {
+      if (this.getPontuation() >= 0) {
         bestTable = this.clone();
         this.clear();
 
         break;
       }
 
-      if (points > bestPontuation) {
+      if (this.getPontuation() > bestPontuation) {
         bestTable = this.clone();
-        bestPontuation = points;
       }
 
       this.clear();
     }
 
-    if (bestTable) {
-      for (const day of bestTable) {
-        const thisDay = this.getDay(day.day);
+    if (!bestTable) return false;
 
-        for (const bestDuty of day) {
-          const thisDuty = thisDay.getDuty(bestDuty.index);
+    for (const day of bestTable) {
+      const thisDay = this.getDay(day.day);
 
-          thisDuty.workers = bestDuty.workers;
-        }
+      for (const bestDuty of day) {
+        const thisDuty = thisDay.getDuty(bestDuty.index);
+
+        thisDuty.workers = bestDuty.workers;
       }
     }
 
-    return bestPontuation >= 0;
+    return bestTable.getPontuation() >= 0;
   }
 
   clone(): ExtraDutyTableV2 {
@@ -113,13 +135,15 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
 
     for (const worker of workerSet) {
       if (!worker.isCompletelyBusy() && worker.daysOfWork.getNumOfDaysOff() > 0) {
-        console.log(`${worker.graduation} - ${worker.positionsLeft} left`)
-
         points += -100 * 1.4 * worker.positionsLeft ** 2;
       }
     }
 
-    return points;
+    this._pontuation = points;
+  }
+
+  resetPontuation() {
+    this._pontuation = null;
   }
 
   tryAssignArrayV2(workers: WorkerInfo[]) {
@@ -127,7 +151,7 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
     this._assignInspArray(workers);
     this._assignSubInspArray(workers);
     this._assignArray(workers, 2, 2, true);
-    this._assignArray(workers, 2, 2);
+    this._assignArray(workers, 2, 3);
   }
 
   private _assignInspArray(workers: WorkerInfo[]) {
@@ -144,6 +168,7 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
 
   private _assignArray(workers: WorkerInfo[], min: number, max: number, excludeMondays = false) {
     const oldDutyCapacity = this.config.dutyCapacity;
+    this.resetPontuation();
 
     for (let i = min; i <= max; i++) {
       this.config.dutyCapacity = i;
@@ -156,7 +181,7 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
         const duties = isMonday(day.day, this.firstMonday) ? day : iterRandom(day);
 
         for (const duty of duties) {
-          const passDuty = duty.isFull() || (excludeMondays && isMonday(duty.day, this.firstMonday)); 
+          const passDuty = duty.isFull() || (excludeMondays && isMonday(duty.day, this.firstMonday));
           if (passDuty) continue;
 
           for (const worker of iterRandom(filteredWorkers)) {
@@ -174,6 +199,7 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
   private _assignOnAllWeekEnds(worker: WorkerInfo): boolean {
     const oldDutyMinDistance = this.config.dutyMinDistance;
     this.config.dutyMinDistance = 1;
+    this.resetPontuation();
 
     for (const weekend of iterRandom(thisMonthWeekends)) {
       if (weekend.saturday) {
