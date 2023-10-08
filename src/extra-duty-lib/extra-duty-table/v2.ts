@@ -1,5 +1,5 @@
 import clone from "clone";
-import { firstMondayFromYearAndMonth, iterRandom, randomizeArray, thisMonthWeekends } from "../../utils";
+import { firstMondayFromYearAndMonth, iterRandom, iterWeekends, randomizeArray } from "../../utils";
 import { ExtraDuty } from "../structs";
 import { Clonable, WorkerInfo } from "../structs/worker-info";
 import { ExtraDutyTable, ExtraDutyTableConfig } from "./v1";
@@ -198,10 +198,16 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
 
   private _assignOnAllWeekEnds(worker: WorkerInfo): boolean {
     const oldDutyMinDistance = this.config.dutyMinDistance;
+    const oldDutyCapacity = this.config.dutyCapacity;
+
     this.config.dutyMinDistance = 1;
+    this.config.dutyCapacity = 3;
+
     this.resetPontuation();
 
-    for (const weekend of iterRandom(thisMonthWeekends)) {
+    const weekends = iterRandom(iterWeekends(this.firstMonday));
+
+    for (const weekend of weekends) {
       if (weekend.saturday) {
         const day = this.getDay(weekend.saturday);
 
@@ -209,26 +215,31 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
       }
 
       if (weekend.sunday) {
-        const day = this.getDay(weekend.sunday);
-
-        day.fill(worker);
+        this
+          .getDay(weekend.sunday)
+          .insert(worker, 0);
       }
     }
 
     this.config.dutyMinDistance = oldDutyMinDistance;
+    this.config.dutyCapacity = oldDutyCapacity;
 
     return worker.isCompletelyBusy();
   }
 
   private _assignDailyWorkerArray(workers: WorkerInfo[]): boolean {
-    const workersSet = new Set(randomizeArray(workers.filter(isDailyWorker), true));
+    const dailyWorkers = randomizeArray(workers.filter(isDailyWorker), true);
 
-    for (const worker of workersSet) {
-      this._assignOnAllWeekEnds(worker);
+    let success = true;
 
-      if (worker.isCompletelyBusy()) workersSet.delete(worker);
+    for (const worker of dailyWorkers) {
+      let assignSuccess = this._assignOnAllWeekEnds(worker);
+
+      if (success && !assignSuccess) {
+        success = false;
+      }
     }
 
-    return workersSet.size === 0;
+    return success;
   }
 }

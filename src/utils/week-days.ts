@@ -51,8 +51,12 @@ export interface Weekend {
   sunday?: number;
 }
 
-export function* iterWeekendsFromThisMonth(): Generator<Weekend> {
-  let firstSaturday = thisMonthFirstMonday - 2;
+export function iterWeekendsFromThisMonth(): Generator<Weekend> {
+  return iterWeekends(thisMonthFirstMonday);
+}
+
+export function* iterWeekends(firstMonday: number): Generator<Weekend> {
+  let firstSaturday = firstMonday - 2;
 
   for (let i = 0; i < 5; i++) {
     const weekend: Weekend = {};
