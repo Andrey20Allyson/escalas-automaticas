@@ -76,8 +76,8 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     if (this.isDailyWorkerAtFridayAtNight(worker)) return false;
 
     return this.collidesWithTodayWork(worker)
-      || this.collidesWithYesterdayWork(worker)
-      || this.collidesWithTommorowWork(worker);
+      || this.collidesWithTomorrowWork(worker)
+      || this.collidesWithYesterdayWork(worker);
   }
 
   collidesWithTodayWork(worker: WorkerInfo) {
@@ -89,7 +89,7 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     return this.offTimeEnd > workStart;
   }
 
-  collidesWithTommorowWork(worker: WorkerInfo) {
+  collidesWithYesterdayWork(worker: WorkerInfo) {
     const workYesterday = worker.daysOfWork.workOn(this.day - 1);
     if (!workYesterday) return false;
 
@@ -98,7 +98,7 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     return yesterdayWorkOffTimeEnd - 24 > this.start;
   }
 
-  collidesWithYesterdayWork(worker: WorkerInfo) {
+  collidesWithTomorrowWork(worker: WorkerInfo) {
     const workTomorrow = worker.daysOfWork.workOn(this.day + 1);
     if (!workTomorrow) return false;
 
