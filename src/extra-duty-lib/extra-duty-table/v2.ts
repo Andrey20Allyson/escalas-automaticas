@@ -170,8 +170,8 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
     const oldDutyCapacity = this.config.dutyCapacity;
     this.resetPontuation();
 
-    for (let i = min; i <= max; i++) {
-      this.config.dutyCapacity = i;
+    for (let capacity = min; capacity <= max; capacity++) {
+      this.config.dutyCapacity = capacity;
 
       for (const day of iterRandom(this)) {
         let filteredWorkers = workers.filter(workerIsCompletelyBusy);
