@@ -1,3 +1,4 @@
+import { DaysOfWeek, dayOfWeekFrom, firstMondayFromYearAndMonth } from "../../utils";
 import type { ExtraDutyTableConfig } from "../extra-duty-table/v1";
 import type { DayOfExtraDuty } from "./day-of-extra-duty";
 import { Gender, Graduation, WorkerInfo } from "./worker-info";
@@ -19,6 +20,8 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
   readonly isNightly: boolean;
   readonly start: number;
   readonly end: number;
+  readonly firstMonday: number;
+  readonly weekDay: number;
 
   constructor(
     readonly day: number,
@@ -31,6 +34,8 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     this.end = this.start + this.config.dutyDuration;
     this.offTimeEnd = this.end + this.config.dutyDuration;
     this.isNightly = this.start >= 18 || this.start < 7;
+    this.firstMonday = firstMondayFromYearAndMonth(this.config.year, this.config.month);
+    this.weekDay = dayOfWeekFrom(this.firstMonday, this.day);
 
     this.graduationQuantityMap = {
       'sub-insp': 0,
@@ -57,8 +62,18 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     return worker.daysOfWork.isDailyWorker && this.isNightly;
   }
 
+  isWeekDay(weekDay: number) {
+    return this.weekDay === weekDay;
+  }
+
+  isDailyWorkerAtFridayAtNight(worker: WorkerInfo) {
+    const isFriday = this.isWeekDay(DaysOfWeek.FRIDAY);
+
+    return isFriday && this.isDailyWorkerAtNight(worker);
+  }
+
   collidesWithWork(worker: WorkerInfo) {
-    // if (this.isDailyWorkerAtNight(worker)) return false;
+    if (this.isDailyWorkerAtFridayAtNight(worker)) return false;
 
     return this.collidesWithTodayWork(worker)
       || this.collidesWithYesterdayWork(worker)
