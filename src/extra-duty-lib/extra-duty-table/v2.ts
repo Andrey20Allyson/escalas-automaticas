@@ -123,7 +123,10 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
 
         if (numOfGraduate >= 2) numOfGraduatePair++;
 
-        points += duty.getSize() > 0 && duty.genderQuantity('female') === duty.getSize() ? -50000 : 0;
+        const isFemaleOnly = duty.getSize() > 0 && duty.genderQuantity('female') === duty.getSize();
+        if (isFemaleOnly) {
+          points -= 50000;
+        }
 
         points += calculateDutyPontuation(duty, firstMonday);
       }
