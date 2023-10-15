@@ -1,36 +1,9 @@
 import clone from "clone";
 import { firstMondayFromYearAndMonth, iterRandom, iterWeekends, randomizeArray } from "../../utils";
-import { ExtraDuty } from "../structs";
 import { Clonable, WorkerInfo } from "../structs/worker-info";
+import { calculateDutyPontuation, isDailyWorker, isInsp, isMonday, isSubInsp, workerIsCompletelyBusy } from "./utils";
 import { ExtraDutyTable, ExtraDutyTableConfig } from "./v1";
-
-export function workerIsCompletelyBusy(worker: WorkerInfo) {
-  return !worker.isCompletelyBusy();
-}
-
-export function isDailyWorker(worker: WorkerInfo) {
-  return worker.daysOfWork.isDailyWorker
-}
-
-type PointGetter = (day: number, firstMonday: number) => number;
-
-const isInsp = (worker: WorkerInfo) => worker.graduation === 'insp';
-const isSubInsp = (worker: WorkerInfo) => worker.graduation === 'sub-insp';
-const pointGetterMap: PointGetter[] = [
-  (day, firstMonday) => -(isMonday(day, firstMonday) ? 50 : 500),
-  () => -1000,
-];
-
-function isMonday(day: number, firstMonday: number): boolean {
-  return day % 7 === firstMonday
-}
-
-function calculateDutyPontuation(duty: ExtraDuty, firstMonday: number): number {
-  const pointGetter = pointGetterMap.at(duty.getSize());
-  const isNightDuty = duty.index > 0;
-
-  return (pointGetter?.(duty.day, firstMonday) ?? 0) * (isNightDuty ? 1 : 3);
-}
+import { ExtraDuty } from "../structs";
 
 export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDutyTableV2> {
   private _pontuation: number | null;
@@ -39,6 +12,26 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
     super(config);
 
     this._pontuation = null;
+  }
+
+  *iterDuties(): Iterable<ExtraDuty> {
+    for (const day of this) {
+      for (const duty of day) {
+        yield duty;
+      }
+    }
+  }
+
+  everyDutyHasMinQuatity() {
+    return !this.hasWorkerInsuficientDuty();
+  }
+
+  hasWorkerInsuficientDuty() {
+    for (const duty of this.iterDuties()) {
+      if (duty.isWorkerInsuficient()) return true;
+    }
+
+    return false;
   }
 
   /**
