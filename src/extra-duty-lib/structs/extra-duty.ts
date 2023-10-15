@@ -54,6 +54,10 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     return this.graduationQuantityMap[grad];
   }
 
+  graduateQuantity() {
+    return this.gradQuantity('insp') + this.gradQuantity('sub-insp');
+  }
+
   genderQuantity(gender: Gender) {
     return this.genderQuantityMap[gender];
   }
@@ -61,9 +65,21 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
   isDailyWorkerAtNight(worker: WorkerInfo) {
     return worker.daysOfWork.isDailyWorker && this.isNightly;
   }
+  
+  gradIsOnly(grad: Graduation) {
+    return !this.isEmpity() && this.gradQuantity(grad) === this.getSize();
+  }
+
+  genderIsOnly(gender: Gender) {
+    return !this.isEmpity() && this.genderQuantity(gender) === this.getSize();
+  }
 
   isWeekDay(weekDay: number) {
     return this.weekDay === weekDay;
+  }
+
+  isWorkerInsuficient() {
+    return this.getSize() < 2;
   }
 
   isDailyWorkerAtFridayAtNight(worker: WorkerInfo) {
@@ -123,6 +139,10 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
 
   isFull() {
     return this.getSize() >= this.config.dutyCapacity;
+  }
+
+  isEmpity() {
+    return this.getSize() === 0;
   }
 
   has(worker: WorkerInfo) {
