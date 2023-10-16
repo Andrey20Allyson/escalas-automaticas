@@ -45,6 +45,20 @@ export class TableIntegrity {
     return this.isFailureFree() && this.penalityIsAcceptable();
   }
 
+  isPerfect() {
+    return this.isFailureFree() && this.getWarningPenality() === 0;
+  }
+
+  isBetterThan(otherIntegrity: TableIntegrity) {
+    if (this.isFailureFree()) {
+      if (!otherIntegrity.isFailureFree()) return true;
+    } else {
+      if (otherIntegrity.isFailureFree()) return false;
+    }
+
+    return this.getWarningPenality() < otherIntegrity.getWarningPenality();
+  }
+
   private _registry<T extends IntegrityFailure | IntegrityWarning>(map: Map<string, T>, inconsistence: T) {
     let existentInconsistence = map.get(inconsistence.name);
 
