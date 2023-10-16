@@ -11,6 +11,8 @@ export class TableIntegrity {
   clear() {
     this.failures.clear();
     this.warnings.clear();
+
+    this._warningPenalityAcc = 0;
   }
 
   registry(inconsistence: IntegrityFailure | IntegrityWarning) {
