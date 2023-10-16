@@ -1,5 +1,5 @@
 import { ExtraDutyTableV2 } from "../v2";
-import { CorrectWorkerAllocationChecker, DutyMinQuantityChecker, FemaleOnlyChecker, GCMOnlyChecker, RuleChecker } from "./rules";
+import { RuleChecker } from "./rules";
 import { TableIntegrity } from "./table-integrity";
 
 export class TableIntegrityAnalyser {
@@ -25,14 +25,5 @@ export class TableIntegrityAnalyser {
 
   removeAllRules() {
     this.checkers = [];
-  }
-
-  static fromDefault() {
-    return new TableIntegrityAnalyser([
-      new GCMOnlyChecker(5000),
-      new FemaleOnlyChecker(),
-      new DutyMinQuantityChecker(),
-      new CorrectWorkerAllocationChecker(),
-    ]);
   }
 }

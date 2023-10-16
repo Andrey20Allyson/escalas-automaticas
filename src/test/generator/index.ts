@@ -1,11 +1,11 @@
 import { ExtraDutyTableV2 } from '../../extra-duty-lib';
 import { WorkerMocker } from './mock/worker';
 import { Benchmarker, analyseResult } from '../../utils';
-import { TableIntegrity, TableIntegrityAnalyser } from '../../extra-duty-lib/extra-duty-table/integrity';
+import { DefaultTableIntegrityAnalyser } from '../../extra-duty-lib/extra-duty-table/integrity';
 
 const workerMocker = new WorkerMocker();
 const beckmarker = new Benchmarker();
-const integrityAnalyser = TableIntegrityAnalyser.fromDefault();
+const integrityAnalyser = new DefaultTableIntegrityAnalyser();
 
 const year = 2023;
 const month = 10;
