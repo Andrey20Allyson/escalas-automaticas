@@ -1,17 +1,22 @@
 import clone from "clone";
-import { firstMondayFromYearAndMonth, iterRandom, iterWeekends, randomizeArray } from "../../utils";
-import { Clonable, WorkerInfo } from "../structs/worker-info";
-import { calculateDutyPontuation, isDailyWorker, isInsp, isMonday, isSubInsp, workerIsCompletelyBusy } from "./utils";
-import { ExtraDutyTable, ExtraDutyTableConfig } from "./v1";
+import { iterRandom, iterWeekends, randomizeArray } from "../../utils";
 import { ExtraDuty } from "../structs";
+import { Clonable, WorkerInfo } from "../structs/worker-info";
+import { DefaultTableIntegrityAnalyser, TableIntegrity, TableIntegrityAnalyser } from "./integrity";
+import { isDailyWorker, isInsp, isMonday, isSubInsp, workerIsCompletelyBusy } from "./utils";
+import { ExtraDutyTable, ExtraDutyTableConfig } from "./v1";
+
+export interface ExtraDutyTableV2Config extends ExtraDutyTableConfig {
+  readonly maxAcceptablePenalityAcc?: number;
+}
 
 export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDutyTableV2> {
-  private _pontuation: number | null;
+  integrity: TableIntegrity;
 
-  constructor(config?: Partial<ExtraDutyTableConfig>) {
+  constructor(config?: Partial<ExtraDutyTableV2Config>) {
     super(config);
 
-    this._pontuation = null;
+    this.integrity = new TableIntegrity(config?.maxAcceptablePenalityAcc ?? 100_000);
   }
 
   *iterDuties(): Iterable<ExtraDuty> {
@@ -34,112 +39,75 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
     return false;
   }
 
-  /**
-   * @throws If pontuation hasn't calculated yet
-   */
-  getPontuation() {
-    if (this._pontuation === null) throw new Error(`Pontuation hasn't calculated yet!`);
-
-    return this._pontuation;
-  }
-
   clear() {
-    this.resetPontuation()
+    this.integrity.clear();
 
     super.clear();
   }
 
   tryAssignArrayMultipleTimes(workers: WorkerInfo[], times: number): boolean {
-    let bestTable: ExtraDutyTableV2 | undefined;
-    const firstMonday = firstMondayFromYearAndMonth(this.config.year, this.config.month);
+    let bestClone = this._bestClone(workers, times);
+    if (!bestClone) return false;
 
-    for (let i = 0; i < times; i++) {
-      this.tryAssignArrayV2(workers);
+    this.copy(bestClone);
 
-      this.calculatePontuation(firstMonday);
-      const bestPontuation = bestTable?.getPontuation() ?? -Infinity;
+    return true;
+  }
 
-      if (this.getPontuation() >= 0) {
-        bestTable = this.clone();
-        this.clear();
+  copy(other: ExtraDutyTableV2) {
+    for (const otherDuty of other.iterDuties()) {
+      const duty = this
+        .getDay(otherDuty.day)
+        .getDuty(otherDuty.index);
 
-        break;
-      }
-
-      if (this.getPontuation() > bestPontuation) {
-        bestTable = this.clone();
-      }
-
-      this.clear();
+      duty.workers = otherDuty.workers;
     }
 
-    if (!bestTable) return false;
+    this.integrity = other.integrity;
 
-    for (const day of bestTable) {
-      const thisDay = this.getDay(day.day);
+    return this;
+  }
 
-      for (const bestDuty of day) {
-        const thisDuty = thisDay.getDuty(bestDuty.index);
+  private _bestClone(workers: WorkerInfo[], limit: number): ExtraDutyTableV2 | null {
+    const analyser = new DefaultTableIntegrityAnalyser();
 
-        thisDuty.workers = bestDuty.workers;
+    let table = this.clone();
+    let bestClone: ExtraDutyTableV2 | null = null;
+
+    for (let i = 0; i < limit; i++) {
+      table.clear();
+      table.tryAssignArrayV2(workers);
+      table.analyse(analyser);
+
+      if (table.integrity.isPerfect()) {
+        return table;
+      }
+
+      if (table.isBetterThan(bestClone)) {
+        bestClone = table.clone();
       }
     }
 
-    return bestTable.getPontuation() >= 0;
+    return bestClone;
+  }
+
+  isBetterThan(otherTable: ExtraDutyTableV2 | null): boolean {
+    return otherTable === null || this.integrity.isBetterThan(otherTable.integrity);
+  }
+
+  empityClone(): ExtraDutyTableV2 {
+    const clone = this.clone();
+    clone.clear();
+
+    return clone;
+  }
+
+  analyse(analyser: TableIntegrityAnalyser = new DefaultTableIntegrityAnalyser()): TableIntegrity {
+    return analyser.analyse(this, this.integrity);
   }
 
   clone(): ExtraDutyTableV2 {
     return clone(this);
-  }
-
-  calculatePontuation(firstMonday: number) {
-    let points = 0;
-    const workerSet = new Set<WorkerInfo>()
-    let numOfGraduatePair = 0;
-    let allDutiesHasGraduate = true;
-
-    for (const day of this) {
-      for (const duty of day) {
-        let haveGraduate = false;
-        let numOfGraduate = 0;
-
-        for (const [_, worker] of duty.workers) {
-          workerSet.add(worker);
-
-          if (worker.graduation === 'sub-insp' || worker.graduation === 'insp') {
-            haveGraduate = true;
-            numOfGraduate++;
-          }
-        }
-
-        if (!haveGraduate) allDutiesHasGraduate = false;
-
-        if (numOfGraduate >= 2) numOfGraduatePair++;
-
-        const isFemaleOnly = duty.getSize() > 0 && duty.genderQuantity('female') === duty.getSize();
-        if (isFemaleOnly) {
-          points -= 50000;
-        }
-
-        points += calculateDutyPontuation(duty, firstMonday);
-      }
-    }
-
-    if (!allDutiesHasGraduate) {
-      points -= numOfGraduatePair * 5000;
-    }
-
-    for (const worker of workerSet) {
-      if (!worker.isCompletelyBusy() && worker.daysOfWork.getNumOfDaysOff() > 0) {
-        points += -100 * 1.4 * worker.positionsLeft ** 2;
-      }
-    }
-
-    this._pontuation = points;
-  }
-
-  resetPontuation() {
-    this._pontuation = null;
   }
 
   tryAssignArrayV2(workers: WorkerInfo[]) {
@@ -164,7 +132,6 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
 
   private _assignArray(workers: WorkerInfo[], min: number, max: number, excludeMondays = false) {
     const oldDutyCapacity = this.config.dutyCapacity;
-    this.resetPontuation();
 
     for (let capacity = min; capacity <= max; capacity++) {
       this.config.dutyCapacity = capacity;
@@ -198,8 +165,6 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
 
     this.config.dutyMinDistance = 1;
     this.config.dutyCapacity = 3;
-
-    this.resetPontuation();
 
     const weekends = iterRandom(iterWeekends(this.firstMonday));
 
