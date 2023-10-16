@@ -1,7 +1,7 @@
 import { ExtraDutyTableV2 } from '../../extra-duty-lib';
-import { WorkerMocker } from './mock/worker';
+import { DefaultTableIntegrityAnalyser, TableIntegrity } from '../../extra-duty-lib/extra-duty-table/integrity';
 import { Benchmarker, analyseResult } from '../../utils';
-import { DefaultTableIntegrityAnalyser } from '../../extra-duty-lib/extra-duty-table/integrity';
+import { WorkerMocker } from './mock/worker';
 
 const workerMocker = new WorkerMocker();
 const beckmarker = new Benchmarker();
