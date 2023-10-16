@@ -99,7 +99,7 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
   }
 
   canWorkOnExtra() {
-    return !this.isCompletelyBusy() || this.daysOfWork.getNumOfDaysOff() > 0;
+    return !this.isCompletelyBusy() && this.daysOfWork.getNumOfDaysOff() > 0;
   }
 
   isGraduate() {
