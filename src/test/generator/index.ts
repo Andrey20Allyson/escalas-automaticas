@@ -34,4 +34,4 @@ const benchmarkString = beckmarker.getMessage();
 console.log(benchmarkString);
 
 console.log(integrity);
-console.log(`está integro: ${integrity.isCompliant()}`);
+console.log(`pode ser utilizado: ${integrity.isCompliant()}`);
