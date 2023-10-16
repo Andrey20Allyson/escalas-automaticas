@@ -94,6 +94,18 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
     return this.positionsLeft - positions < 0;
   }
 
+  cantWorkOnExtra() {
+    return !this.canWorkOnExtra();
+  }
+
+  canWorkOnExtra() {
+    return !this.isCompletelyBusy() || this.daysOfWork.getNumOfDaysOff() > 0;
+  }
+
+  isGraduate() {
+    return this.graduation === 'insp' || this.graduation === 'sub-insp';
+  }
+
   clone() {
     const { daysOfWork, grad, individualRegistry, name, post, postWorkerID, workTime, workerID, startPositionsLeft, gender } = this.config;
 

@@ -1,36 +1,9 @@
 import clone from "clone";
-import { firstMondayFromYearAndMonth, iterRandom, randomizeArray, thisMonthWeekends } from "../../utils";
-import { ExtraDuty } from "../structs";
+import { firstMondayFromYearAndMonth, iterRandom, iterWeekends, randomizeArray } from "../../utils";
 import { Clonable, WorkerInfo } from "../structs/worker-info";
+import { calculateDutyPontuation, isDailyWorker, isInsp, isMonday, isSubInsp, workerIsCompletelyBusy } from "./utils";
 import { ExtraDutyTable, ExtraDutyTableConfig } from "./v1";
-
-export function workerIsCompletelyBusy(worker: WorkerInfo) {
-  return !worker.isCompletelyBusy();
-}
-
-export function isDailyWorker(worker: WorkerInfo) {
-  return worker.daysOfWork.isDailyWorker
-}
-
-type PointGetter = (day: number, firstMonday: number) => number;
-
-const isInsp = (worker: WorkerInfo) => worker.graduation === 'insp';
-const isSubInsp = (worker: WorkerInfo) => worker.graduation === 'sub-insp';
-const pointGetterMap: PointGetter[] = [
-  (day, firstMonday) => -(isMonday(day, firstMonday) ? 50 : 500),
-  () => -1000,
-];
-
-function isMonday(day: number, firstMonday: number): boolean {
-  return day % 7 === firstMonday
-}
-
-function calculateDutyPontuation(duty: ExtraDuty, firstMonday: number): number {
-  const pointGetter = pointGetterMap.at(duty.getSize());
-  const isNightDuty = duty.index > 0;
-
-  return (pointGetter?.(duty.day, firstMonday) ?? 0) * (isNightDuty ? 1 : 3);
-}
+import { ExtraDuty } from "../structs";
 
 export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDutyTableV2> {
   private _pontuation: number | null;
@@ -39,6 +12,26 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
     super(config);
 
     this._pontuation = null;
+  }
+
+  *iterDuties(): Iterable<ExtraDuty> {
+    for (const day of this) {
+      for (const duty of day) {
+        yield duty;
+      }
+    }
+  }
+
+  everyDutyHasMinQuatity() {
+    return !this.hasWorkerInsuficientDuty();
+  }
+
+  hasWorkerInsuficientDuty() {
+    for (const duty of this.iterDuties()) {
+      if (duty.isWorkerInsuficient()) return true;
+    }
+
+    return false;
   }
 
   /**
@@ -123,7 +116,10 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
 
         if (numOfGraduate >= 2) numOfGraduatePair++;
 
-        points += duty.getSize() > 0 && duty.genderQuantity('female') === duty.getSize() ? -50000 : 0;
+        const isFemaleOnly = duty.getSize() > 0 && duty.genderQuantity('female') === duty.getSize();
+        if (isFemaleOnly) {
+          points -= 50000;
+        }
 
         points += calculateDutyPontuation(duty, firstMonday);
       }
@@ -170,8 +166,8 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
     const oldDutyCapacity = this.config.dutyCapacity;
     this.resetPontuation();
 
-    for (let i = min; i <= max; i++) {
-      this.config.dutyCapacity = i;
+    for (let capacity = min; capacity <= max; capacity++) {
+      this.config.dutyCapacity = capacity;
 
       for (const day of iterRandom(this)) {
         let filteredWorkers = workers.filter(workerIsCompletelyBusy);
@@ -198,10 +194,16 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
 
   private _assignOnAllWeekEnds(worker: WorkerInfo): boolean {
     const oldDutyMinDistance = this.config.dutyMinDistance;
+    const oldDutyCapacity = this.config.dutyCapacity;
+
     this.config.dutyMinDistance = 1;
+    this.config.dutyCapacity = 3;
+
     this.resetPontuation();
 
-    for (const weekend of iterRandom(thisMonthWeekends)) {
+    const weekends = iterRandom(iterWeekends(this.firstMonday));
+
+    for (const weekend of weekends) {
       if (weekend.saturday) {
         const day = this.getDay(weekend.saturday);
 
@@ -209,26 +211,31 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
       }
 
       if (weekend.sunday) {
-        const day = this.getDay(weekend.sunday);
-
-        day.fill(worker);
+        this
+          .getDay(weekend.sunday)
+          .insert(worker, 0);
       }
     }
 
     this.config.dutyMinDistance = oldDutyMinDistance;
+    this.config.dutyCapacity = oldDutyCapacity;
 
     return worker.isCompletelyBusy();
   }
 
   private _assignDailyWorkerArray(workers: WorkerInfo[]): boolean {
-    const workersSet = new Set(randomizeArray(workers.filter(isDailyWorker), true));
+    const dailyWorkers = randomizeArray(workers.filter(isDailyWorker), true);
 
-    for (const worker of workersSet) {
-      this._assignOnAllWeekEnds(worker);
+    let success = true;
 
-      if (worker.isCompletelyBusy()) workersSet.delete(worker);
+    for (const worker of dailyWorkers) {
+      let assignSuccess = this._assignOnAllWeekEnds(worker);
+
+      if (success && !assignSuccess) {
+        success = false;
+      }
     }
 
-    return workersSet.size === 0;
+    return success;
   }
 }
