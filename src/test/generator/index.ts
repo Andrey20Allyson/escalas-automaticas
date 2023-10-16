@@ -14,13 +14,9 @@ const table = new ExtraDutyTableV2({ month, year });
 
 const tableAssignBenchmark = beckmarker.start('talbe assign');
 
-table.tryAssignArrayMultipleTimes(workers, 100);
+table.tryAssignArrayMultipleTimes(workers, 400);
 
 tableAssignBenchmark.end();
-
-const tableAnalisysBenchmark = beckmarker.start('table analisys');
-
-tableAnalisysBenchmark.end();
 
 const analisysString = analyseResult(table);
 console.log(analisysString);

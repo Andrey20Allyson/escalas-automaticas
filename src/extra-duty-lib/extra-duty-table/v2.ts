@@ -69,15 +69,13 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
   }
 
   private _bestClone(workers: WorkerInfo[], limit: number): ExtraDutyTableV2 | null {
-    const analyser = new DefaultTableIntegrityAnalyser();
-
     let table = this.clone();
     let bestClone: ExtraDutyTableV2 | null = null;
 
     for (let i = 0; i < limit; i++) {
       table.clear();
       table.tryAssignArrayV2(workers);
-      table.analyse(analyser);
+      table.analyse();
 
       if (table.integrity.isPerfect()) {
         return table;
