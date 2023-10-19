@@ -4,7 +4,7 @@ import { GCMOnlyChecker, FemaleOnlyChecker, DutyMinQuantityChecker, CorrectWorke
 export class DefaultTableIntegrityAnalyser extends TableIntegrityAnalyser {
   constructor() {
     super([
-      new GCMOnlyChecker(5000),
+      new GCMOnlyChecker(75),
       new FemaleOnlyChecker(),
       new DutyMinQuantityChecker(),
       new CorrectWorkerAllocationChecker(),
