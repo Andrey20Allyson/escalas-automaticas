@@ -4,6 +4,8 @@ import { ExtraDutyTableV2, Holidays, WorkerRegistriesMap } from '../../extra-dut
 import { Benchmarker, Result, analyseResult } from '../../utils';
 import { argvCompiler } from '../../utils/cli';
 import { WorkerMocker } from './mock/worker';
+import { MainTableFactory } from '../../auto-schedule/table-factories';
+import path from 'path';
 
 function mockWorkers(year: number, month: number) {
   const workerMocker = new WorkerMocker();
@@ -33,17 +35,19 @@ export type WorkersLoadMode = 'mock' | 'input-file';
 export interface TestExecOptions {
   mode?: WorkersLoadMode;
   inputFile?: string;
+  outputFile?: string;
 }
 
-async function exec(options: TestExecOptions = {}) {  
+async function exec(options: TestExecOptions = {}) {
   const {
     mode = options.inputFile !== undefined ? 'input-file' : 'mock',
     inputFile = 'input/data.xlsx',
+    outputFile,
   } = options;
-  
+
   const beckmarker = new Benchmarker();
   const year = 2023;
-  const month = 10;
+  const month = 9;
 
   const workers = mode === 'mock'
     ? mockWorkers(year, month)
@@ -53,7 +57,7 @@ async function exec(options: TestExecOptions = {}) {
 
   const tableAssignBenchmark = beckmarker.start('talbe assign');
 
-  table.tryAssignArrayMultipleTimes(workers, 400);
+  table.tryAssignArrayMultipleTimes(workers, 7000);
 
   tableAssignBenchmark.end();
 
@@ -65,11 +69,41 @@ async function exec(options: TestExecOptions = {}) {
 
   console.log(table.integrity);
   console.log(`pode ser utilizado: ${table.integrity.isCompliant()}`);
+
+  if (outputFile) {
+    const pattern = await fs.readFile('input/output-pattern.xlsx');
+
+    const factory = new MainTableFactory(pattern);
+
+    const outBuffer = await factory.generate(table, { sheetName: 'DADOS' });
+
+    const outputFileWithExt = path.extname(outputFile) === 'xlsx'
+      ? outputFile
+      : outputFile + '.xlsx';
+
+    fs.writeFile(path.resolve(outputFileWithExt), outBuffer);
+  }
 }
 
-const cliController = argvCompiler.compile();
+async function runCli() {
+  const cliController = argvCompiler.compile();
 
-exec({
-  mode: cliController.optionalFlag('mode', 'M')?.asEnum(['mock', 'input-file']),
-  inputFile: cliController.optionalFlag('input', 'I')?.asString(),
-});
+  if (cliController.hasFlag('help', 'h')) {
+    console.log(
+      'flags:\n' +
+      '  --mode <"mock" | "input-file"> : select the execution mode (aliases to -m)\n' +
+      '  --input <string> : the input file path (aliases to -i)\n' +
+      '  --output <string> : the output file path (aliases to -o)'
+    );
+
+    return;
+  }
+
+  exec({
+    mode: cliController.optionalFlag('mode', 'm')?.asEnum(['mock', 'input-file']),
+    inputFile: cliController.optionalFlag('input', 'i')?.asString(),
+    outputFile: cliController.optionalFlag('output', 'o')?.asString(),
+  });
+}
+
+runCli();
