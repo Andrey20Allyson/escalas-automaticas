@@ -111,7 +111,7 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
     this._assignDailyWorkerArray(workers);
     this._assignInspArray(workers);
     this._assignSubInspArray(workers);
-    this._assignArray(workers, 2, 2, true);
+    this._assignArray(workers, 1, 2, true);
     this._assignArray(workers, 2, 3);
   }
 
