@@ -36,12 +36,14 @@ export interface TestExecOptions {
   mode?: WorkersLoadMode;
   inputFile?: string;
   outputFile?: string;
+  tries?: number;
 }
 
 async function exec(options: TestExecOptions = {}) {
   const {
     mode = options.inputFile !== undefined ? 'input-file' : 'mock',
     inputFile = 'input/data.xlsx',
+    tries = 7000,
     outputFile,
   } = options;
 
@@ -57,7 +59,7 @@ async function exec(options: TestExecOptions = {}) {
 
   const tableAssignBenchmark = beckmarker.start('talbe assign');
 
-  table.tryAssignArrayMultipleTimes(workers, 7000);
+  table.tryAssignArrayMultipleTimes(workers, tries);
 
   tableAssignBenchmark.end();
 
@@ -77,7 +79,7 @@ async function exec(options: TestExecOptions = {}) {
 
     const outBuffer = await factory.generate(table, { sheetName: 'DADOS' });
 
-    const outputFileWithExt = path.extname(outputFile) === 'xlsx'
+    const outputFileWithExt = path.extname(outputFile) === '.xlsx'
       ? outputFile
       : outputFile + '.xlsx';
 
@@ -93,7 +95,8 @@ async function runCli() {
       'flags:\n' +
       '  --mode <"mock" | "input-file"> : select the execution mode (aliases to -m)\n' +
       '  --input <string> : the input file path (aliases to -i)\n' +
-      '  --output <string> : the output file path (aliases to -o)'
+      '  --output <string> : the output file path (aliases to -o)\n' +
+      '  --tries <number> : the number of times that the program will try generate the table (aliases to -t)'
     );
 
     return;
@@ -103,6 +106,7 @@ async function runCli() {
     mode: cliController.optionalFlag('mode', 'm')?.asEnum(['mock', 'input-file']),
     inputFile: cliController.optionalFlag('input', 'i')?.asString(),
     outputFile: cliController.optionalFlag('output', 'o')?.asString(),
+    tries: cliController.optionalFlag('tries', 't')?.asNumber(),
   });
 }
 
