@@ -50,6 +50,28 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     };
   }
 
+  copy(other: ExtraDuty): this {
+    for (const _key in this.graduationQuantityMap) {
+      const key = _key as keyof GraduationQuantityMap;
+
+      this.graduationQuantityMap[key] = other.graduationQuantityMap[key];
+    }
+
+    for (const _key in this.genderQuantityMap) {
+      const key = _key as keyof GenderQuantityMap;
+
+      this.genderQuantityMap[key] = other.genderQuantityMap[key];
+    }
+
+    this.workers.clear();
+
+    for (const [_, worker] of other) {
+      this.workers.set(this.keyFrom(worker), worker);
+    }
+
+    return this;
+  }
+
   gradQuantity(grad: Graduation) {
     return this.graduationQuantityMap[grad];
   }

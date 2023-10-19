@@ -56,11 +56,10 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
 
   copy(other: ExtraDutyTableV2) {
     for (const otherDuty of other.iterDuties()) {
-      const duty = this
+      this
         .getDay(otherDuty.day)
-        .getDuty(otherDuty.index);
-
-      duty.workers = otherDuty.workers;
+        .getDuty(otherDuty.index)
+        .copy(otherDuty);
     }
 
     this.integrity = other.integrity;
