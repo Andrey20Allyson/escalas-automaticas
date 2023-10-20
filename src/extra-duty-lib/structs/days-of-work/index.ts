@@ -1,7 +1,7 @@
 import { enumerate, firstMondayFromYearAndMonth, getNumOfDaysInMonth, isBusinessDay } from "../../../utils";
 import { Holidays } from "../holidays";
 import { Clonable } from "../worker-info";
-import { LicenseInterval } from "./licence-interval";
+import { LicenseInterval } from "./license-interval";
 
 export class DaySearch {
   constructor(
@@ -91,8 +91,8 @@ export class DaysOfWork implements Clonable<DaysOfWork> {
     }
   }
 
-  applyLicenceInterval(licenceInterval: LicenseInterval) {
-    for (const day of licenceInterval.iterDaysInMonth(this.year, this.month)) {
+  applyLicenseInterval(licenseInterval: LicenseInterval) {
+    for (const day of licenseInterval.iterDaysInMonth(this.year, this.month)) {
       this.work(day);
     }
   }

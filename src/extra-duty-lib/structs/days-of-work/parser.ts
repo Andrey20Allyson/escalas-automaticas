@@ -1,5 +1,5 @@
 import { DaysOfWork } from ".";
-import { DEFAULT_LICENSE_INTERVAL_PARSER, LicenseIntervalParser } from "./licence-interval";
+import { DEFAULT_LICENSE_INTERVAL_PARSER, LicenseIntervalParser } from "./license-interval";
 
 export interface DaysOfWorkParseData {
   name?: string;
@@ -43,7 +43,7 @@ export class DaysOfWorkParser implements IDaysOfWorkParser {
 
     const licenceInterval = this.licenceIntervalParser.parse(post)
     if (licenceInterval !== null) {
-      daysOfWork.applyLicenceInterval(licenceInterval);
+      daysOfWork.applyLicenseInterval(licenceInterval);
     }
 
     return daysOfWork;
