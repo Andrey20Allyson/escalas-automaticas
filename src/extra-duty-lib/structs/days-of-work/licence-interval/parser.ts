@@ -1,29 +1,29 @@
 import { LicenseInterval } from ".";
 import { DEFAULT_DAY_PARSER, DayParser } from "../../day/parser";
 
-export const DEFAULT_MEDICAL_LICENCE_REGEXP = /LICENÇA MÉDICA \((DE (\d{2}\/\d{2}\/\d{2}) )?ATÉ (\d{2}\/\d{2}\/\d{2})\)/;
-export const DEFAULT_PREMIUM_LICENCE_REGEXP = /LICENÇA PRÊMIO \((DE (\d{2}\/\d{2}\/\d{2}) )?ATÉ (\d{2}\/\d{2}\/\d{2})\)/;
+export const DEFAULT_MEDICAL_LICENSE_REGEXP = /LICENÇA MÉDICA \((DE (\d{2}\/\d{2}\/\d{2}) )?ATÉ (\d{2}\/\d{2}\/\d{2})\)/;
+export const DEFAULT_PREMIUM_LICENSE_REGEXP = /LICENÇA PRÊMIO \((DE (\d{2}\/\d{2}\/\d{2}) )?ATÉ (\d{2}\/\d{2}\/\d{2})\)/;
 
-export interface LicenceIntervalParserConfig {
+export interface LicenseIntervalParserConfig {
   dayParser?: DayParser;
-  medicalLicenceRegExp?: RegExp;
-  premiumLicenceRegExp?: RegExp;
+  medicalLicenseRegExp?: RegExp;
+  premiumLicenseRegExp?: RegExp;
 }
 
-export class LicenceIntervalParser {
+export class LicenseIntervalParser {
   readonly dayParser: DayParser;
-  readonly medicalLicenceRegExp: RegExp;
-  readonly premiumLicenceRegExp: RegExp;
+  readonly medicalLicenseRegExp: RegExp;
+  readonly premiumLicenseRegExp: RegExp;
   
-  constructor(config: LicenceIntervalParserConfig = {}) {
+  constructor(config: LicenseIntervalParserConfig = {}) {
     this.dayParser = config.dayParser ?? DEFAULT_DAY_PARSER;
-    this.medicalLicenceRegExp = config.medicalLicenceRegExp ?? DEFAULT_MEDICAL_LICENCE_REGEXP;
-    this.premiumLicenceRegExp = config.premiumLicenceRegExp ?? DEFAULT_PREMIUM_LICENCE_REGEXP;
+    this.medicalLicenseRegExp = config.medicalLicenseRegExp ?? DEFAULT_MEDICAL_LICENSE_REGEXP;
+    this.premiumLicenseRegExp = config.premiumLicenseRegExp ?? DEFAULT_PREMIUM_LICENSE_REGEXP;
   }
 
   parse(data: string) {
-    const matches = this.medicalLicenceRegExp.exec(data)
-      ?? this.premiumLicenceRegExp.exec(data);
+    const matches = this.medicalLicenseRegExp.exec(data)
+      ?? this.premiumLicenseRegExp.exec(data);
 
     if (!matches) return null;
 
@@ -38,4 +38,4 @@ export class LicenceIntervalParser {
   }
 }
 
-export const DEFAULT_LICENCE_INTERVAL_PARSER = new LicenceIntervalParser();
+export const DEFAULT_LICENSE_INTERVAL_PARSER = new LicenseIntervalParser();
