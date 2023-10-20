@@ -6,6 +6,7 @@ import { argvCompiler } from '../../utils/cli';
 import { WorkerMocker } from './mock/worker';
 import { MainTableFactory } from '../../auto-schedule/table-factories';
 import path from 'path';
+import { DEFAULT_MONTH_PARSER, Month } from '../../extra-duty-lib/structs/month';
 
 function mockWorkers(year: number, month: number) {
   const workerMocker = new WorkerMocker();
@@ -37,6 +38,7 @@ export interface TestExecOptions {
   inputFile?: string;
   outputFile?: string;
   tries?: number;
+  month?: Month;
 }
 
 async function exec(options: TestExecOptions = {}) {
@@ -45,17 +47,19 @@ async function exec(options: TestExecOptions = {}) {
     inputFile = 'input/data.xlsx',
     tries = 7000,
     outputFile,
+    month = Month.now(),
   } = options;
 
   const beckmarker = new Benchmarker();
-  const year = 2023;
-  const month = 9;
 
   const workers = mode === 'mock'
-    ? mockWorkers(year, month)
-    : await loadWorkers(year, month, inputFile);
+    ? mockWorkers(month.year, month.index)
+    : await loadWorkers(month.year, month.index, inputFile);
 
-  const table = new ExtraDutyTableV2({ month, year });
+  const table = new ExtraDutyTableV2({
+    year: month.year,
+    month: month.index,
+  });
 
   const tableAssignBenchmark = beckmarker.start('talbe assign');
 
@@ -96,17 +100,22 @@ async function runCli() {
       '  --mode <"mock" | "input-file"> : select the execution mode (aliases to -m)\n' +
       '  --input <string> : the input file path (aliases to -i)\n' +
       '  --output <string> : the output file path (aliases to -o)\n' +
-      '  --tries <number> : the number of times that the program will try generate the table (aliases to -t)'
+      '  --tries <number> : the number of times that the program will try generate the table (aliases to -t)\n' +
+      '  --date <mm/yy> : the month of extra duty table (aliases to -d)'
     );
 
     return;
   }
+
+  const rawDate = cliController.optionalFlag('date', 'd')?.asString();
+  const month = rawDate ? DEFAULT_MONTH_PARSER.parse(rawDate) : undefined;
 
   exec({
     mode: cliController.optionalFlag('mode', 'm')?.asEnum(['mock', 'input-file']),
     inputFile: cliController.optionalFlag('input', 'i')?.asString(),
     outputFile: cliController.optionalFlag('output', 'o')?.asString(),
     tries: cliController.optionalFlag('tries', 't')?.asNumber(),
+    month,
   });
 }
 
