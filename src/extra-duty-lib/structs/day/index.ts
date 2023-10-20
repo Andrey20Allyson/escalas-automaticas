@@ -33,7 +33,7 @@ export class Day {
   }
 
   static isValidIndex(year: number, month: number, day: number) {
-    return isInteger(day) && day > 0 && day <= Day.lastOf(year, month); 
+    return isInteger(day) && day >= 0 && day <= Day.lastOf(year, month); 
   }
 }
 
