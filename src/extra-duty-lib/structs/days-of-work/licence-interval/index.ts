@@ -6,6 +6,15 @@ export class LicenseInterval {
     readonly end: Day,
   ) { }
 
+  *iterDaysInMonth(year: number, month: number): Iterable<number> {
+    const first = this.getFirstDayInMonth(year, month);
+    const last = this.getLastDayInMonth(year, month);
+
+    for (let i = first; i <= last; i++) {
+      yield i;
+    }
+  }
+
   getFirstDayInMonth(year: number, month: number): number {
     if (this.start === null) return 0;
 

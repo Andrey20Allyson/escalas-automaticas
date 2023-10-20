@@ -1,7 +1,7 @@
 import { DaysOfWork } from ".";
-import { DEFAULT_LICENCE_INTERVAL_PARSER, LicenceIntervalParser } from "./licence-interval";
+import { DEFAULT_LICENSE_INTERVAL_PARSER, LicenseIntervalParser } from "./licence-interval";
 
-export interface DayOfWorkParseData {
+export interface DaysOfWorkParseData {
   name?: string;
   hourly: string;
   post: string;
@@ -13,62 +13,63 @@ export const DEFAULT_DAYS_OF_WORK_REGEXP = /\(DIAS:[^\d]*([^]*)\)/;
 
 export interface DaysOfWorkParserConfig {
   daysOfWorkRegExp?: RegExp;
-  licenceIntervalParser?: LicenceIntervalParser;
+  licenceIntervalParser?: LicenseIntervalParser;
 }
 
-export class DaysOfWorkParser {
-  readonly licenceIntervalParser: LicenceIntervalParser;
+export interface IDaysOfWorkParser {
+  parse(data: DaysOfWorkParseData): DaysOfWork;
+}
+
+export class DaysOfWorkParser implements IDaysOfWorkParser {
+  readonly licenceIntervalParser: LicenseIntervalParser;
   readonly daysOfWorkRegExp: RegExp;
 
   constructor(config: DaysOfWorkParserConfig = {}) {
-    this.licenceIntervalParser = config.licenceIntervalParser ?? DEFAULT_LICENCE_INTERVAL_PARSER;
+    this.licenceIntervalParser = config.licenceIntervalParser ?? DEFAULT_LICENSE_INTERVAL_PARSER;
     this.daysOfWorkRegExp = config.daysOfWorkRegExp ?? DEFAULT_DAYS_OF_WORK_REGEXP;
   }
 
-  parse(data: DayOfWorkParseData): DaysOfWork {
+  parse(data: DaysOfWorkParseData): DaysOfWork {
     const {
-      name = 'unknown',
       hourly,
       month,
       post,
       year,
     } = data;
 
-    const daysOfWork = hourly.includes('2ª/6ª')
+    const daysOfWork = this.isDailyWorker(hourly)
       ? DaysOfWork.fromDailyWorker(year, month)
-      : this.parsePeriodic(hourly, year, month);
+      : this.parsePeriodic(data);
 
-    if (!daysOfWork) throw new Error(`Can't parse daysOfWork of "${name}", unknown hourly: "${hourly}"`);
-
-    for (const medicalDischargeDay of this.iterDaysUnableToWorkOnExtra(post, year, month)) {
-      daysOfWork.work(medicalDischargeDay);
+    const licenceInterval = this.licenceIntervalParser.parse(post) 
+    if (licenceInterval !== null) {
+      daysOfWork.applyLicenceInterval(licenceInterval);
     }
 
     return daysOfWork;
   }
 
-  parsePeriodic(hourly: string, year: number, month: number): DaysOfWork | undefined {
+  isDailyWorker(hourly: string) {
+    return hourly.includes('2ª/6ª');
+  }
+
+  parsePeriodic(data: DaysOfWorkParseData): DaysOfWork {
+    const {
+      name = 'unknown',
+      hourly,
+      year,
+      month,
+    } = data;
+
     const matches = this.daysOfWorkRegExp.exec(hourly);
-    if (!matches) return;
+    if (!matches) throw new Error(`Can't parse daysOfWork of "${name}", unknown hourly: "${hourly}"`);
 
     const numbersString = matches.at(1);
-    if (!numbersString) return;
+    if (!numbersString) throw new Error(`Can't parse daysOfWork of "${name}", unknown hourly: "${hourly}"`);
 
     const days = numbersString.split(';').map(val => Number(val) - 1);
 
     return DaysOfWork.fromDays(days, year, month);
-  }
-
-  *iterDaysUnableToWorkOnExtra(post: string, year: number, month: number): Iterable<number> {
-    const licenceInterval = this.licenceIntervalParser.parse(post);
-    if (licenceInterval === null) return;
-
-    const first = licenceInterval.getFirstDayInMonth(year, month);
-    const last = licenceInterval.getLastDayInMonth(year, month);
-
-    for (let i = first; i <= last; i++) {
-      yield i;
-    }
   }
 }
 
