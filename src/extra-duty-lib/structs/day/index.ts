@@ -1,11 +1,24 @@
-import { getNumOfDaysInMonth } from "../../../utils";
+import { getNumOfDaysInMonth, isInteger } from "../../../utils";
+import { Month } from "../month";
 
 export class Day {
+  readonly year: number;
+  readonly month: number;
+
   constructor(
-    readonly year: number,
-    readonly month: number,
+    year: number,
+    month: number,
     readonly index: number,
-  ) { }
+  ) {
+    const validMonth = new Month(year, month);
+
+    this.year = validMonth.year;
+    this.month = validMonth.index;
+
+    if (!Day.isValidIndex(this.year, this.month, this.index)) {
+      throw new Error(`value ${this.index} don't is a valid day of month ${validMonth.toString()}`);
+    }
+  }
 
   static fromLastOf(year: number, month: number): Day {
     return new Day(
@@ -17,6 +30,10 @@ export class Day {
 
   static lastOf(year: number, month: number): number {
     return getNumOfDaysInMonth(month, year);
+  }
+
+  static isValidIndex(year: number, month: number, day: number) {
+    return isInteger(day) && day > 0 && day <= Day.lastOf(year, month); 
   }
 }
 

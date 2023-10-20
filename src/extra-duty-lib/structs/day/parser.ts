@@ -1,7 +1,17 @@
 import { Day } from ".";
-import { Year } from "../year";
+import { DEFAULT_MONTH_PARSER, MonthParser } from "../month";
+
+export interface DayParserConfig {
+  monthParser?: MonthParser;
+}
 
 export class DayParser {
+  readonly monthParser: MonthParser;
+
+  constructor(config: DayParserConfig = {}) {
+    this.monthParser = config.monthParser ?? DEFAULT_MONTH_PARSER;
+  }
+
   parse(text: string): Day {
     const numbers = text.split('/');
     if (numbers.length !== 3) {
@@ -14,9 +24,7 @@ export class DayParser {
       throw new Error(`Expected numbers, recived ${text}`);
     }
 
-    const normalizedYear = Year.normalize(year);
-
-    return new Day(normalizedYear, month - 1, day - 1);
+    return new Day(year, month - 1, day - 1);
   }
 }
 

@@ -26,9 +26,7 @@ export class MonthParser {
       throw new Error(`Expected numbers, recived ${data}`);
     }
 
-    const normalizedYear = Year.normalize(year);
-
-    return new Month(normalizedYear, month - 1);
+    return new Month(year, month - 1);
   }
 }
 
