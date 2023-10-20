@@ -1,4 +1,4 @@
-import { isInteger } from '../../../utils';
+import { getNumOfDaysInMonth, isInteger, thisMonth, thisYear } from '../../../utils';
 import { Year } from '../year';
 
 export class Month {
@@ -15,12 +15,20 @@ export class Month {
     }
   }
 
+  numOfDays(): number {
+    return getNumOfDaysInMonth(this.index, this.year);
+  }
+
   toString() {
     return `${this.index + 1}/${this.year}`;
   }
 
   static isValidIndex(month: number) {
     return month >= 0 && month < 12 && isInteger(month);
+  }
+
+  static now(): Month {
+    return new Month(thisYear, thisMonth);
   }
 }
 

@@ -1,4 +1,4 @@
-import { getNumOfDaysInMonth, isInteger } from "../../../utils";
+import { getNumOfDaysInMonth, isInteger, thisMonth, thisYear } from "../../../utils";
 import { Month } from "../month";
 
 export class Day {
@@ -34,6 +34,14 @@ export class Day {
 
   static isValidIndex(year: number, month: number, day: number) {
     return isInteger(day) && day >= 0 && day <= Day.lastOf(year, month); 
+  }
+
+  static now(): Day {
+    return new Day(
+      thisYear,
+      thisMonth,
+      new Date().getDate(),
+    );
   }
 }
 

@@ -1,4 +1,4 @@
-import { isInteger } from "../../../utils";
+import { isInteger, thisYear } from "../../../utils";
 
 export class Year {
   readonly index: number;
@@ -19,5 +19,9 @@ export class Year {
 
   static normalize(year: number): number {
     return year < 1000 ? year + 2000 : year;
+  }
+
+  static now(): Year {
+    return new Year(thisYear);
   }
 }
