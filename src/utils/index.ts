@@ -10,3 +10,4 @@ export * from './string';
 export * from './text';
 export * from './week-days';
 export * from './year';
+export * from './cli';
