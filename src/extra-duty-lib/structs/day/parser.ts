@@ -1,4 +1,5 @@
 import { Day } from ".";
+import { Year } from "../year";
 
 export class DayParser {
   parse(text: string): Day {
@@ -13,13 +14,9 @@ export class DayParser {
       throw new Error(`Expected numbers, recived ${text}`);
     }
 
-    const normalizedYear = this.normalizeYear(year);
+    const normalizedYear = Year.normalize(year);
 
     return new Day(normalizedYear, month - 1, day - 1);
-  }
-
-  normalizeYear(year: number) {
-    return year < 1000 ? year + 2000 : year;
   }
 }
 
