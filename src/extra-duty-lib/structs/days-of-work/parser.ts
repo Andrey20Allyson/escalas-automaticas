@@ -9,8 +9,6 @@ export interface DaysOfWorkParseData {
   month: number;
 }
 
-export const DEFAULT_DAYS_OF_WORK_REGEXP = /\(DIAS:[^\d]*([^]*)\)/;
-
 export interface DaysOfWorkParserConfig {
   daysOfWorkRegExp?: RegExp;
   licenceIntervalParser?: LicenseIntervalParser;
@@ -19,6 +17,8 @@ export interface DaysOfWorkParserConfig {
 export interface IDaysOfWorkParser {
   parse(data: DaysOfWorkParseData): DaysOfWork;
 }
+
+export const DEFAULT_DAYS_OF_WORK_REGEXP = /\(DIAS:[^\d]*([^]*)\)/;
 
 export class DaysOfWorkParser implements IDaysOfWorkParser {
   readonly licenceIntervalParser: LicenseIntervalParser;
@@ -41,7 +41,7 @@ export class DaysOfWorkParser implements IDaysOfWorkParser {
       ? DaysOfWork.fromDailyWorker(year, month)
       : this.parsePeriodic(data);
 
-    const licenceInterval = this.licenceIntervalParser.parse(post) 
+    const licenceInterval = this.licenceIntervalParser.parse(post)
     if (licenceInterval !== null) {
       daysOfWork.applyLicenceInterval(licenceInterval);
     }
@@ -62,10 +62,14 @@ export class DaysOfWorkParser implements IDaysOfWorkParser {
     } = data;
 
     const matches = this.daysOfWorkRegExp.exec(hourly);
-    if (!matches) throw new Error(`Can't parse daysOfWork of "${name}", unknown hourly: "${hourly}"`);
+    if (!matches) {
+      throw new Error(`Hourly of "${name}" don't matches with format, expected "(DIAS: X;X;X;...;X)" but recived "${hourly}"`);
+    }
 
     const numbersString = matches.at(1);
-    if (!numbersString) throw new Error(`Can't parse daysOfWork of "${name}", unknown hourly: "${hourly}"`);
+    if (!numbersString) {
+      throw new Error(`Hourly of "${name}" don't matches with format, expected "(DIAS: X;X;X;...;X)" but recived "${hourly}"`);
+    }
 
     const days = numbersString.split(';').map(val => Number(val) - 1);
 
