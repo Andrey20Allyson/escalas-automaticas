@@ -3,6 +3,7 @@ import { ExtraDutyTableV2, Holidays, WorkerInfo, WorkerRegistriesMap } from "../
 import { Result, ResultError, ResultType } from "../utils";
 import { BookHandler, CellHandler, LineHander } from "../xlsx-handlers";
 import { ExcelTime } from "../xlsx-handlers/utils";
+import { DEFAULT_WORKER_INFO_PARSER } from '../extra-duty-lib/structs/worker-info/parser';
 
 export enum WorkerInfoCollumns {
   NAME = 'd',
@@ -61,7 +62,7 @@ export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: Scr
     if (ResultError.isError(workerData)) return workerData;
 
     try {
-      const worker = WorkerInfo.parse({
+      const worker = DEFAULT_WORKER_INFO_PARSER.parse({
         name: nameCell.value,
         hourly: hourlyCell.value,
         registration: registrationCell.value,

@@ -1,7 +1,6 @@
 import { enumerate, firstMondayFromYearAndMonth, getNumOfDaysInMonth, isBusinessDay } from "../../../utils";
 import { Holidays } from "../holidays";
 import { Clonable } from "../worker-info";
-import { DayOfWorkParseData, DaysOfWorkParser } from "./parser";
 
 export class DaySearch {
   constructor(
@@ -144,8 +143,6 @@ export class DaysOfWork implements Clonable<DaysOfWork> {
 
     return daysOfWork;
   }
-
-  static parse(data: DayOfWorkParseData): DaysOfWork {
-    return new DaysOfWorkParser(data).parse();
-  }
 }
+
+export * from './parser';

@@ -1,6 +1,5 @@
 import { DaysOfWork } from ".";
-import { parseNumberOrThrow } from "../../../utils";
-import { Day } from "../day";
+import { DEFAULT_LICENCE_INTERVAL_PARSER, LicenceIntervalParser } from "./licence-interval";
 
 export interface DayOfWorkParseData {
   name?: string;
@@ -10,43 +9,46 @@ export interface DayOfWorkParseData {
   month: number;
 }
 
-export interface LicenseInterval {
-  start: Day | null;
-  end: Day;
+export const DEFAULT_DAYS_OF_WORK_REGEXP = /\(DIAS:[^\d]*([^]*)\)/;
+
+export interface DaysOfWorkParserConfig {
+  daysOfWorkRegExp?: RegExp;
+  licenceIntervalParser?: LicenceIntervalParser;
 }
 
-export const DAYS_OF_WORK_REGEXP = /\(DIAS:[^\d]*([^]*)\)/;
-export const MEDICAL_LICENCE_REGEXP = /LICENÇA MÉDICA \((DE (\d{2}\/\d{2}\/\d{2}) )?ATÉ (\d{2}\/\d{2}\/\d{2})\)/;// /DISP\. MÉDICA DE (\d{2}) À (\d{2})/;
-export const PREMIUM_LICENCE_REGEXP = /LICENÇA PRÊMIO \((DE (\d{2}\/\d{2}\/\d{2}) )?ATÉ (\d{2}\/\d{2}\/\d{2})\)/;
-
 export class DaysOfWorkParser {
-  constructor(
-    readonly data: DayOfWorkParseData
-  ) { }
+  readonly licenceIntervalParser: LicenceIntervalParser;
+  readonly daysOfWorkRegExp: RegExp;
 
-  parse(): DaysOfWork {
+  constructor(config: DaysOfWorkParserConfig = {}) {
+    this.licenceIntervalParser = config.licenceIntervalParser ?? DEFAULT_LICENCE_INTERVAL_PARSER;
+    this.daysOfWorkRegExp = config.daysOfWorkRegExp ?? DEFAULT_DAYS_OF_WORK_REGEXP;
+  }
+
+  parse(data: DayOfWorkParseData): DaysOfWork {
     const {
       name = 'unknown',
       hourly,
       month,
+      post,
       year,
-    } = this.data;
+    } = data;
 
     const daysOfWork = hourly.includes('2ª/6ª')
       ? DaysOfWork.fromDailyWorker(year, month)
-      : this.parsePeriodic();
+      : this.parsePeriodic(hourly, year, month);
 
     if (!daysOfWork) throw new Error(`Can't parse daysOfWork of "${name}", unknown hourly: "${hourly}"`);
 
-    for (const medicalDischargeDay of this.iterDaysUnableToWorkOnExtra()) {
+    for (const medicalDischargeDay of this.iterDaysUnableToWorkOnExtra(post, year, month)) {
       daysOfWork.work(medicalDischargeDay);
     }
 
     return daysOfWork;
   }
 
-  parsePeriodic(): DaysOfWork | undefined {
-    const matches = DAYS_OF_WORK_REGEXP.exec(this.data.hourly);
+  parsePeriodic(hourly: string, year: number, month: number): DaysOfWork | undefined {
+    const matches = this.daysOfWorkRegExp.exec(hourly);
     if (!matches) return;
 
     const numbersString = matches.at(1);
@@ -54,37 +56,20 @@ export class DaysOfWorkParser {
 
     const days = numbersString.split(';').map(val => Number(val) - 1);
 
-    return DaysOfWork.fromDays(days, this.data.year, this.data.month);
+    return DaysOfWork.fromDays(days, year, month);
   }
 
-  *iterDaysUnableToWorkOnExtra(): Iterable<number> {
-    const matches = MEDICAL_LICENCE_REGEXP.exec(this.data.hourly);
-    if (!matches) return;
+  *iterDaysUnableToWorkOnExtra(post: string, year: number, month: number): Iterable<number> {
+    const licenceInterval = this.licenceIntervalParser.parse(post);
+    if (licenceInterval === null) return;
 
-    const [_, startDay, endDay] = matches as [string, string?, string?];
+    const first = licenceInterval.getFirstDayInMonth(year, month);
+    const last = licenceInterval.getLastDayInMonth(year, month);
 
-    const startDayNumber = parseNumberOrThrow(startDay) - 1;
-    const endDayNumber = parseNumberOrThrow(endDay) - 1;
-
-    for (let i = startDayNumber; i <= endDayNumber; i++) {
+    for (let i = first; i <= last; i++) {
       yield i;
-    }
-  }
-
-  parseLicenceInterval(): LicenseInterval | null {
-    const matches = MEDICAL_LICENCE_REGEXP.exec(this.data.post)
-      ?? PREMIUM_LICENCE_REGEXP.exec(this.data.post);
-
-    if (!matches) return null;
-
-    const rawStartDay = matches.at(2);
-    const rawEndDay = matches.at(3);
-    if (rawEndDay === undefined) throw new Error(`Can't find a license end day in '${this.data.post}', expected a 'ATÉ dd/mm/yy' or 'ATÉ dd/mm/yyyy'`);
-
-    return {
-      start: rawStartDay === undefined ? null : Day.parse(rawStartDay),
-      end: Day.parse(rawEndDay),
     }
   }
 }
 
+export const DEFAULT_DAYS_OF_WORK_PARSER = new DaysOfWorkParser();

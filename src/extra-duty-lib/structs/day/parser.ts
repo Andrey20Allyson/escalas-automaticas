@@ -1,20 +1,16 @@
 import { Day } from ".";
 
 export class DayParser {
-  constructor(
-    readonly text: string,
-  ) { }
-
-  parse(): Day {
-    const numbers = this.text.split('/');
+  parse(text: string): Day {
+    const numbers = text.split('/');
     if (numbers.length !== 3) {
-      throw new Error(`Invalid format, expected dd/mm/yy or dd/mm/yyyy recived ${this.text}`);
+      throw new Error(`Invalid format, expected dd/mm/yy or dd/mm/yyyy recived ${text}`);
     }
 
     const [day, month, year] = numbers.map(Number);
 
     if (isNaN(day) || isNaN(month) || isNaN(year)) {
-      throw new Error(`Expected numbers, recived ${this.text}`);
+      throw new Error(`Expected numbers, recived ${text}`);
     }
 
     const normalizedYear = this.normalizeYear(year);
@@ -26,3 +22,5 @@ export class DayParser {
     return year < 1000 ? year + 2000 : year;
   }
 }
+
+export const DEFAULT_DAY_PARSER = new DayParser();

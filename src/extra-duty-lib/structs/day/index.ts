@@ -1,4 +1,4 @@
-import { DayParser } from "./parser";
+import { getNumOfDaysInMonth } from "../../../utils";
 
 export class Day {
   constructor(
@@ -7,7 +7,17 @@ export class Day {
     readonly index: number,
   ) { }
 
-  static parse(text: string): Day {
-    return new DayParser(text).parse();
+  static fromLastOf(year: number, month: number): Day {
+    return new Day(
+      year,
+      month,
+      Day.lastOf(year, month),
+    );
+  }
+
+  static lastOf(year: number, month: number): number {
+    return getNumOfDaysInMonth(month, year);
   }
 }
+
+export * from './parser';

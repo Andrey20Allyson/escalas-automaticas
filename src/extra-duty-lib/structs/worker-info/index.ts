@@ -1,6 +1,6 @@
-import { DaysOfWork } from './days-of-work';
-import { WorkTime } from './work-time';
-import { getMonth, parseNumberOrThrow, thisMonthWeekends } from "../../utils";
+import { getMonth } from "../../../utils";
+import { DaysOfWork } from '../days-of-work';
+import { WorkTime } from '../work-time';
 
 export interface WorkerInfoConfig extends Worker {
   readonly post: string;
@@ -10,18 +10,6 @@ export interface WorkerInfoConfig extends Worker {
   readonly postWorkerID: number;
   readonly individualRegistry: number;
   startPositionsLeft?: number;
-}
-
-export interface WorkerParseData {
-  name: string;
-  post: string;
-  grad: string;
-  year: number;
-  month: number;
-  hourly: string;
-  gender?: string;
-  registration: string;
-  individualRegistry?: string;
 }
 
 export interface Worker {
@@ -130,32 +118,6 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
     return clone;
   }
 
-  static parse(data: WorkerParseData) {
-    if (['FÉRIAS', 'LIC. PRÊMIO', 'DISP. MÉDICA MÊS INTEIRO'].some(skipLabel => data.hourly.includes(skipLabel))) return;
-
-    const workTime = WorkTime.parse(data.hourly);
-    if (!workTime) throw new Error(`Can't parse workTime of "${data.name}"`);
-
-    const daysOfWork = DaysOfWork.parse(data);
-    
-    const splitedRegistration = data.registration.split('-');
-    if (splitedRegistration.length !== 2) throw new Error(`Can't parse registration "${data.registration}"`);
-
-    const [registration, postResistration] = splitedRegistration.map(parseNumberOrThrow);
-
-    return new WorkerInfo({
-      name: data.name,
-      postWorkerID: postResistration,
-      workerID: registration,
-      grad: data.grad,
-      post: data.post,
-      workTime,
-      daysOfWork,
-      gender: data.gender ?? 'U',
-      individualRegistry: data.individualRegistry !== undefined ? parseNumberOrThrow(data.individualRegistry.replace(/\.|\-/g, '')) : 0,
-    });
-  }
-
   private static _fakeCount = 0;
 
   static fakeFromName(name: string) {
@@ -205,3 +167,5 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
 function raise(error: unknown): never {
   throw error;
 }
+
+export * from './parser';
