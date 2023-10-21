@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import { ExtraDutyTableV2 } from '../extra-duty-table';
-import { WorkerInfo } from './worker-info';
+import { ExtraDutyTableV2 } from '../../extra-duty-lib/extra-duty-table';
+import { WorkerInfo } from '../../extra-duty-lib/structs/worker-info';
 
 test(`shold return true if worker's duty are colliding with interval`, () => {
   const table = new ExtraDutyTableV2({ dutyMinDistance: 20 });

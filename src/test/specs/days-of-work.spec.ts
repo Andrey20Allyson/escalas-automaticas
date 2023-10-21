@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { DaySearch, DaysOfWork } from '.';
+import { DaySearch, DaysOfWork } from '../../extra-duty-lib/structs/days-of-work';
 
 describe(DaysOfWork.name, () => {
   describe(DaysOfWork.prototype.searchClosestDayOff.name, () => {

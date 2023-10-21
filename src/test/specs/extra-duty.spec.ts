@@ -1,8 +1,8 @@
 import { test, expect, describe } from 'vitest';
-import { ExtraDuty } from './extra-duty';
-import { WorkerInfo } from './worker-info';
-import { DaysOfWork } from './days-of-work';
-import { WorkTime } from './work-time';
+import { ExtraDuty } from '../../extra-duty-lib/structs/extra-duty';
+import { WorkerInfo } from '../../extra-duty-lib/structs/worker-info';
+import { DaysOfWork } from '../../extra-duty-lib/structs/days-of-work';
+import { WorkTime } from '../../extra-duty-lib/structs/work-time';
 
 interface DutyMockConfig {
   day: number;
