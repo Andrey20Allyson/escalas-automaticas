@@ -1,11 +1,11 @@
 import fs from 'fs/promises';
-import { execute, generate, generateFromWorkers, io } from '.';
-import { parseTable, parseWorkers } from './auto-schedule/io';
-import { DivugationTableFactory } from './auto-schedule/table-factories';
-import { Holidays, WorkerRegistriesMap } from './extra-duty-lib';
-import { Benchmarker, Result, ResultError, analyseResult, getMonth, getYear } from './utils';
-import { BookHandler } from './xlsx-handlers/book';
-import { DayListTableFactory } from './auto-schedule/table-factories/day-list-factory';
+import { execute, generate, generateFromWorkers, io } from '../..';
+import { parseTable, parseWorkers } from '../../auto-schedule/io';
+import { DivugationTableFactory } from '../../auto-schedule/table-factories';
+import { Holidays, WorkerRegistriesMap } from '../../extra-duty-lib';
+import { Benchmarker, Result, ResultError, analyseResult, getMonth, getYear } from '../../utils';
+import { BookHandler } from '../../xlsx-handlers/book';
+import { DayListTableFactory } from '../../auto-schedule/table-factories/day-list-factory';
 
 io.setFileSystem(fs);
 
