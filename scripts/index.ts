@@ -1,5 +1,4 @@
 import { program } from 'commander';
-import { build } from './build';
 
 const buildCommand = program
   .command('build')
@@ -17,9 +16,11 @@ const buildCommand = program
     }
   }, true)
   .action(async () => {
-    const clearOption: boolean = buildCommand.getOptionValue('clear') ?? buildCommand.error('error');
+    const lib = await import('./actions/build');
 
-    build(clearOption);
+    const clearOption: boolean = buildCommand.getOptionValue('clear');
+
+    lib.build(clearOption);
   });
 
 program.parse();
