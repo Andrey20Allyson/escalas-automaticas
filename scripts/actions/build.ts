@@ -9,6 +9,7 @@ export async function build(execClear: boolean = true) {
 
   console.log('building \'dist/\'...');
   await asyncExec('npx tsc');
+  await asyncExec('npx tsc-alias');
 
   await remove('dist/test/');
 }
