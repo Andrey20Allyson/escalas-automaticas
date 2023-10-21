@@ -10,7 +10,7 @@
   },
   "scripts": {
     "test": "vitest",
-    "build": "tsc",
+    "build": "tsx scripts build",
     "build:scripts": "tsc -p scripts"
   },
   "keywords": [],
