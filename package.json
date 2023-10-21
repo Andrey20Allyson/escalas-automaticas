@@ -8,10 +8,6 @@
   "repository": {
     "url": "https://github.com/Andrey20Allyson/escalas-automaticas"
   },
-  "exports": {
-    ".": "./dist",
-    "./*": "./dist/*"
-  },
   "scripts": {
     "test": "vitest",
     "build": "tsx scripts build",
