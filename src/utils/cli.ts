@@ -254,4 +254,12 @@ export class DefaultArgvCompiler implements ArgvCompiler {
   }
 }
 
-export const argvCompiler: ArgvCompiler = new DefaultArgvCompiler(process.argv);
+function getProcess(): NodeJS.Process | null {
+  if (globalThis.process === undefined) {
+    return null;
+  }
+
+  return globalThis.process;
+}
+
+export const argvCompiler: ArgvCompiler = new DefaultArgvCompiler(getProcess()?.argv ?? []);
