@@ -22,27 +22,43 @@ export class DaySearch {
 export interface DayOfWork {
   day: number;
   work: boolean;
+  restriction: DayRestriction;
+}
+
+export enum DayRestriction {
+  NONE = 1,
+  ORDINARY_WORK,
+  LICENCE,
+}
+
+export interface DayRestrictionArray extends Iterable<DayRestriction>, RelativeIndexable<DayRestriction> {
+  readonly length: number;
+  values(): Iterable<DayRestriction>;
+  [k: number]: DayRestriction;
 }
 
 export class DaysOfWork implements Clonable<DaysOfWork> {
-  private readonly days: boolean[];
+  private readonly days: DayRestrictionArray;
   private numOfDaysOff: number;
 
   readonly length: number;
 
-  constructor(readonly year: number, readonly month: number, startValue = false, readonly isDailyWorker: boolean = false) {
-    this.days = new Array(getNumOfDaysInMonth(month, year)).fill(startValue);
+  constructor(readonly year: number, readonly month: number, startWorking = false, readonly isDailyWorker: boolean = false) {
+    const arrayLenth = getNumOfDaysInMonth(month, year);
+
+    this.days = new Uint8Array(arrayLenth)
+      .fill(startWorking ? DayRestriction.ORDINARY_WORK : DayRestriction.NONE);
 
     this.length = this.days.length;
 
-    this.numOfDaysOff = startValue ? 0 : this.length;
+    this.numOfDaysOff = startWorking ? 0 : this.length;
   }
 
   clone() {
     const clone = new DaysOfWork(this.year, this.month, false, this.isDailyWorker);
 
     for (let i = 0; i < this.days.length; i++) {
-      clone.setDayOfWork(i, this.workOn(i));
+      clone.set(i, this.get(i));
     }
 
     clone.numOfDaysOff = this.numOfDaysOff;
@@ -54,28 +70,49 @@ export class DaysOfWork implements Clonable<DaysOfWork> {
     return this.numOfDaysOff;
   }
 
-  work(day: number) {
-    this.setDayOfWork(day, true);
+  dayOff(day: number) {
+    this.set(day, DayRestriction.NONE);
   }
 
-  setDayOfWork(day: number, work: boolean) {
-    if (day < 0 || day >= this.length || this.days[day] === work) return;
+  work(day: number) {
+    this.set(day, DayRestriction.ORDINARY_WORK);
+  }
 
-    this.numOfDaysOff += work ? -1 : 1;
-    this.days[day] = work;
+  license(day: number) {
+    this.set(day, DayRestriction.LICENCE);
+  }
+
+  set(day: number, restriction: DayRestriction) {
+    if (day < 0 || day >= this.length || this.days[day] === restriction) return;
+
+    this.numOfDaysOff += restriction === DayRestriction.NONE ? 1 : -1;
+    this.days[day] = restriction;
   }
 
   switchDayOfWork(day: number) {
-    this.setDayOfWork(day, !this.workOn(day));
+    const currentRestriction = this.get(day);
+
+    let nextRestriction: DayRestriction;
+
+    switch (currentRestriction) {
+      case DayRestriction.NONE:
+        nextRestriction = DayRestriction.ORDINARY_WORK;
+      case DayRestriction.ORDINARY_WORK:
+        nextRestriction = DayRestriction.LICENCE;
+      case DayRestriction.LICENCE:
+        nextRestriction = DayRestriction.NONE;
+    }
+
+    this.set(day, nextRestriction);
   }
 
   *entries(): Iterable<DayOfWork> {
-    for (const [day, work] of enumerate(this.days)) {
-      yield { day, work };
+    for (const [day, restriction] of enumerate(this.days)) {
+      yield { day, work: restriction === DayRestriction.ORDINARY_WORK, restriction };
     }
   }
 
-  values(): Iterable<boolean> {
+  values(): Iterable<DayRestriction> {
     return this.days.values();
   }
 
@@ -93,7 +130,7 @@ export class DaysOfWork implements Clonable<DaysOfWork> {
 
   applyLicenseInterval(licenseInterval: LicenseInterval) {
     for (const day of licenseInterval.iterDaysInMonth(this.year, this.month)) {
-      this.work(day);
+      this.license(day);
     }
   }
 
@@ -114,12 +151,24 @@ export class DaysOfWork implements Clonable<DaysOfWork> {
     }
   }
 
-  notWork(day: number) {
-    this.setDayOfWork(day, false);
+  notWork(day: number): void {
+    if (this.dayIs(day, DayRestriction.ORDINARY_WORK)) this.set(day, DayRestriction.NONE);
+  }
+
+  dayIs(day: number, restriction: DayRestriction): boolean {
+    return this.get(day) === restriction;
   }
 
   workOn(day: number): boolean {
-    return this.days.at(day) === true;
+    return this.dayIs(day, DayRestriction.ORDINARY_WORK);
+  }
+
+  licenseOn(day: number): boolean {
+    return this.dayIs(day, DayRestriction.LICENCE);
+  }
+
+  get(day: number) {
+    return this.days.at(day) ?? DayRestriction.NONE;
   }
 
   static fromAllDays(year: number, month: number) {
