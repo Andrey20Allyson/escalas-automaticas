@@ -21,11 +21,11 @@ export interface IDaysOfWorkParser {
 export const DEFAULT_DAYS_OF_WORK_REGEXP = /\(DIAS:[^\d]*([^]*)\)/;
 
 export class DaysOfWorkParser implements IDaysOfWorkParser {
-  readonly licenceIntervalParser: LicenseIntervalParser;
+  readonly licenseIntervalParser: LicenseIntervalParser;
   readonly daysOfWorkRegExp: RegExp;
 
   constructor(config: DaysOfWorkParserConfig = {}) {
-    this.licenceIntervalParser = config.licenceIntervalParser ?? DEFAULT_LICENSE_INTERVAL_PARSER;
+    this.licenseIntervalParser = config.licenceIntervalParser ?? DEFAULT_LICENSE_INTERVAL_PARSER;
     this.daysOfWorkRegExp = config.daysOfWorkRegExp ?? DEFAULT_DAYS_OF_WORK_REGEXP;
   }
 
@@ -41,9 +41,9 @@ export class DaysOfWorkParser implements IDaysOfWorkParser {
       ? DaysOfWork.fromDailyWorker(year, month)
       : this.parsePeriodic(data);
 
-    const licenceInterval = this.licenceIntervalParser.parse(post)
-    if (licenceInterval !== null) {
-      daysOfWork.applyLicenseInterval(licenceInterval);
+    const licenseInterval = this.licenseIntervalParser.parse(post)
+    if (licenseInterval !== null) {
+      daysOfWork.applyLicenseInterval(licenseInterval);
     }
 
     return daysOfWork;

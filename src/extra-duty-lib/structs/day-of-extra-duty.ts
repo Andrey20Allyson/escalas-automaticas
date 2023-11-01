@@ -68,7 +68,12 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
 
     return duty.canAdd(worker)
       && !this.otherDutiesHasWorker(worker, duty.index)
+      && !this.collidesWithLicence(worker)
       && !duty.collidesWithWork(worker);
+  }
+
+  collidesWithLicence(worker: WorkerInfo): boolean {
+    return worker.daysOfWork.licenceOn(this.day);
   }
 
   canInsertIn(worker: WorkerInfo, dutyIndex: number) {
