@@ -3,11 +3,14 @@ import { ExtraDuty } from '../../extra-duty-lib/structs/extra-duty';
 import { WorkerInfo } from '../../extra-duty-lib/structs/worker-info';
 import { DaysOfWork } from '../../extra-duty-lib/structs/days-of-work';
 import { WorkTime } from '../../extra-duty-lib/structs/work-time';
+import { LicenseInterval } from '../../extra-duty-lib/structs/days-of-work/license-interval';
+import { Day } from '../../extra-duty-lib/structs/day';
 
 interface DutyMockConfig {
   day: number;
   index: number;
   year?: number;
+  month?: number;
 }
 
 interface WorkerMockConfig {
@@ -21,8 +24,12 @@ interface MocksConfig {
 }
 
 function mocks(config: MocksConfig) {
-  const mockedYear = 2023;
-  const mockedMonth = 9;
+  const {
+    duty: {
+      year = 2023,
+      month = 9,
+    }
+  } = config;
 
   const duty = new ExtraDuty(config.duty.day, config.duty.index, {
     dutyCapacity: 1,
@@ -31,13 +38,13 @@ function mocks(config: MocksConfig) {
     dutyMinDistance: 4,
     dutyPositionSize: 2,
     firstDutyTime: 7,
-    month: mockedMonth,
-    year: mockedYear,
+    month,
+    year,
   });
 
   const daysOfWork = config.worker.daysOfWork === 'daily-worker'
-    ? DaysOfWork.fromDailyWorker(mockedYear, mockedMonth)
-    : DaysOfWork.fromDays(config.worker.daysOfWork, mockedYear, mockedMonth);
+    ? DaysOfWork.fromDailyWorker(year, month)
+    : DaysOfWork.fromDays(config.worker.daysOfWork, year, month);
 
   const worker = new WorkerInfo({
     daysOfWork,
@@ -119,6 +126,26 @@ describe(ExtraDuty.name, () => {
       });
 
       expect(duty.collidesWithTomorrowWork(worker)).toBeTruthy();
+    });
+  });
+
+  describe(ExtraDuty.prototype.canAdd.name, () => {
+    test(`shold return false if worker has license at same day of duty`, () => {
+      const { worker, duty } = mocks({
+        duty: {
+          year: 2023,
+          month: 9,
+          day: 21,
+          index: 1,
+        },
+        worker: {
+          daysOfWork: []
+        },
+      });
+
+      worker.daysOfWork.applyLicenseInterval(new LicenseInterval(null, new Day(2023, 11, 20)));
+
+      expect(duty.canAdd(worker)).toBeFalsy();
     });
   });
 });
