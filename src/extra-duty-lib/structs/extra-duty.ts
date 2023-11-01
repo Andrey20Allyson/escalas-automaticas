@@ -145,6 +145,10 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     return this.offTimeEnd > tomorrowWorkStart;
   }
 
+  collidesWithLicense(worker: WorkerInfo) {
+    return worker.daysOfWork.licenseOn(this.day);
+  }
+
   breaksInspRule(worker: WorkerInfo) {
     return worker.graduation === 'insp' && this.gradQuantity('insp') > 0;
   }
@@ -184,6 +188,7 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
       && (force
         || !worker.isCompletelyBusy(this.config.dutyPositionSize)
         && !this.isFull()
+        && !this.collidesWithLicense(worker)
         && !this.breaksInspRule(worker)
         && !this.breaksGenderRule(worker)
       );
