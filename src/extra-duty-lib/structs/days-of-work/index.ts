@@ -163,7 +163,7 @@ export class DaysOfWork implements Clonable<DaysOfWork> {
     return this.dayIs(day, DayRestriction.ORDINARY_WORK);
   }
 
-  licenceOn(day: number): boolean {
+  licenseOn(day: number): boolean {
     return this.dayIs(day, DayRestriction.LICENCE);
   }
 
