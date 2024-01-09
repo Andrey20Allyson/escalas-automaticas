@@ -25,7 +25,8 @@ export class WorkerInfoParser {
   }
 
   parse(data: WorkerInfoParseData): WorkerInfo | null {
-    if (['FÉRIAS', 'LIC. PRÊMIO', 'DISP. MÉDICA MÊS'].some(skipLabel => data.post.includes(skipLabel))) return null;
+    if (['FÉRIAS', 'DISP. MÉDICA MÊS'].some(skipLabel => data.post.includes(skipLabel))) return null;
+    if (['LICENÇA PRÊMIO', 'LIC. PRÊMIO'].some(skipLabel => data.hourly.trim().toUpperCase() === skipLabel)) return null;
 
     const workTime = this.workTimeParser.parse(data);
     const daysOfWork = this.daysOfWorkParser.parse(data);

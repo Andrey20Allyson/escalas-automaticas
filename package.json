@@ -11,7 +11,8 @@
   "scripts": {
     "test": "vitest",
     "build": "tsx scripts build",
-    "build:scripts": "tsc -p scripts"
+    "build:scripts": "tsc -p scripts",
+    "prepublish": "node scripts build"
   },
   "keywords": [],
   "author": "",
