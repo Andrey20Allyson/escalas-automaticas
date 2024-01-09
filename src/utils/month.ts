@@ -1,9 +1,9 @@
 import { isLeapYear, thisYear } from "./year";
 
+const FEBRUARY_MONTH_INDEX = 1;
 export const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 export const thisMonth = getMonth();
 export const numOfDaysInThisMonth = getNumOfDaysInMonth(thisMonth, thisYear);
-const FEBRUARY_MONTH_INDEX = 1;
 
 export function getMonth() {
   return new Date().getMonth();
