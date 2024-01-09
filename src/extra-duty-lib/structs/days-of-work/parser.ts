@@ -9,9 +9,18 @@ export interface DaysOfWorkParseData {
   month: number;
 }
 
+export interface PeriodicParsingOptions {
+  daySeparator?: string;
+}
+
+export interface PeriodicParsingConfig {
+  daySeparator: string;
+}
+
 export interface DaysOfWorkParserConfig {
   daysOfWorkRegExp?: RegExp;
   licenceIntervalParser?: LicenseIntervalParser;
+  periodic?: PeriodicParsingOptions;
 }
 
 export interface IDaysOfWorkParser {
@@ -23,10 +32,14 @@ export const DEFAULT_DAYS_OF_WORK_REGEXP = /\(DIAS:[^\d]*([^]*)\)/;
 export class DaysOfWorkParser implements IDaysOfWorkParser {
   readonly licenseIntervalParser: LicenseIntervalParser;
   readonly daysOfWorkRegExp: RegExp;
+  readonly periodic: PeriodicParsingConfig;
 
   constructor(config: DaysOfWorkParserConfig = {}) {
     this.licenseIntervalParser = config.licenceIntervalParser ?? DEFAULT_LICENSE_INTERVAL_PARSER;
     this.daysOfWorkRegExp = config.daysOfWorkRegExp ?? DEFAULT_DAYS_OF_WORK_REGEXP;
+    this.periodic = {
+      daySeparator: config.periodic?.daySeparator ?? ',',
+    };
   }
 
   parse(data: DaysOfWorkParseData): DaysOfWork {
@@ -63,17 +76,32 @@ export class DaysOfWorkParser implements IDaysOfWorkParser {
 
     const matches = this.daysOfWorkRegExp.exec(hourly);
     if (!matches) {
-      throw new Error(`Hourly of "${name}" don't matches with format, expected "(DIAS: X;X;X;...;X)" but recived "${hourly}"`);
+      throw new Error(this.getErrorMessage(name, hourly));
     }
 
     const numbersString = matches.at(1);
     if (!numbersString) {
-      throw new Error(`Hourly of "${name}" don't matches with format, expected "(DIAS: X;X;X;...;X)" but recived "${hourly}"`);
+      throw new Error(this.getErrorMessage(name, hourly));
     }
 
-    const days = numbersString.split(';').map(val => Number(val) - 1);
+    const days = numbersString
+      .split(this.periodic.daySeparator)
+      .map(val => this.parseToNumber(val) - 1);
 
     return DaysOfWork.fromDays(days, year, month);
+  }
+
+  parseToNumber(value: string): number {
+    const num = Number(value);
+    if (isNaN(num)) throw new Error(`Can't parse string ${JSON.stringify(value)} to a number!`);
+
+    return num;
+  }
+
+  getErrorMessage(name: string, hourly: string) {
+    const sep = this.periodic.daySeparator;
+
+    return `Hourly of "${name}" don't matches with format, expected "(DIAS: X${sep}X${sep}X${sep}...${sep}X)" but recived "${hourly}"`;
   }
 }
 
