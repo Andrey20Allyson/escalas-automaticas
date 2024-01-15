@@ -1,4 +1,4 @@
-import { ExtraDutyTableV2 } from "../../v2";
+import { ExtraDutyTable } from "../../extra-duty-table";
 import { TableIntegrity } from "../table-integrity";
 import { IntegrityWarning } from "../warning";
 import { RuleChecker } from "./rule-checker";
@@ -8,7 +8,7 @@ export class GCMOnlyChecker implements RuleChecker {
     public penality: number = 5000,
   ) { }
 
-  check(table: ExtraDutyTableV2, integrity: TableIntegrity): void {
+  check(table: ExtraDutyTable, integrity: TableIntegrity): void {
     let numOfGraduatePair = 0;
     let numOfDutiesGCMOnly = 0;
 

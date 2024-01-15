@@ -1,4 +1,4 @@
-import type { ExtraDutyTable, ExtraDutyTableConfig } from '../extra-duty-table/v1';
+import type { ExtraDutyTable, ExtraDutyTableConfig } from '../extra-duty-table/extra-duty-table';
 import { WorkerInfo } from './worker-info';
 import { ExtraDuty } from './extra-duty';
 

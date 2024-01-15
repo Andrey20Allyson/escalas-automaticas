@@ -1,12 +1,12 @@
 import fs from 'fs/promises';
+import path from 'path';
 import { parseWorkers } from '../../auto-schedule/io';
-import { ExtraDutyTableV2, Holidays, WorkerRegistriesMap } from '../../extra-duty-lib';
+import { MainTableFactory } from '../../auto-schedule/table-factories';
+import { ExtraDutyTable, Holidays, WorkerRegistriesMap } from '../../extra-duty-lib';
+import { DEFAULT_MONTH_PARSER, Month } from '../../extra-duty-lib/structs/month';
 import { Benchmarker, Result, analyseResult } from '../../utils';
 import { argvCompiler } from '../../utils/cli';
 import { WorkerMocker } from './mock/worker';
-import { MainTableFactory } from '../../auto-schedule/table-factories';
-import path from 'path';
-import { DEFAULT_MONTH_PARSER, Month } from '../../extra-duty-lib/structs/month';
 
 function mockWorkers(year: number, month: number) {
   const workerMocker = new WorkerMocker();
@@ -56,7 +56,7 @@ async function exec(options: TestExecOptions = {}) {
     ? mockWorkers(month.year, month.index)
     : await loadWorkers(month.year, month.index, inputFile);
 
-  const table = new ExtraDutyTableV2({
+  const table = new ExtraDutyTable({
     year: month.year,
     month: month.index,
   });

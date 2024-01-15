@@ -32,6 +32,8 @@ function mocks(config: MocksConfig) {
   } = config;
 
   const duty = new ExtraDuty(config.duty.day, config.duty.index, {
+    currentPlace: 'n/a',
+    maxAcceptablePenalityAcc: 0,
     dutyCapacity: 1,
     dutyDuration: 12,
     dutyInterval: 12,

@@ -1,6 +1,6 @@
-import { ExtraDutyTableV2 } from "../../v2";
+import { ExtraDutyTable } from "../../extra-duty-table";
 import { TableIntegrity } from "../table-integrity";
 
 export interface RuleChecker {
-  check(table: ExtraDutyTableV2, integrity: TableIntegrity): void;
+  check(table: ExtraDutyTable, integrity: TableIntegrity): void;
 }

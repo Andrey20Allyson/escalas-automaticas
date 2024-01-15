@@ -1,11 +1,11 @@
-import { ExtraDutyTableV2 } from "../v2";
+import { ExtraDutyTable } from "../extra-duty-table";
 import { RuleChecker } from "./rules";
 import { TableIntegrity } from "./table-integrity";
 
 export class TableIntegrityAnalyser {
   constructor(private checkers: RuleChecker[] = []) { }
 
-  analyse(table: ExtraDutyTableV2, integrity: TableIntegrity = new TableIntegrity()): TableIntegrity {
+  analyse(table: ExtraDutyTable, integrity: TableIntegrity = new TableIntegrity()): TableIntegrity {
     for (const checker of this.checkers) {
       checker.check(table, integrity);
     }

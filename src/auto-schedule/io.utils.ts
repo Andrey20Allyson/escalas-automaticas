@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { ExtraDutyTableV2, Holidays, WorkerInfo, WorkerRegistriesMap } from "../extra-duty-lib";
+import { ExtraDutyTable, Holidays, WorkerInfo, WorkerRegistriesMap } from "../extra-duty-lib";
 import { Result, ResultError, ResultType } from "../utils";
 import { BookHandler, CellHandler, LineHander } from "../xlsx-handlers";
 import { ExcelTime } from "../xlsx-handlers/utils";
@@ -106,7 +106,7 @@ export interface ScrappeTableOptions {
   sheetName?: string;
 }
 
-export function scrappeTable(buffer: Buffer, workers: WorkerInfo[], options: ScrappeTableOptions): ExtraDutyTableV2 {
+export function scrappeTable(buffer: Buffer, workers: WorkerInfo[], options: ScrappeTableOptions): ExtraDutyTable {
   const book = BookHandler.parse(buffer);
 
   const sheet = book.getSheet(options.sheetName);
@@ -114,7 +114,7 @@ export function scrappeTable(buffer: Buffer, workers: WorkerInfo[], options: Scr
   const month = sheet.at('c', 7).as('number').value - 1;
   const year = sheet.at('c', 6).as('number').value;
 
-  const table = new ExtraDutyTableV2({
+  const table = new ExtraDutyTable({
     month,
     year,
   });

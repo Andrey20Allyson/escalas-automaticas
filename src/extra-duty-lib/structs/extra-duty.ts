@@ -1,6 +1,7 @@
 import { DaysOfWeek, dayOfWeekFrom, firstMondayFromYearAndMonth } from "../../utils";
-import type { ExtraDutyTableConfig } from "../extra-duty-table/v1";
+import type { ExtraDutyTableConfig } from "../extra-duty-table/extra-duty-table";
 import type { DayOfExtraDuty } from "./day-of-extra-duty";
+import { QuantityStorage } from "./quantity-storage";
 import { Gender, Graduation, WorkerInfo } from "./worker-info";
 
 export type GraduationQuantityMap = {
@@ -11,10 +12,15 @@ export type GenderQuantityMap = {
   [K in Gender]: number;
 };
 
+export interface ExtraDutyEntry {
+  readonly place: string;
+  readonly worker: WorkerInfo;
+}
+
 export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
-  graduationQuantityMap: GraduationQuantityMap;
-  genderQuantityMap: GenderQuantityMap;
-  workers: Map<number, WorkerInfo>;
+  graduationQuantityStorage: QuantityStorage<Graduation>;
+  genderQuantityStorage: QuantityStorage<Gender>;
+  workers: Map<number, ExtraDutyEntry>;
 
   readonly offTimeEnd: number;
   readonly isNightly: boolean;
@@ -37,57 +43,54 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     this.firstMonday = firstMondayFromYearAndMonth(this.config.year, this.config.month);
     this.weekDay = dayOfWeekFrom(this.firstMonday, this.day);
 
-    this.graduationQuantityMap = {
+    this.graduationQuantityStorage = new QuantityStorage<Graduation>(() => ({
       'sub-insp': 0,
       'insp': 0,
       'gcm': 0,
-    };
+    }));
 
-    this.genderQuantityMap = {
+    this.genderQuantityStorage = new QuantityStorage<Gender>(() => ({
       'female': 0,
       'male': 0,
       'N/A': 0,
-    };
+    }));
+  }
+
+  *entries(): Iterable<[number, ExtraDutyEntry]> {
+    for (const entry of this.workers) {
+      yield entry;
+    }
   }
 
   copy(other: ExtraDuty): this {
-    for (const _key in this.graduationQuantityMap) {
-      const key = _key as keyof GraduationQuantityMap;
-
-      this.graduationQuantityMap[key] = other.graduationQuantityMap[key];
-    }
-
-    for (const _key in this.genderQuantityMap) {
-      const key = _key as keyof GenderQuantityMap;
-
-      this.genderQuantityMap[key] = other.genderQuantityMap[key];
-    }
+    this.graduationQuantityStorage.copy(other.graduationQuantityStorage);
+    this.genderQuantityStorage.copy(other.genderQuantityStorage);
 
     this.workers.clear();
 
-    for (const [_, worker] of other) {
-      this.workers.set(this.keyFrom(worker), worker);
+    for (const [_, entry] of other.entries()) {
+      this.workers.set(this.keyFrom(entry.worker), entry);
     }
 
     return this;
   }
 
-  gradQuantity(grad: Graduation) {
-    return this.graduationQuantityMap[grad];
+  gradQuantity(grad: Graduation): number {
+    return this.graduationQuantityStorage.quantityFrom(this.config.currentPlace, grad);
   }
 
   graduateQuantity() {
     return this.gradQuantity('insp') + this.gradQuantity('sub-insp');
   }
 
-  genderQuantity(gender: Gender) {
-    return this.genderQuantityMap[gender];
+  genderQuantity(gender: Gender): number {
+    return this.genderQuantityStorage.quantityFrom(this.config.currentPlace, gender);
   }
 
   isDailyWorkerAtNight(worker: WorkerInfo) {
     return worker.daysOfWork.isDailyWorker && this.isNightly;
   }
-  
+
   gradIsOnly(grad: Graduation) {
     return !this.isEmpity() && this.gradQuantity(grad) === this.getSize();
   }
@@ -158,8 +161,8 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
   }
 
   *[Symbol.iterator](): Iterator<[string, WorkerInfo]> {
-    for (const [_, worker] of this.workers) {
-      yield [worker.name, worker];
+    for (const [_, entry] of this.workers) {
+      yield [entry.worker.name, entry.worker];
     }
   }
 
@@ -197,10 +200,10 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
   add(worker: WorkerInfo, force = false): boolean {
     if (!this.canAdd(worker, force)) return false;
 
-    this.workers.set(this.keyFrom(worker), worker);
+    this.workers.set(this.keyFrom(worker), { place: this.config.currentPlace, worker });
 
-    this.graduationQuantityMap[worker.graduation]++;
-    this.genderQuantityMap[worker.gender]++;
+    this.graduationQuantityStorage.increment(this.config.currentPlace, worker.graduation);
+    this.genderQuantityStorage.increment(this.config.currentPlace, worker.gender);
 
     worker.occupyPositions(this.config.dutyPositionSize);
 
@@ -212,8 +215,8 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
 
     if (!existed) return;
 
-    this.graduationQuantityMap[worker.graduation]--;
-    this.genderQuantityMap[worker.gender]--;
+    this.graduationQuantityStorage.decrement(this.config.currentPlace, worker.graduation);
+    this.genderQuantityStorage.decrement(this.config.currentPlace, worker.gender);
 
     worker.leavePositions(this.config.dutyPositionSize);
   }
@@ -224,13 +227,8 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     }
 
     this.workers.clear();
-
-    this._clearQuantityMap();
-  }
-
-  private _clearQuantityMap() {
-    resetMap(this.genderQuantityMap);
-    resetMap(this.graduationQuantityMap);
+    this.genderQuantityStorage.clear();
+    this.graduationQuantityStorage.clear();
   }
 
   static dutiesFrom(day: DayOfExtraDuty): readonly ExtraDuty[] {
@@ -241,11 +239,5 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     }
 
     return duties;
-  }
-}
-
-function resetMap(map: Record<string, number>) {
-  for (const key in map) {
-    map[key] = 0;
   }
 }

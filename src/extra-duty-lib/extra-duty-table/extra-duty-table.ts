@@ -1,22 +1,45 @@
-import clone from "clone";
-import { iterRandom, iterWeekends, randomizeArray } from "../../utils";
-import { ExtraDuty } from "../structs";
-import { Clonable, WorkerInfo } from "../structs/worker-info";
-import { DefaultTableIntegrityAnalyser, TableIntegrity, TableIntegrityAnalyser } from "./integrity";
-import { isDailyWorker, isInsp, isMonday, isSubInsp, workerIsCompletelyBusy } from "./utils";
-import { ExtraDutyTable, ExtraDutyTableConfig } from "./v1";
+import clone from 'clone';
+import { firstMondayFromYearAndMonth, getNumOfDaysInMonth, iterRandom, iterWeekends, randomizeArray, thisMonth, thisYear } from '../../utils';
+import { DayOfExtraDuty, ExtraDuty, WorkerInfo } from '../structs';
+import { DefaultTableIntegrityAnalyser, TableIntegrity, TableIntegrityAnalyser } from './integrity';
+import { isDailyWorker, isInsp, isMonday, isSubInsp, workerIsCompletelyBusy } from './utils';
+import { ExtraPlace } from './extra-place';
 
-export interface ExtraDutyTableV2Config extends ExtraDutyTableConfig {
-  readonly maxAcceptablePenalityAcc?: number;
+export interface ExtraDutyTableConfig {
+  readonly maxAcceptablePenalityAcc: number;
+  readonly dutyPositionSize: number;
+  readonly firstDutyTime: number;
+  readonly dutyInterval: number;
+  readonly dutyDuration: number;
+  readonly month: number;
+  readonly year: number;
+  dutyMinDistance: number;
+  dutyCapacity: number;
+  currentPlace: string;
 }
 
-export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDutyTableV2> {
+export interface ExtraDutyTableEntry {
+  worker: WorkerInfo;
+  duty: ExtraDuty;
+  day: DayOfExtraDuty;
+}
+
+export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
+  readonly days: readonly DayOfExtraDuty[];
+  readonly config: ExtraDutyTableConfig;
+  readonly firstMonday: number;
+  readonly width: number;
   integrity: TableIntegrity;
 
-  constructor(config?: Partial<ExtraDutyTableV2Config>) {
-    super(config);
+  constructor(config?: Partial<ExtraDutyTableConfig>) {
+    this.config = ExtraDutyTable.createConfigFrom(config);
 
-    this.integrity = new TableIntegrity(config?.maxAcceptablePenalityAcc ?? 100_000);
+    this.width = getNumOfDaysInMonth(this.config.month, this.config.year);
+    this.days = DayOfExtraDuty.daysFrom(this);
+
+    this.firstMonday = firstMondayFromYearAndMonth(this.config.year, this.config.month);
+
+    this.integrity = new TableIntegrity(this.config.maxAcceptablePenalityAcc);
   }
 
   *iterDuties(): Iterable<ExtraDuty> {
@@ -39,12 +62,6 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
     return false;
   }
 
-  clear() {
-    this.integrity.clear();
-
-    super.clear();
-  }
-
   tryAssignArrayMultipleTimes(workers: WorkerInfo[], times: number): boolean {
     let bestClone = this._bestClone(workers, times);
     if (!bestClone) return false;
@@ -54,7 +71,7 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
     return true;
   }
 
-  copy(other: ExtraDutyTableV2) {
+  copy(other: ExtraDutyTable) {
     for (const otherDuty of other.iterDuties()) {
       this
         .getDay(otherDuty.day)
@@ -67,9 +84,9 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
     return this;
   }
 
-  private _bestClone(workers: WorkerInfo[], limit: number): ExtraDutyTableV2 | null {
+  private _bestClone(workers: WorkerInfo[], limit: number): ExtraDutyTable | null {
     let table = this.clone();
-    let bestClone: ExtraDutyTableV2 | null = null;
+    let bestClone: ExtraDutyTable | null = null;
 
     for (let i = 0; i < limit; i++) {
       table.clear();
@@ -88,11 +105,11 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
     return bestClone;
   }
 
-  isBetterThan(otherTable: ExtraDutyTableV2 | null): boolean {
+  isBetterThan(otherTable: ExtraDutyTable | null): boolean {
     return otherTable === null || this.integrity.isBetterThan(otherTable.integrity);
   }
 
-  empityClone(): ExtraDutyTableV2 {
+  empityClone(): ExtraDutyTable {
     const clone = this.clone();
     clone.clear();
 
@@ -103,11 +120,51 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
     return analyser.analyse(this, this.integrity);
   }
 
-  clone(): ExtraDutyTableV2 {
+  clone(): ExtraDutyTable {
     return clone(this);
   }
 
-  tryAssignArrayV2(workers: WorkerInfo[]) {
+  [Symbol.iterator](): Iterator<DayOfExtraDuty> {
+    return this.days[Symbol.iterator]();
+  }
+
+  *entries(): Iterable<ExtraDutyTableEntry> {
+    for (const day of this) {
+      for (const duty of day) {
+        for (const [_, worker] of duty) {
+          yield { worker, duty, day };
+        }
+      }
+    }
+  }
+
+  workers() {
+    const workersSet = new Set<WorkerInfo>();
+
+    for (const entry of this.entries()) {
+      workersSet.add(entry.worker);
+    }
+
+    return Array.from(workersSet);
+  }
+
+  clear() {
+    this.integrity.clear();
+
+    for (const day of this) {
+      day.clear();
+    }
+  }
+
+  toArray() {
+    return Array.from(this);
+  }
+
+  getDay(day: number) {
+    return this.days.at(day) ?? new DayOfExtraDuty(day, this);
+  }
+
+  private tryAssignArrayV2(workers: WorkerInfo[]) {
     this._assignDailyWorkerArray(workers);
     this._assignInspArray(workers);
     this._assignSubInspArray(workers);
@@ -199,5 +256,20 @@ export class ExtraDutyTableV2 extends ExtraDutyTable implements Clonable<ExtraDu
     }
 
     return success;
+  }
+
+  static createConfigFrom(partialConfig?: Partial<ExtraDutyTableConfig>): ExtraDutyTableConfig {
+    return {
+      dutyPositionSize: partialConfig?.dutyPositionSize ?? 2,
+      dutyMinDistance: partialConfig?.dutyMinDistance ?? 4,
+      firstDutyTime: partialConfig?.firstDutyTime ?? 7,
+      dutyInterval: partialConfig?.dutyInterval ?? 12,
+      dutyDuration: partialConfig?.dutyDuration ?? 12,
+      dutyCapacity: partialConfig?.dutyCapacity ?? 2,
+      month: partialConfig?.month ?? thisMonth,
+      year: partialConfig?.year ?? thisYear,
+      maxAcceptablePenalityAcc: partialConfig?.maxAcceptablePenalityAcc ?? 100_000,
+      currentPlace: partialConfig?.currentPlace ?? ExtraPlace.JIQUIA,
+    };
   }
 }

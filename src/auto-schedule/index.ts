@@ -1,4 +1,4 @@
-import { ExtraDutyTable, ExtraDutyTableV2, Holidays, WorkerInfo, WorkerRegistriesMap } from '../extra-duty-lib';
+import { ExtraDutyTable, Holidays, WorkerInfo, WorkerRegistriesMap } from '../extra-duty-lib';
 import { getMonth, getYear } from '../utils';
 import { analyseResult } from '../utils/analyser';
 import { Benchmarker } from '../utils/benchmark';
@@ -36,7 +36,7 @@ export async function execute(options: ExecutionOptions) {
 
   // assign workers to table
   const assignArrayProcess = benchmarker.start('assign workers to table');
-  const table = new ExtraDutyTableV2();
+  const table = new ExtraDutyTable();
   const success = table.tryAssignArrayMultipleTimes(workers, options.tries ?? 500);
   if (!success) throw new Error(`Can't assign with success!`);
   assignArrayProcess.end();
@@ -100,7 +100,7 @@ export function generateFromWorkers(workers: WorkerInfo[], options: GenerateFrom
   const year = options.year ?? getYear();
 
   const assignArrayProcess = options.benchmarker?.start('assign workers to table');
-  const table = new ExtraDutyTableV2({ month, year });
+  const table = new ExtraDutyTable({ month, year });
   table.tryAssignArrayMultipleTimes(workers, options.tries ?? 7000);
   assignArrayProcess?.end();
 
@@ -131,7 +131,7 @@ export async function generateFromTable(table: ExtraDutyTable, options: Generate
   return serializedTable;
 }
 
-export function tableFrom(buffer: Buffer, workers: WorkerInfo[], options: ScrappeTableOptions): ExtraDutyTableV2 {
+export function tableFrom(buffer: Buffer, workers: WorkerInfo[], options: ScrappeTableOptions): ExtraDutyTable {
   return parseTable(buffer, workers, options);
 }
 

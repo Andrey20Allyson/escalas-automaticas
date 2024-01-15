@@ -1,6 +1,6 @@
 import type { readFile, writeFile } from 'fs/promises';
 import * as XLSX from 'xlsx';
-import { ExtraDutyTable, ExtraDutyTableV2, WorkerInfo } from '../extra-duty-lib';
+import { ExtraDutyTable, WorkerInfo } from '../extra-duty-lib';
 import { Result } from "../utils/result";
 import { ScrappeTableOptions, ScrappeWorkersOptions, scrappeTable, scrappeWorkersFromBook } from './io.utils';
 import { DivugationTableFactory, MainTableFactory, TableFactory, TableFactoryOptions } from './table-factories';
@@ -68,7 +68,7 @@ export function parseWorkers(data: Buffer, options: ScrappeWorkersOptions): Work
   return scrappeWorkersFromBook(book, options);
 }
 
-export function parseTable(data: Buffer, workers: WorkerInfo[], options: ScrappeTableOptions): ExtraDutyTableV2 {
+export function parseTable(data: Buffer, workers: WorkerInfo[], options: ScrappeTableOptions): ExtraDutyTable {
   return scrappeTable(data, workers, options);
 }
 

@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { ExtraDutyTableV2 } from '../../extra-duty-lib/extra-duty-table/v2';
+import { ExtraDutyTable } from '../../extra-duty-lib/extra-duty-table/extra-duty-table';
 import { WorkerInfo } from '../../extra-duty-lib/structs/worker-info';
 
 test(`#clear shold restart all workers positionsLeft`, () => {
@@ -7,7 +7,7 @@ test(`#clear shold restart all workers positionsLeft`, () => {
   const worker1 = WorkerInfo.fakeFromName('Roberto');
   const worker2 = WorkerInfo.fakeFromName('Cariane');
 
-  const table = new ExtraDutyTableV2();
+  const table = new ExtraDutyTable();
 
   const day0 = table.getDay(0);
 

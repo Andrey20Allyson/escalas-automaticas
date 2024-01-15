@@ -1,4 +1,4 @@
-import { ExtraDutyTableV2 } from "../../v2";
+import { ExtraDutyTable } from "../../extra-duty-table";
 import { TableIntegrity } from "../table-integrity";
 import { IntegrityWarning } from "../warning";
 import { RuleChecker } from "./rule-checker";
@@ -8,7 +8,7 @@ export class CorrectWorkerAllocationChecker implements RuleChecker {
     return 100 * 1.4 * workerPositionsLeft ** 2
   }
   
-  check(table: ExtraDutyTableV2, integrity: TableIntegrity): void {
+  check(table: ExtraDutyTable, integrity: TableIntegrity): void {
     if (table.everyDutyHasMinQuatity()) return;
 
     for (const worker of table.workers()) {
