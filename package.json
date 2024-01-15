@@ -1,6 +1,6 @@
 {
   "name": "@andrey-allyson/escalas-automaticas",
-  "version": "1.8.0",
+  "version": "1.10.2",
   "main": "./dist/index.js",
   "publishConfig": {
     "access": "public"
@@ -11,7 +11,8 @@
   "scripts": {
     "test": "vitest",
     "build": "tsx scripts build",
-    "build:scripts": "tsc -p scripts"
+    "build:scripts": "tsc -p scripts",
+    "prepublish": "node scripts build"
   },
   "keywords": [],
   "author": "",

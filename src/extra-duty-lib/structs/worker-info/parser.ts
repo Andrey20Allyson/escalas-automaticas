@@ -1,7 +1,7 @@
 import { WorkerInfo } from ".";
 import { parseNumberOrThrow } from "../../../utils";
 import { DEFAULT_DAYS_OF_WORK_PARSER, DaysOfWorkParser } from "../days-of-work";
-import { WorkTime } from "../work-time";
+import { IWorkTimeParser, WorkTimeParser } from "../work-time/parser";
 
 export interface WorkerInfoParseData {
   name: string;
@@ -17,17 +17,18 @@ export interface WorkerInfoParseData {
 
 export class WorkerInfoParser {
   readonly daysOfWorkParser: DaysOfWorkParser;
+  readonly workTimeParser: IWorkTimeParser;
 
   constructor() {
     this.daysOfWorkParser = DEFAULT_DAYS_OF_WORK_PARSER;
+    this.workTimeParser = new WorkTimeParser();
   }
 
   parse(data: WorkerInfoParseData): WorkerInfo | null {
-    if (['FÉRIAS', 'LIC. PRÊMIO', 'DISP. MÉDICA MÊS'].some(skipLabel => data.post.includes(skipLabel))) return null;
+    if (['FÉRIAS', 'DISP. MÉDICA MÊS'].some(skipLabel => data.post.includes(skipLabel))) return null;
+    if (['LICENÇA PRÊMIO', 'LIC. PRÊMIO'].some(skipLabel => data.hourly.trim().toUpperCase() === skipLabel)) return null;
 
-    const workTime = WorkTime.parse(data.hourly);
-    if (!workTime) throw new Error(`Can't parse workTime of "${data.name}"`);
-
+    const workTime = this.workTimeParser.parse(data);
     const daysOfWork = this.daysOfWorkParser.parse(data);
     
     const splitedRegistration = data.registration.split('-');
