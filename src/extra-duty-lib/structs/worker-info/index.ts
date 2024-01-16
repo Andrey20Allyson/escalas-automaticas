@@ -100,7 +100,6 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
     const config: WorkerInfoConfig = {
       daysOfWork: daysOfWork.clone(),
       workTime: workTime.clone(),
-
       startPositionsLeft,
       individualRegistry,
       postWorkerID,
