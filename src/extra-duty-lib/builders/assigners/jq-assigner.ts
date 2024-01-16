@@ -1,6 +1,6 @@
 import { iterRandom, iterWeekends, randomizeArray } from "../../../utils";
 import { ExtraDutyTable } from "../../extra-duty-table";
-import { isInsp, isSubInsp, workerIsCompletelyBusy, isMonday, isDailyWorker } from "../../extra-duty-table/utils";
+import { isInsp, isSubInsp, workerIsCompletelyBusy, isMonday, isDailyWorker } from "./jq-utils";
 import { WorkerInfo } from "../../structs";
 import { ScheduleAssigner } from "../classifiers/classifier";
 

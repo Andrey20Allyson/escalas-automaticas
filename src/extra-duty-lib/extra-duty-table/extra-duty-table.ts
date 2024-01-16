@@ -2,7 +2,7 @@ import clone from 'clone';
 import { firstMondayFromYearAndMonth, getNumOfDaysInMonth, thisMonth, thisYear } from '../../utils';
 import { DayOfExtraDuty, ExtraDuty, WorkerInfo } from '../structs';
 import { ExtraPlace } from './extra-place';
-import { DefaultTableIntegrityAnalyser, TableIntegrity, TableIntegrityAnalyser } from './integrity';
+import { DefaultTableIntegrityAnalyser, TableIntegrity, TableIntegrityAnalyser } from '../builders/integrity';
 
 export interface ExtraDutyTableConfig {
   readonly maxAcceptablePenalityAcc: number;

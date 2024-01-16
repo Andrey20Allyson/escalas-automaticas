@@ -1,4 +1,4 @@
-import { WorkerInfo, ExtraDuty } from "../structs";
+import { WorkerInfo, ExtraDuty } from "../../structs";
 
 export function workerIsCompletelyBusy(worker: WorkerInfo) {
   return !worker.isCompletelyBusy();

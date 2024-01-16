@@ -1,5 +1,5 @@
-import { calculateDutyPontuation } from "../../utils";
-import { ExtraDutyTable } from "../../extra-duty-table";
+import { calculateDutyPontuation } from "../../assigners/jq-utils";
+import { ExtraDutyTable } from "../../../extra-duty-table/extra-duty-table";
 import { TableIntegrity } from "../table-integrity";
 import { IntegrityWarning } from "../warning";
 import { RuleChecker } from "./rule-checker";

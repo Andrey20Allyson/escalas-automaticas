@@ -1,4 +1,4 @@
-import { ExtraDutyTable } from "../../extra-duty-table";
+import { ExtraDutyTable } from "../../../extra-duty-table/extra-duty-table";
 import { IntegrityFailure } from "../failure";
 import { TableIntegrity } from "../table-integrity";
 import { RuleChecker } from "./rule-checker";
