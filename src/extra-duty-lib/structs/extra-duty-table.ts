@@ -56,13 +56,6 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
     return this;
   }
 
-  empityClone(): ExtraDutyTable {
-    const clone = this.clone();
-    clone.clear();
-
-    return clone;
-  }
-
   clone(): ExtraDutyTable {
     return clone(this);
   }
