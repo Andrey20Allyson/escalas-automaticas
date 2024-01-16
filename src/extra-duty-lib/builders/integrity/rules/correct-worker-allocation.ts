@@ -8,10 +8,12 @@ export class CorrectWorkerAllocationChecker implements RuleChecker {
     return 100 * 1.4 * workerPositionsLeft ** 2
   }
   
-  check(table: ExtraDutyTable, integrity: TableIntegrity): void {
-    if (table.everyDutyHasMinQuatity()) return;
+  check(integrity: TableIntegrity): void {
+    const isWorkerInsuficient = Array.from(integrity.table.iterDuties()).some(duty => duty.isWorkerInsuficient());
+    
+    if (!isWorkerInsuficient) return;
 
-    for (const worker of table.workers()) {
+    for (const worker of integrity.table.workers()) {
       if (worker.cantWorkOnExtra()) continue;
 
       const penality = this.calculatePenality(worker.positionsLeft);

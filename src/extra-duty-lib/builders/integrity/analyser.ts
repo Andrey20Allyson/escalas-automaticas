@@ -5,9 +5,11 @@ import { TableIntegrity } from "./table-integrity";
 export class TableIntegrityAnalyser {
   constructor(private checkers: RuleChecker[] = []) { }
 
-  analyse(table: ExtraDutyTable, integrity: TableIntegrity = new TableIntegrity()): TableIntegrity {
+  analyse(table: ExtraDutyTable): TableIntegrity {
+    const integrity = new TableIntegrity(table, table.config.maxAcceptablePenalityAcc);
+
     for (const checker of this.checkers) {
-      checker.check(table, integrity);
+      checker.check(integrity);
     }
 
     return integrity;

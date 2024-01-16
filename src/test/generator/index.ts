@@ -3,11 +3,12 @@ import path from 'path';
 import { parseWorkers } from '../../auto-schedule/io';
 import { MainTableFactory } from '../../auto-schedule/table-factories';
 import { ExtraDutyTable, Holidays, WorkerRegistriesMap } from '../../extra-duty-lib';
+import { DefaultTableIntegrityAnalyser } from '../../extra-duty-lib/builders/integrity';
+import { JQScheduleBuilder } from '../../extra-duty-lib/builders/jq-schedule/builder';
 import { DEFAULT_MONTH_PARSER, Month } from '../../extra-duty-lib/structs/month';
 import { Benchmarker, Result, analyseResult } from '../../utils';
 import { argvCompiler } from '../../utils/cli';
 import { WorkerMocker } from './mock/worker';
-import { JQScheduleBuilder } from '../../extra-duty-lib/builders/jq-schedule/builder';
 
 function mockWorkers(year: number, month: number) {
   const workerMocker = new WorkerMocker();
@@ -75,8 +76,11 @@ async function exec(options: TestExecOptions = {}) {
   const benchmarkString = beckmarker.getMessage();
   console.log(benchmarkString);
 
-  console.log(table.integrity);
-  console.log(`pode ser utilizado: ${table.integrity.isCompliant()}`);
+  const integrity = new DefaultTableIntegrityAnalyser()
+    .analyse(table);
+
+  console.log(integrity);
+  console.log(`pode ser utilizado: ${integrity.isCompliant()}`);
 
   if (outputFile) {
     const pattern = await fs.readFile('input/output-pattern.xlsx');

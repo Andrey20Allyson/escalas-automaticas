@@ -1,3 +1,5 @@
+import clone from "clone";
+import { ExtraDutyTable } from "../../structs";
 import { IntegrityFailure } from "./failure";
 import { IntegrityWarning } from "./warning";
 
@@ -6,7 +8,10 @@ export class TableIntegrity {
   readonly warnings: Map<string, IntegrityWarning> = new Map();
   private _warningPenalityAcc = 0;
 
-  constructor(public maxAcceptablePenalityAcc: number | null = null) { }
+  constructor(
+    readonly table: ExtraDutyTable,
+    public maxAcceptablePenalityAcc: number | null = null
+  ) { }
 
   clear() {
     this.failures.clear();
@@ -23,6 +28,10 @@ export class TableIntegrity {
     this._addWarningPenality(inconsistence.getPenalityAcc());
 
     return this._registry(this.warnings, inconsistence);
+  }
+
+  clone(): TableIntegrity {
+    return clone(this);
   }
 
   private _addWarningPenality(penality: number) {

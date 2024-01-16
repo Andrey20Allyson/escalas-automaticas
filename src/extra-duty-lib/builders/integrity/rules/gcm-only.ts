@@ -1,4 +1,3 @@
-import { ExtraDutyTable } from "../../../structs/extra-duty-table";
 import { TableIntegrity } from "../table-integrity";
 import { IntegrityWarning } from "../warning";
 import { RuleChecker } from "./rule-checker";
@@ -8,11 +7,11 @@ export class GCMOnlyChecker implements RuleChecker {
     public penality: number = 5000,
   ) { }
 
-  check(table: ExtraDutyTable, integrity: TableIntegrity): void {
+  check(integrity: TableIntegrity): void {
     let numOfGraduatePair = 0;
     let numOfDutiesGCMOnly = 0;
 
-    for (const duty of table.iterDuties()) {
+    for (const duty of integrity.table.iterDuties()) {
       if (duty.gradIsOnly('gcm')) numOfDutiesGCMOnly++;
 
       if (duty.graduateQuantity() >= 2) numOfGraduatePair++;

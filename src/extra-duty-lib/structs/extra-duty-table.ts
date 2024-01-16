@@ -1,8 +1,7 @@
 import clone from 'clone';
-import { firstMondayFromYearAndMonth, getNumOfDaysInMonth, thisMonth, thisYear } from '../../utils';
 import { DayOfExtraDuty, ExtraDuty, WorkerInfo } from '.';
+import { firstMondayFromYearAndMonth, getNumOfDaysInMonth, thisMonth, thisYear } from '../../utils';
 import { ExtraPlace } from './extra-place';
-import { DefaultTableIntegrityAnalyser, TableIntegrity, TableIntegrityAnalyser } from '../builders/integrity';
 
 export interface ExtraDutyTableConfig {
   readonly maxAcceptablePenalityAcc: number;
@@ -28,7 +27,6 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
   readonly config: ExtraDutyTableConfig;
   readonly firstMonday: number;
   readonly width: number;
-  integrity: TableIntegrity;
 
   constructor(config?: Partial<ExtraDutyTableConfig>) {
     this.config = ExtraDutyTable.createConfigFrom(config);
@@ -37,8 +35,6 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
     this.days = DayOfExtraDuty.daysFrom(this);
 
     this.firstMonday = firstMondayFromYearAndMonth(this.config.year, this.config.month);
-
-    this.integrity = new TableIntegrity(this.config.maxAcceptablePenalityAcc);
   }
 
   *iterDuties(): Iterable<ExtraDuty> {
@@ -49,18 +45,6 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
     }
   }
 
-  everyDutyHasMinQuatity() {
-    return !this.hasWorkerInsuficientDuty();
-  }
-
-  hasWorkerInsuficientDuty() {
-    for (const duty of this.iterDuties()) {
-      if (duty.isWorkerInsuficient()) return true;
-    }
-
-    return false;
-  }
-
   copy(other: ExtraDutyTable) {
     for (const otherDuty of other.iterDuties()) {
       this
@@ -69,13 +53,7 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
         .copy(otherDuty);
     }
 
-    this.integrity = other.integrity;
-
     return this;
-  }
-
-  isBetterThan(otherTable: ExtraDutyTable | null): boolean {
-    return otherTable === null || this.integrity.isBetterThan(otherTable.integrity);
   }
 
   empityClone(): ExtraDutyTable {
@@ -83,10 +61,6 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
     clone.clear();
 
     return clone;
-  }
-
-  analyse(analyser: TableIntegrityAnalyser = new DefaultTableIntegrityAnalyser()): TableIntegrity {
-    return analyser.analyse(this, this.integrity);
   }
 
   clone(): ExtraDutyTable {
@@ -118,8 +92,6 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
   }
 
   clear() {
-    this.integrity.clear();
-
     for (const day of this) {
       day.clear();
     }
