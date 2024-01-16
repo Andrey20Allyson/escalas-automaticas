@@ -1,45 +1,24 @@
 import { ExtraDutyTable } from "../../extra-duty-table";
 import { WorkerInfo } from "../../structs";
+import { DefaultScheduleClassifier } from "../classifiers/classifier";
 import { ScheduleBuilder } from "../schedule-builder";
-import { JQScheduleAssigner } from "./assigner";
+import { JQScheduleAssigner } from "../assigners/jq-assigner";
 
 export class JQScheduleBuilder implements ScheduleBuilder {
+  readonly classifier: DefaultScheduleClassifier;
+  
   constructor(
-    readonly tries: number,
-  ) { }
+    tries: number,
+  ) {
+    this.classifier = new DefaultScheduleClassifier(tries, new JQScheduleAssigner());
+  }
 
   build(table: ExtraDutyTable, workers: WorkerInfo[]): ExtraDutyTable {
-    const bestClone = this.findBestClone(table, workers);
+    const bestClone = this.classifier.classify(table, workers);
     if (!bestClone) return table;
 
     table.copy(bestClone);
 
     return table;
-  }
-
-  private findBestClone(table: ExtraDutyTable, workers: WorkerInfo[]): ExtraDutyTable | null {
-    let tableClone = table.clone();
-    let bestClone: ExtraDutyTable | null = null;
-
-    for (let i = 0; i < this.tries; i++) {
-      tableClone.clear();
-
-      const assigner = new JQScheduleAssigner(tableClone);
-      assigner
-        .assign(workers)
-        .analyse();
-
-      tableClone.analyse();
-
-      if (tableClone.integrity.isPerfect()) {
-        return tableClone;
-      }
-
-      if (tableClone.isBetterThan(bestClone)) {
-        bestClone = tableClone.clone();
-      }
-    }
-
-    return bestClone;
   }
 }
