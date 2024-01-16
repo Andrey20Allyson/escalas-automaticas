@@ -1,4 +1,4 @@
-import { ExtraDutyTable, WorkerInfo } from "../../structs";
+import { ExtraDutyTable, ExtraPlace, WorkerInfo } from "../../structs";
 import { JQScheduleAssigner } from "../assigners/jq-assigner";
 import { DefaultScheduleClassifier } from "../classifiers/classifier";
 import { ScheduleBuilder } from "../schedule-builder";
@@ -13,8 +13,9 @@ export class JQScheduleBuilder implements ScheduleBuilder {
   }
 
   build(table: ExtraDutyTable, workers: WorkerInfo[]): ExtraDutyTable {
+    table.config.currentPlace = ExtraPlace.JIQUIA;
+
     const bestClone = this.classifier.classify(table, workers);
-    if (!bestClone) return table;
 
     table.copy(bestClone);
 
