@@ -7,6 +7,7 @@ import { DEFAULT_MONTH_PARSER, Month } from '../../extra-duty-lib/structs/month'
 import { Benchmarker, Result, analyseResult } from '../../utils';
 import { argvCompiler } from '../../utils/cli';
 import { WorkerMocker } from './mock/worker';
+import { JQScheduleBuilder } from '../../extra-duty-lib/builders/jq-schedule/builder';
 
 function mockWorkers(year: number, month: number) {
   const workerMocker = new WorkerMocker();
@@ -63,7 +64,8 @@ async function exec(options: TestExecOptions = {}) {
 
   const tableAssignBenchmark = beckmarker.start('talbe assign');
 
-  table.tryAssignArrayMultipleTimes(workers, tries);
+  new JQScheduleBuilder(tries)
+    .build(table, workers);
 
   tableAssignBenchmark.end();
 

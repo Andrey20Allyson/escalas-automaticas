@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-import { execute, generate, generateFromWorkers, io } from '../..';
+import { generate, generateFromWorkers, io } from '../..';
 import { parseTable, parseWorkers } from '../../auto-schedule/io';
 import { DivugationTableFactory } from '../../auto-schedule/table-factories';
 import { Holidays, WorkerRegistriesMap } from '../../extra-duty-lib';
@@ -8,18 +8,6 @@ import { BookHandler } from '../../xlsx-handlers/book';
 import { DayListTableFactory } from '../../auto-schedule/table-factories/day-list-factory';
 
 io.setFileSystem(fs);
-
-async function programTest() {
-  const INPUT_FILE = './input/data.xlsx';
-  const OUTPUT_FILE = './output/out-data.xlsx';
-
-  await execute({
-    input: INPUT_FILE,
-    output: OUTPUT_FILE,
-    analyse: true,
-    benchmark: true,
-  });
-}
 
 async function XLSXHandersTest() {
   const inputBuffer = await fs.readFile('input/output-pattern.xlsx');

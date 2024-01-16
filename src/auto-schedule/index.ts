@@ -1,68 +1,11 @@
 import { ExtraDutyTable, Holidays, WorkerInfo, WorkerRegistriesMap } from '../extra-duty-lib';
+import { JQScheduleBuilder } from '../extra-duty-lib/builders/jq-schedule/builder';
 import { getMonth, getYear } from '../utils';
 import { analyseResult } from '../utils/analyser';
 import { Benchmarker } from '../utils/benchmark';
-import { loadWorkers, parseTable, parseWorkers, saveTable, serializeTable } from './io';
+import { parseTable, parseWorkers, serializeTable } from './io';
 import { ScrappeTableOptions } from './io.utils';
 import { MainTableFactory } from './table-factories/main-factory';
-
-export interface ExecutionOptions {
-  input: string;
-  output?: string;
-  sheetName?: string;
-  month?: number;
-  year?: number;
-  analyse?: boolean;
-  benchmark?: boolean;
-  sortByName?: boolean;
-  tries?: number;
-}
-
-/**
- * Server environment only
- * @deprecated
- */
-export async function execute(options: ExecutionOptions) {
-  const month = options.month ?? getMonth();
-  const year = options.year ?? getYear();
-
-  const benchmarker = new Benchmarker();
-  const programProcess = benchmarker.start('full process');
-
-  // loads workers from specified file
-  const loadWorkersProcess = benchmarker.start('load workers from file');
-  const workers = await loadWorkers(options.input, { ...options, month, year });
-  loadWorkersProcess.end();
-
-  // assign workers to table
-  const assignArrayProcess = benchmarker.start('assign workers to table');
-  const table = new ExtraDutyTable();
-  const success = table.tryAssignArrayMultipleTimes(workers, options.tries ?? 500);
-  if (!success) throw new Error(`Can't assign with success!`);
-  assignArrayProcess.end();
-
-  if (options.analyse) {
-    // analyse the result
-    const analysisProcess = benchmarker.start('analyse result');
-    const analysisResult = analyseResult(table);
-    console.log(analysisResult);
-    analysisProcess.end();
-  }
-
-  if (options.output) {
-    // saves the result
-    const saveTableProcess = benchmarker.start('save table inside a file');
-    await saveTable(options.output, table);
-    saveTableProcess.end();
-  }
-
-  programProcess.end();
-
-  if (options.benchmark) {
-    const benchmarkMessage = benchmarker.getMessage();
-    console.log(benchmarkMessage);
-  }
-}
 
 export interface GenerateOptions extends GenerateFromWorkersOptions {
   holidays?: Holidays;
@@ -101,8 +44,11 @@ export function generateFromWorkers(workers: WorkerInfo[], options: GenerateFrom
 
   const assignArrayProcess = options.benchmarker?.start('assign workers to table');
   const table = new ExtraDutyTable({ month, year });
-  table.tryAssignArrayMultipleTimes(workers, options.tries ?? 7000);
-  assignArrayProcess?.end();
+  
+  new JQScheduleBuilder(options.tries ?? 7000)
+    .build(table, workers);
+  
+    assignArrayProcess?.end();
 
   if (options.onAnalyse) {
     const analysisResult = analyseResult(table);
