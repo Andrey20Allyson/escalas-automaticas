@@ -5,14 +5,13 @@ import { Gender, Graduation, WorkerInfo } from "./worker-info";
 import { WorkingPlaceStorage } from "./working-place-storage";
 
 export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
-  workers: WorkingPlaceStorage;
-
   readonly offTimeEnd: number;
   readonly isNightly: boolean;
   readonly start: number;
   readonly end: number;
   readonly firstMonday: number;
   readonly weekDay: number;
+  readonly workers: WorkingPlaceStorage;
 
   constructor(
     readonly day: number,
