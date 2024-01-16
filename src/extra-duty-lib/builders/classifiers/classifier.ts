@@ -39,6 +39,7 @@ export class DefaultScheduleClassifier implements ScheduleClassifier {
       }
     }
 
-    return bestClone!;
+    if (bestClone === null) throw new Error(`Unespected null`);
+    return bestClone;
   }
 }
