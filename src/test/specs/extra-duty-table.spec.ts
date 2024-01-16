@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { ExtraDutyTable } from '../../extra-duty-lib/extra-duty-table/extra-duty-table';
+import { ExtraDutyTable } from '../../extra-duty-lib/structs/extra-duty-table';
 import { WorkerInfo } from '../../extra-duty-lib/structs/worker-info';
 
 test(`#clear shold restart all workers positionsLeft`, () => {

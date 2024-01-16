@@ -1,5 +1,4 @@
-import { ExtraDutyTable } from "../extra-duty-table";
-import { WorkerInfo } from "../structs";
+import { ExtraDutyTable, WorkerInfo } from "../structs";
 import { ScheduleBuilder } from "./schedule-builder";
 
 export class JBDayScheduleBuilder implements ScheduleBuilder {

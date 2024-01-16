@@ -1,8 +1,7 @@
 import { iterRandom, iterWeekends, randomizeArray } from "../../../utils";
-import { ExtraDutyTable } from "../../extra-duty-table";
-import { isInsp, isSubInsp, workerIsCompletelyBusy, isMonday, isDailyWorker } from "./jq-utils";
-import { WorkerInfo } from "../../structs";
+import { ExtraDutyTable, WorkerInfo } from "../../structs";
 import { ScheduleAssigner } from "../classifiers/classifier";
+import { isDailyWorker, isInsp, isMonday, isSubInsp, workerIsCompletelyBusy } from "./jq-utils";
 
 export class JQScheduleAssigner implements ScheduleAssigner {
   constructor() { }

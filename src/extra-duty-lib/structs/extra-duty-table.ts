@@ -1,6 +1,6 @@
 import clone from 'clone';
 import { firstMondayFromYearAndMonth, getNumOfDaysInMonth, thisMonth, thisYear } from '../../utils';
-import { DayOfExtraDuty, ExtraDuty, WorkerInfo } from '../structs';
+import { DayOfExtraDuty, ExtraDuty, WorkerInfo } from '.';
 import { ExtraPlace } from './extra-place';
 import { DefaultTableIntegrityAnalyser, TableIntegrity, TableIntegrityAnalyser } from '../builders/integrity';
 

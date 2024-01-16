@@ -1,8 +1,7 @@
-import { ExtraDutyTable } from "../../extra-duty-table";
-import { WorkerInfo } from "../../structs";
+import { ExtraDutyTable, WorkerInfo } from "../../structs";
+import { JQScheduleAssigner } from "../assigners/jq-assigner";
 import { DefaultScheduleClassifier } from "../classifiers/classifier";
 import { ScheduleBuilder } from "../schedule-builder";
-import { JQScheduleAssigner } from "../assigners/jq-assigner";
 
 export class JQScheduleBuilder implements ScheduleBuilder {
   readonly classifier: DefaultScheduleClassifier;

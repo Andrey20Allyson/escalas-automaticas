@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { ExtraDutyTable } from '../../extra-duty-lib/extra-duty-table';
+import { ExtraDutyTable } from '../../extra-duty-lib';
 import { WorkerInfo } from '../../extra-duty-lib/structs/worker-info';
 
 test(`shold return true if worker's duty are colliding with interval`, () => {

@@ -5,4 +5,6 @@ export * from './holidays';
 export * from './work-time';
 export * from './worker-info';
 export * from './worker-registries';
+export * from './extra-duty-table';
+export * from './extra-place';
 

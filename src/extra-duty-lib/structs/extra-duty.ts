@@ -1,5 +1,5 @@
 import { DaysOfWeek, dayOfWeekFrom, firstMondayFromYearAndMonth } from "../../utils";
-import type { ExtraDutyTableConfig } from "../extra-duty-table/extra-duty-table";
+import type { ExtraDutyTableConfig } from "./extra-duty-table";
 import type { DayOfExtraDuty } from "./day-of-extra-duty";
 import { Gender, Graduation, WorkerInfo } from "./worker-info";
 import { WorkingPlaceStorage } from "./working-place-storage";

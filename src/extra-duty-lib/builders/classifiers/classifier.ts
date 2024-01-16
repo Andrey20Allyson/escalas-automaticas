@@ -1,4 +1,4 @@
-import { ExtraDutyTable } from "../../extra-duty-table";
+import { ExtraDutyTable } from "../../structs/extra-duty-table";
 import { WorkerInfo } from "../../structs";
 
 export interface ScheduleAssigner {
