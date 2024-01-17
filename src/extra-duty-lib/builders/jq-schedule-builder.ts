@@ -1,9 +1,9 @@
 import { ExtraPlace } from "../structs";
 import { JQScheduleAssigner } from "./assigners/jq-assigner";
 import { DefaultScheduleClassifier } from "./classifiers/classifier";
-import { ClassifingScheduleBuilder } from "./classifing-schedule-builder";
+import { ClassifyingScheduleBuilder } from "./classifying-schedule-builder";
 
-export class JQScheduleBuilder extends ClassifingScheduleBuilder {
+export class JQScheduleBuilder extends ClassifyingScheduleBuilder {
   constructor(
     tries: number,
   ) {

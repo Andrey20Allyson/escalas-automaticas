@@ -2,7 +2,7 @@ import { ExtraDutyTable, WorkerInfo } from "../structs";
 import { ScheduleClassifier } from "./classifiers/classifier";
 import { ScheduleBuilder } from "./schedule-builder";
 
-export class ClassifingScheduleBuilder implements ScheduleBuilder {
+export class ClassifyingScheduleBuilder implements ScheduleBuilder {
   constructor(
     readonly extraPlace: string,
     readonly classifier: ScheduleClassifier,
