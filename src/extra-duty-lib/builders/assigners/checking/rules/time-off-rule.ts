@@ -1,4 +1,4 @@
-import { DayOfExtraDuty, ExtraDutyTable, ExtraPlace, WorkerInfo } from "../../../../structs";
+import { DayOfExtraDuty, ExtraDutyTable, WorkerInfo } from "../../../../structs";
 import { AssignmentRule } from "../assignment-rule";
 
 export interface TimeOffCollisionTestConfig {
@@ -25,25 +25,14 @@ export class TimeOffAssignmentRule implements AssignmentRule {
     return day.includes(worker, firstIndex, lastIndex, place);
   }
 
-  *iterOtherPlaces(currentPlace: string): Iterable<ExtraPlace> {
-    for (const place of Object.values(ExtraPlace)) {
-      if (place !== currentPlace) return place;
-    }
-  }
-
   canAssign(table: ExtraDutyTable, worker: WorkerInfo, dayIndex: number, dutyIndex: number): boolean {
     const day = table.getDay(dayIndex);
     if (day.config.dutyMinDistance < 1) throw new Error(`Distance can't be smaller than 1! distance: ${day.config.dutyMinDistance}`);
 
-    if (this.collidesWithTimeOff({ worker, day, dutyIndex, place: day.config.currentPlace })) {
-      return false;
-    }
+    const place = day.config.currentPlace;
 
-    if (this.collidesWithTimeOff({ worker, day, dutyIndex, distance: 1 })) {
-      return false;
-    }
-
-    return true;
+    return this.collidesWithTimeOff({ worker, day, dutyIndex, place }) === false
+      && this.collidesWithTimeOff({ worker, day, dutyIndex, distance: 1 }) === false;
   }
 
   canAssignInDay(): boolean {
