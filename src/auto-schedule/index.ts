@@ -1,5 +1,5 @@
 import { ExtraDutyTable, Holidays, WorkerInfo, WorkerRegistriesMap } from '../extra-duty-lib';
-import { JQScheduleBuilder } from '../extra-duty-lib/builders/jq-schedule/builder';
+import { JQScheduleBuilder } from '../extra-duty-lib/builders/jq-schedule-builder';
 import { getMonth, getYear } from '../utils';
 import { analyseResult } from '../utils/analyser';
 import { Benchmarker } from '../utils/benchmark';

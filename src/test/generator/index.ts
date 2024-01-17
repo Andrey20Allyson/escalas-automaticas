@@ -4,7 +4,7 @@ import { parseWorkers } from '../../auto-schedule/io';
 import { MainTableFactory } from '../../auto-schedule/table-factories';
 import { ExtraDutyTable, Holidays, WorkerRegistriesMap } from '../../extra-duty-lib';
 import { DefaultTableIntegrityAnalyser } from '../../extra-duty-lib/builders/integrity';
-import { JQScheduleBuilder } from '../../extra-duty-lib/builders/jq-schedule/builder';
+import { JQScheduleBuilder } from '../../extra-duty-lib/builders/jq-schedule-builder';
 import { DEFAULT_MONTH_PARSER, Month } from '../../extra-duty-lib/structs/month';
 import { Benchmarker, Result, analyseResult } from '../../utils';
 import { argvCompiler } from '../../utils/cli';

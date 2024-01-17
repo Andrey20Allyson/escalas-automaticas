@@ -2,9 +2,13 @@ import { DayOfExtraDuty, ExtraDuty, WorkerInfo } from "../../../structs";
 import { AssignmentRule } from "./assignment-rule";
 
 export class AssignmentChecker {
+  readonly rules: ReadonlyArray<AssignmentRule>;
+  
   constructor(
-    readonly rules: ReadonlyArray<AssignmentRule> = [],
-  ) { }
+    rules: AssignmentRule[] = [],
+  ) {
+    this.rules = [...rules];
+  }
 
   checkDay(worker: WorkerInfo, day: DayOfExtraDuty): boolean {
     return this
@@ -19,7 +23,7 @@ export class AssignmentChecker {
   }
 
   use(...rules: AssignmentRule[]): AssignmentChecker {
-    return new AssignmentChecker([...this.rules, ...rules]);
+    return new AssignmentChecker(this.rules.concat(rules));
   }
 
   extend(...checkers: AssignmentChecker[]): AssignmentChecker {
