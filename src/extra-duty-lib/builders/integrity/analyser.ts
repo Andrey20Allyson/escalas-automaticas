@@ -3,10 +3,13 @@ import { RuleChecker } from "./rules";
 import { TableIntegrity } from "./table-integrity";
 
 export class TableIntegrityAnalyser {
-  constructor(private checkers: RuleChecker[] = []) { }
+  constructor(
+    private checkers: RuleChecker[] = [],
+    private penalityLimit: number,
+  ) { }
 
   analyse(table: ExtraDutyTable): TableIntegrity {
-    const integrity = new TableIntegrity(table, table.config.maxAcceptablePenalityAcc);
+    const integrity = new TableIntegrity(table, this.penalityLimit);
 
     for (const checker of this.checkers) {
       checker.check(integrity);

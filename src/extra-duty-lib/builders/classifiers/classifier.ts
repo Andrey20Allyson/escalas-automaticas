@@ -13,13 +13,14 @@ export class DefaultScheduleClassifier implements ScheduleClassifier {
   constructor(
     tries: number,
     readonly assigner: ScheduleAssigner,
+    readonly penalityLimit?: number,
   ) {
     this.tries = tries < 1 ? 1 : tries;
   }
 
   classify(table: ExtraDutyTable, workers: WorkerInfo[]) {
     const tableClone = table.clone();
-    const analyser = new DefaultTableIntegrityAnalyser();
+    const analyser = new DefaultTableIntegrityAnalyser(this.penalityLimit);
     let bestIntegrity: TableIntegrity | null = null;
 
     for (let i = 0; i < this.tries; i++) {

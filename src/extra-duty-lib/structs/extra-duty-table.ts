@@ -4,7 +4,6 @@ import { firstMondayFromYearAndMonth, getNumOfDaysInMonth, thisMonth, thisYear }
 import { ExtraPlace } from './extra-place';
 
 export interface ExtraDutyTableConfig {
-  readonly maxAcceptablePenalityAcc: number;
   readonly dutyPositionSize: number;
   readonly firstDutyTime: number;
   readonly dutyInterval: number;
@@ -108,7 +107,6 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
       dutyCapacity: partialConfig?.dutyCapacity ?? 2,
       month: partialConfig?.month ?? thisMonth,
       year: partialConfig?.year ?? thisYear,
-      maxAcceptablePenalityAcc: partialConfig?.maxAcceptablePenalityAcc ?? 100_000,
       currentPlace: partialConfig?.currentPlace ?? ExtraPlace.JIQUIA,
     };
   }
