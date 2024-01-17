@@ -142,7 +142,7 @@ export function scrappeTable(buffer: Buffer, workers: WorkerInfo[], options: Scr
 
     const duty = dayOfDuty.getDuty(Math.floor((startHour < firstDutyTime ? startHour + 24 - firstDutyTime : startTime.hours - firstDutyTime) / dutyDuration));
 
-    if (!duty.has(worker)) duty.add(worker, true);
+    if (!duty.has(worker)) duty.add(worker);
   }
 
   return table;
