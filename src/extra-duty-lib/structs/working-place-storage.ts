@@ -22,16 +22,24 @@ export class WorkingPlaceStorage {
     }));
   }
 
-  placeFrom(name: string): Map<number, WorkerInfo> {
-    let place = this.places.get(name);
+  placeFrom(place: string): ReadonlyMap<number, WorkerInfo> {
+    return this._mutPlaceFrom(place);
+  }
 
-    if (place === undefined) {
-      place = new Map();
+  sizeOf(place: string) {
+    return this.placeFrom(place).size;
+  }
 
-      this.places.set(name, place);
+  private _mutPlaceFrom(place: string): Map<number, WorkerInfo> {
+    let placeMap = this.places.get(place);
+
+    if (placeMap === undefined) {
+      placeMap = new Map();
+
+      this.places.set(place, placeMap);
     }
 
-    return place;
+    return placeMap;
   }
 
   has(workerId: number, place?: string): boolean;
@@ -53,14 +61,14 @@ export class WorkingPlaceStorage {
   }
 
   add(place: string, worker: WorkerInfo): void {
-    this.placeFrom(place).set(this.keyFrom(worker), worker);
+    this._mutPlaceFrom(place).set(this.keyFrom(worker), worker);
 
     this.graduation.increment(place, worker.graduation);
     this.gender.increment(place, worker.gender);
   }
 
   remove(place: string, worker: WorkerInfo): boolean {
-    const existed = this.placeFrom(place).delete(this.keyFrom(worker));
+    const existed = this._mutPlaceFrom(place).delete(this.keyFrom(worker));
 
     if (!existed) return false;
 

@@ -1,6 +1,6 @@
-import { DaysOfWeek, dayOfWeekFrom, firstMondayFromYearAndMonth } from "../../utils";
-import type { ExtraDutyTable, ExtraDutyTableConfig } from "./extra-duty-table";
+import { dayOfWeekFrom, firstMondayFromYearAndMonth } from "../../utils";
 import type { DayOfExtraDuty } from "./day-of-extra-duty";
+import type { ExtraDutyTable, ExtraDutyTableConfig } from "./extra-duty-table";
 import { Gender, Graduation, WorkerInfo } from "./worker-info";
 import { WorkingPlaceStorage } from "./working-place-storage";
 
@@ -50,10 +50,6 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     return this.workers.gender.quantityFrom(this.config.currentPlace, gender);
   }
 
-  isDailyWorkerAtNight(worker: WorkerInfo) {
-    return worker.daysOfWork.isDailyWorker && this.isNightly;
-  }
-
   gradIsOnly(grad: Graduation) {
     return !this.isEmpity() && this.gradQuantity(grad) === this.getSize();
   }
@@ -68,59 +64,6 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
 
   isWorkerInsuficient() {
     return this.getSize() < 2;
-  }
-
-  isDailyWorkerAtFridayAtNight(worker: WorkerInfo) {
-    const isFriday = this.isWeekDay(DaysOfWeek.FRIDAY);
-
-    return isFriday && this.isDailyWorkerAtNight(worker);
-  }
-
-  collidesWithWork(worker: WorkerInfo) {
-    if (this.isDailyWorkerAtFridayAtNight(worker)) return false;
-
-    return this.collidesWithTodayWork(worker)
-      || this.collidesWithTomorrowWork(worker)
-      || this.collidesWithYesterdayWork(worker);
-  }
-
-  collidesWithTodayWork(worker: WorkerInfo) {
-    const workToday = worker.daysOfWork.workOn(this.day.index);
-    if (!workToday) return false;
-
-    const workStart = worker.workTime.startTime;
-
-    return this.offTimeEnd > workStart;
-  }
-
-  collidesWithYesterdayWork(worker: WorkerInfo) {
-    const workYesterday = worker.daysOfWork.workOn(this.day.index - 1);
-    if (!workYesterday) return false;
-
-    const yesterdayWorkOffTimeEnd = worker.workTime.startTime + worker.workTime.totalTime * 2;
-
-    return yesterdayWorkOffTimeEnd - 24 > this.start;
-  }
-
-  collidesWithTomorrowWork(worker: WorkerInfo) {
-    const workTomorrow = worker.daysOfWork.workOn(this.day.index + 1);
-    if (!workTomorrow) return false;
-
-    const tomorrowWorkStart = worker.workTime.startTime + 24;
-
-    return this.offTimeEnd > tomorrowWorkStart;
-  }
-
-  collidesWithLicense(worker: WorkerInfo) {
-    return worker.daysOfWork.licenseOn(this.day.index);
-  }
-
-  breaksInspRule(worker: WorkerInfo) {
-    return worker.graduation === 'insp' && this.gradQuantity('insp') > 0;
-  }
-
-  breaksGenderRule(worker: WorkerInfo) {
-    return worker.gender === 'female' && (this.genderQuantity('female') > 0 && this.genderQuantity('male') < 1);
   }
 
   *[Symbol.iterator](): Iterator<[string, WorkerInfo]> {
@@ -149,20 +92,7 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     return this.workers.placeFrom(this.config.currentPlace).size;
   }
 
-  canAdd(worker: WorkerInfo, force = false) {
-    return !this.has(worker)
-      && (force
-        || !worker.isCompletelyBusy(this.config.dutyPositionSize)
-        && !this.isFull()
-        && !this.collidesWithLicense(worker)
-        && !this.breaksInspRule(worker)
-        && !this.breaksGenderRule(worker)
-      );
-  }
-
-  add(worker: WorkerInfo, force = false): boolean {
-    if (!this.canAdd(worker, force)) return false;
-
+  add(worker: WorkerInfo): boolean {
     this.workers.add(this.config.currentPlace, worker);
 
     worker.occupyPositions(this.config.dutyPositionSize);
