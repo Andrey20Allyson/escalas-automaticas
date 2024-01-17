@@ -38,7 +38,7 @@ export function* iterRows(entries: Iterable<ExtraDutyTableEntry>): Iterable<Extr
       const date = new Date(
         entry.day.config.year,
         entry.day.config.month,
-        entry.day.day + 1,
+        entry.day.index + 1,
       );
 
       const workerConfig = entry.worker.config;

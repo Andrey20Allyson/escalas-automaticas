@@ -25,5 +25,5 @@ export function calculateDutyPontuation(duty: ExtraDuty, firstMonday: number): n
   const pointGetter = pointGetterMap.at(duty.getSize());
   const isNightDuty = duty.index > 0;
 
-  return (pointGetter?.(duty.day, firstMonday) ?? 0) * (isNightDuty ? 1 : 3);
+  return (pointGetter?.(duty.day.index, firstMonday) ?? 0) * (isNightDuty ? 1 : 3);
 }

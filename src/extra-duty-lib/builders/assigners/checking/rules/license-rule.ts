@@ -1,12 +1,12 @@
-import { ExtraDutyTable, WorkerInfo } from "../../../../structs";
+import { DayOfExtraDuty, ExtraDuty, WorkerInfo } from "../../../../structs";
 import { AssignmentRule } from "../assignment-rule";
 
 export class LicenseAssignmentRule implements AssignmentRule {
-  canAssign(table: ExtraDutyTable, worker: WorkerInfo, dayIndex: number): boolean {
-    return this.canAssignInDay(table, worker, dayIndex);
+  canAssign(worker: WorkerInfo, duty: ExtraDuty): boolean {
+    return this.canAssignInDay(worker, duty.day);
   }
 
-  canAssignInDay(_table: ExtraDutyTable, worker: WorkerInfo, dayIndex: number): boolean {
-    return worker.daysOfWork.licenseOn(dayIndex);
+  canAssignInDay(worker: WorkerInfo, day: DayOfExtraDuty): boolean {
+    return worker.daysOfWork.licenseOn(day.index);
   }
 }

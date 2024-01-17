@@ -1,5 +1,5 @@
 import { DaysOfWeek, dayOfWeekFrom, firstMondayFromYearAndMonth } from "../../utils";
-import type { ExtraDutyTableConfig } from "./extra-duty-table";
+import type { ExtraDutyTable, ExtraDutyTableConfig } from "./extra-duty-table";
 import type { DayOfExtraDuty } from "./day-of-extra-duty";
 import { Gender, Graduation, WorkerInfo } from "./worker-info";
 import { WorkingPlaceStorage } from "./working-place-storage";
@@ -12,20 +12,24 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
   readonly firstMonday: number;
   readonly weekDay: number;
   readonly workers: WorkingPlaceStorage;
+  readonly config: ExtraDutyTableConfig;
+  readonly table: ExtraDutyTable;
 
   constructor(
-    readonly day: number,
     readonly index: number,
-    readonly config: ExtraDutyTableConfig
+    readonly day: DayOfExtraDuty,
   ) {
+    this.table = day.table;
+    this.config = day.config;
+
     this.workers = new WorkingPlaceStorage();
 
-    this.start = config.firstDutyTime + config.dutyInterval * index;
+    this.start = this.config.firstDutyTime + this.config.dutyInterval * index;
     this.end = this.start + this.config.dutyDuration;
     this.offTimeEnd = this.end + this.config.dutyDuration;
     this.isNightly = this.start >= 18 || this.start < 7;
     this.firstMonday = firstMondayFromYearAndMonth(this.config.year, this.config.month);
-    this.weekDay = dayOfWeekFrom(this.firstMonday, this.day);
+    this.weekDay = dayOfWeekFrom(this.firstMonday, this.day.index);
   }
 
   copy(other: ExtraDuty): this {
@@ -81,7 +85,7 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
   }
 
   collidesWithTodayWork(worker: WorkerInfo) {
-    const workToday = worker.daysOfWork.workOn(this.day);
+    const workToday = worker.daysOfWork.workOn(this.day.index);
     if (!workToday) return false;
 
     const workStart = worker.workTime.startTime;
@@ -90,7 +94,7 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
   }
 
   collidesWithYesterdayWork(worker: WorkerInfo) {
-    const workYesterday = worker.daysOfWork.workOn(this.day - 1);
+    const workYesterday = worker.daysOfWork.workOn(this.day.index - 1);
     if (!workYesterday) return false;
 
     const yesterdayWorkOffTimeEnd = worker.workTime.startTime + worker.workTime.totalTime * 2;
@@ -99,7 +103,7 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
   }
 
   collidesWithTomorrowWork(worker: WorkerInfo) {
-    const workTomorrow = worker.daysOfWork.workOn(this.day + 1);
+    const workTomorrow = worker.daysOfWork.workOn(this.day.index + 1);
     if (!workTomorrow) return false;
 
     const tomorrowWorkStart = worker.workTime.startTime + 24;
@@ -108,7 +112,7 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
   }
 
   collidesWithLicense(worker: WorkerInfo) {
-    return worker.daysOfWork.licenseOn(this.day);
+    return worker.daysOfWork.licenseOn(this.day.index);
   }
 
   breaksInspRule(worker: WorkerInfo) {
@@ -183,10 +187,10 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
   }
 
   static dutiesFrom(day: DayOfExtraDuty): readonly ExtraDuty[] {
-    const duties: ExtraDuty[] = new Array(day.size);
+    const duties: ExtraDuty[] = new Array(day.getSize());
 
     for (let i = 0; i < duties.length; i++) {
-      duties[i] = new ExtraDuty(day.day, i, day.config);
+      duties[i] = new ExtraDuty(i, day);
     }
 
     return duties;

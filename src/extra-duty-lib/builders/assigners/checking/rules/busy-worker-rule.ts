@@ -1,12 +1,16 @@
-import { ExtraDutyTable, WorkerInfo } from "../../../../structs";
+import { DayOfExtraDuty, ExtraDuty, ExtraDutyTable, ExtraDutyTableConfig, WorkerInfo } from "../../../../structs";
 import { AssignmentRule } from "../assignment-rule";
 
 export class BusyWorkerAssignmentRule implements AssignmentRule {
-  canAssign(table: ExtraDutyTable, worker: WorkerInfo): boolean {
-    return this.canAssignInDay(table, worker);
+  isBusy(worker: WorkerInfo, config: ExtraDutyTableConfig) {
+    return worker.isCompletelyBusy(config.dutyPositionSize) === false;
+  }
+  
+  canAssign(worker: WorkerInfo, duty: ExtraDuty): boolean {
+    return this.isBusy(worker, duty.config);
   }
 
-  canAssignInDay(table: ExtraDutyTable, worker: WorkerInfo): boolean {
-    return worker.isCompletelyBusy(table.config.dutyPositionSize) === false;
+  canAssignInDay(worker: WorkerInfo, day: DayOfExtraDuty): boolean {
+    return this.isBusy(worker, day.config);
   }
 }

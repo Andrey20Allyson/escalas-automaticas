@@ -76,11 +76,11 @@ export function fromExcelDim(dim: number) {
 
 export function* iterGrids(table: ExtraDutyTable): Iterable<DayGrid> {
   for (const day of table) {
-    const weekDay = dayOfWeekFrom(table.firstMonday, day.day);
+    const weekDay = dayOfWeekFrom(table.firstMonday, day.index);
 
     const weekDayName = weekDayNames.at(weekDay) ?? 'Unknow';
 
-    const title = `Dia ${parseDayIndex(day.day)} (${weekDayName})`;
+    const title = `Dia ${parseDayIndex(day.index)} (${weekDayName})`;
 
     const grid: DayGrid = { title, entries: [], numOfDiurnal: 0, numOfNightly: 0 };
 

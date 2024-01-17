@@ -107,7 +107,7 @@ export class DayListTableFactory implements TableFactory {
     for (const [worker, daySet] of sortedWorkersAndDays) {
       const rowFill = actualRow % 2 === 0 ? primaryFill : secondaryFill;
       const row = sheet.getRow(actualRow++);
-      const days = Array.from(daySet, day => day.day).sort((a, b) => a - b).map(parseDayIndex);
+      const days = Array.from(daySet, day => day.index).sort((a, b) => a - b).map(parseDayIndex);
 
       const indexCell = row.getCell(DayListTableCollumn.INDEX);
       indexCell.value = `${indexCellValue++}.`;

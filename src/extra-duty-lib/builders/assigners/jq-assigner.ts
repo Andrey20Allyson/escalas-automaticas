@@ -1,10 +1,24 @@
 import { iterRandom, iterWeekends, randomizeArray } from "../../../utils";
 import { ExtraDutyTable, WorkerInfo } from "../../structs";
-import { ScheduleAssigner } from "../classifiers/classifier";
+import { ScheduleAssigner } from "./assigner";
+import { AssignmentChecker } from "./checking";
+import { BusyWorkerAssignmentRule, DutyLimitAssignmentRule, FemaleAssignmentRule, InspAssignmentRule, LicenseAssignmentRule, OrdinaryAssignmentRule, TimeOffAssignmentRule } from "./checking/rules";
 import { isDailyWorker, isInsp, isMonday, isSubInsp, workerIsCompletelyBusy } from "./jq-utils";
 
-export class JQScheduleAssigner implements ScheduleAssigner {
-  constructor() { }
+export class JQScheduleAssigner extends ScheduleAssigner {
+  constructor() {
+    super(
+      new AssignmentChecker([
+        new BusyWorkerAssignmentRule(),
+        new DutyLimitAssignmentRule(),
+        new FemaleAssignmentRule(),
+        new InspAssignmentRule(),
+        new LicenseAssignmentRule(),
+        new OrdinaryAssignmentRule(),
+        new TimeOffAssignmentRule(),
+      ])
+    )
+  }
 
   assignInto(table: ExtraDutyTable, workers: WorkerInfo[]): ExtraDutyTable {
     this._assignDailyWorkerArray(table, workers);
@@ -39,14 +53,14 @@ export class JQScheduleAssigner implements ScheduleAssigner {
 
         if (filteredWorkers.length === 0) break;
 
-        const duties = isMonday(day.day, table.firstMonday) ? day : iterRandom(day);
+        const duties = isMonday(day.index, table.firstMonday) ? day : iterRandom(day);
 
         for (const duty of duties) {
-          const passDuty = duty.isFull() || (excludeMondays && isMonday(duty.day, table.firstMonday));
+          const passDuty = duty.isFull() || (excludeMondays && isMonday(duty.day.index, table.firstMonday));
           if (passDuty) continue;
 
           for (const worker of iterRandom(filteredWorkers)) {
-            day.insert(worker, duty);
+            this.assignWorker(worker, duty);
 
             if (duty.isFull()) break;
           }
@@ -70,13 +84,17 @@ export class JQScheduleAssigner implements ScheduleAssigner {
       if (weekend.saturday) {
         const day = table.getDay(weekend.saturday);
 
-        day.fill(worker);
+        for (const duty of day) {
+          this.assignWorker(worker, duty);
+        }
       }
 
       if (weekend.sunday) {
-        table
+        const duty = table
           .getDay(weekend.sunday)
-          .insert(worker, 0);
+          .getDuty(0);
+
+        this.assignWorker(worker, duty);
       }
     }
 

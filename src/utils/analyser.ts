@@ -38,7 +38,7 @@ export function analyseResult(table: ExtraDutyTable, colors = true) {
       numOfWorkersMap[duty.index * 2 + 1] += size;
     }
 
-    const formatedDay = chalk.white(String(day.day + 1).padStart(2, '0'));
+    const formatedDay = chalk.white(String(day.index + 1).padStart(2, '0'));
     const formatedDutySizes = numOfWorkersMap.map(numberToColoredString).join(', ');
 
     analysisText.writeLn(chalk.gray(`  Dia(${formatedDay}) => [${formatedDutySizes}]`));

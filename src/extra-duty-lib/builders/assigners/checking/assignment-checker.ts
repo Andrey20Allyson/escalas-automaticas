@@ -1,4 +1,4 @@
-import { ExtraDutyTable, WorkerInfo } from "../../../structs";
+import { DayOfExtraDuty, ExtraDuty, WorkerInfo } from "../../../structs";
 import { AssignmentRule } from "./assignment-rule";
 
 export class AssignmentChecker {
@@ -6,15 +6,15 @@ export class AssignmentChecker {
     readonly rules: AssignmentRule[] = [],
   ) { }
 
-  checkDay(table: ExtraDutyTable, worker: WorkerInfo, dayIndex: number): boolean {
+  checkDay(worker: WorkerInfo, day: DayOfExtraDuty): boolean {
     return this
       .rules
-      .every(rule => rule.canAssignInDay(table, worker, dayIndex));
+      .every(rule => rule.canAssignInDay(worker, day));
   }
 
-  checkDuty(table: ExtraDutyTable, worker: WorkerInfo, dayIndex: number, dutyIndex: number): boolean {
+  checkDuty(worker: WorkerInfo, duty: ExtraDuty): boolean {
     return this
       .rules
-      .every(rule => rule.canAssign(table, worker, dayIndex, dutyIndex));
+      .every(rule => rule.canAssign(worker, duty));
   }
 }

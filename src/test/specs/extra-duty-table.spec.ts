@@ -11,9 +11,9 @@ test(`#clear shold restart all workers positionsLeft`, () => {
 
   const day0 = table.getDay(0);
 
-  day0.insert(worker0, 0);
-  day0.insert(worker1, 0);
-  day0.insert(worker2, 1);
+  day0.getDuty(0).add(worker0);
+  day0.getDuty(0).add(worker1);
+  day0.getDuty(1).add(worker2);
 
   table.clear();
 

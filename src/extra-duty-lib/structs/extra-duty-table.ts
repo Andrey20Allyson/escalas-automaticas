@@ -48,7 +48,7 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
   copy(other: ExtraDutyTable) {
     for (const otherDuty of other.iterDuties()) {
       this
-        .getDay(otherDuty.day)
+        .getDay(otherDuty.day.index)
         .getDuty(otherDuty.index)
         .copy(otherDuty);
     }

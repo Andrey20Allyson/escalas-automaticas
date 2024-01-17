@@ -1,10 +1,10 @@
-import { DayOfExtraDuty, ExtraDutyTable, WorkerInfo } from "../../../../structs";
+import { table } from "console";
+import { DayOfExtraDuty, ExtraDuty, ExtraDutyTable, WorkerInfo } from "../../../../structs";
 import { AssignmentRule } from "../assignment-rule";
 
 export interface TimeOffCollisionTestConfig {
   worker: WorkerInfo;
-  day: DayOfExtraDuty;
-  dutyIndex: number;
+  duty: ExtraDuty;
   distance?: number;
   place?: string;
 }
@@ -12,27 +12,25 @@ export interface TimeOffCollisionTestConfig {
 export class TimeOffAssignmentRule implements AssignmentRule {
   collidesWithTimeOff(config: TimeOffCollisionTestConfig) {
     const {
-      day,
-      dutyIndex,
+      duty,
       worker,
       place,
-      distance = day.config.dutyMinDistance,
+      distance = duty.config.dutyMinDistance,
     } = config;
 
-    const firstIndex = dutyIndex - distance;
-    const lastIndex = dutyIndex + distance + 1;
+    const firstIndex = duty.index - distance;
+    const lastIndex = duty.index + distance + 1;
 
-    return day.includes(worker, firstIndex, lastIndex, place);
+    return duty.day.includes(worker, firstIndex, lastIndex, place);
   }
 
-  canAssign(table: ExtraDutyTable, worker: WorkerInfo, dayIndex: number, dutyIndex: number): boolean {
-    const day = table.getDay(dayIndex);
-    if (day.config.dutyMinDistance < 1) throw new Error(`Distance can't be smaller than 1! distance: ${day.config.dutyMinDistance}`);
+  canAssign(worker: WorkerInfo, duty: ExtraDuty): boolean {
+    if (duty.config.dutyMinDistance < 1) throw new Error(`Distance can't be smaller than 1! distance: ${duty.config.dutyMinDistance}`);
 
-    const place = day.config.currentPlace;
+    const place = duty.config.currentPlace;
 
-    return this.collidesWithTimeOff({ worker, day, dutyIndex, place }) === false
-      && this.collidesWithTimeOff({ worker, day, dutyIndex, distance: 1 }) === false;
+    return this.collidesWithTimeOff({ worker, duty, place }) === false
+      && this.collidesWithTimeOff({ worker, duty, distance: 1 }) === false;
   }
 
   canAssignInDay(): boolean {

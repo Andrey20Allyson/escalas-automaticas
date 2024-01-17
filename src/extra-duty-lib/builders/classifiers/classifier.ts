@@ -1,10 +1,7 @@
 import { ExtraDutyTable } from "../../structs/extra-duty-table";
 import { WorkerInfo } from "../../structs";
 import { DefaultTableIntegrityAnalyser, TableIntegrity } from "../integrity";
-
-export interface ScheduleAssigner {
-  assignInto(table: ExtraDutyTable, workers: WorkerInfo[]): ExtraDutyTable;
-}
+import { ScheduleAssigner } from "../assigners/assigner";
 
 export interface ScheduleClassifier {
   classify(table: ExtraDutyTable, workers: WorkerInfo[]): ExtraDutyTable;
