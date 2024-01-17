@@ -92,12 +92,10 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     return this.workers.placeFrom(this.config.currentPlace).size;
   }
 
-  add(worker: WorkerInfo): boolean {
+  add(worker: WorkerInfo) {
     this.workers.add(this.config.currentPlace, worker);
 
     worker.occupyPositions(this.config.dutyPositionSize);
-
-    return true;
   }
 
   delete(worker: WorkerInfo) {

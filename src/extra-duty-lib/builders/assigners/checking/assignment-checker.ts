@@ -3,7 +3,7 @@ import { AssignmentRule } from "./assignment-rule";
 
 export class AssignmentChecker {
   constructor(
-    readonly rules: AssignmentRule[] = [],
+    readonly rules: ReadonlyArray<AssignmentRule> = [],
   ) { }
 
   checkDay(worker: WorkerInfo, day: DayOfExtraDuty): boolean {
@@ -16,5 +16,13 @@ export class AssignmentChecker {
     return this
       .rules
       .every(rule => rule.canAssign(worker, duty));
+  }
+
+  use(...rules: AssignmentRule[]): AssignmentChecker {
+    return new AssignmentChecker([...this.rules, ...rules]);
+  }
+
+  extend(...checkers: AssignmentChecker[]): AssignmentChecker {
+    return this.use(...checkers.flatMap(checker => checker.rules));
   }
 }

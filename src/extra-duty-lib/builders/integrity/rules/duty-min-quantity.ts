@@ -1,4 +1,4 @@
-import { calculateDutyPontuation } from "../../assigners/jq-utils";
+import { calculateDutyPontuation } from "../../assigners/utils";
 import { TableIntegrity } from "../table-integrity";
 import { IntegrityWarning } from "../warning";
 import { RuleChecker } from "./rule-checker";
