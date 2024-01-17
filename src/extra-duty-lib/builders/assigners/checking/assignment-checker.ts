@@ -12,9 +12,9 @@ export class AssignmentChecker {
       .every(rule => rule.canAssignInDay(table, worker, dayIndex));
   }
 
-  checkDuty(table: ExtraDutyTable, worker: WorkerInfo, dayIndex: number, duty: number): boolean {
+  checkDuty(table: ExtraDutyTable, worker: WorkerInfo, dayIndex: number, dutyIndex: number): boolean {
     return this
       .rules
-      .every(rule => rule.canAssign(table, worker, dayIndex, duty));
+      .every(rule => rule.canAssign(table, worker, dayIndex, dutyIndex));
   }
 }
