@@ -92,12 +92,16 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
     return duty;
   }
 
-  workedAtInterval(worker: WorkerInfo, start: number, end: number) {
+  includes(worker: WorkerInfo, start: number, end: number, place?: string): boolean {
     for (let i = start; i < end; i++) {
-      if (this.at(i)?.has(worker)) return true;
+      if (this.has(worker, i, place)) return true;
     }
 
     return false;
+  }
+
+  has(worker: WorkerInfo, dutyIndex: number, place?: string): boolean {
+    return this.at(dutyIndex)?.has(worker, place) ?? false;
   }
 
   otherDutiesHasWorker(worker: WorkerInfo, searchStart: number) {
@@ -105,8 +109,8 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
 
     const nextIndex = searchStart + 1;
 
-    return this.workedAtInterval(worker, searchStart - this.config.dutyMinDistance, searchStart)
-      || this.workedAtInterval(worker, nextIndex, nextIndex + this.config.dutyMinDistance);
+    return this.includes(worker, searchStart - this.config.dutyMinDistance, searchStart)
+      || this.includes(worker, nextIndex, nextIndex + this.config.dutyMinDistance);
   }
 
   fill(worker: WorkerInfo, options: DayOfExtraDutyFillOptions = {}) {

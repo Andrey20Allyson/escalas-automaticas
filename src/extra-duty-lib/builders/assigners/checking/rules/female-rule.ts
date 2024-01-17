@@ -5,9 +5,11 @@ export class FemaleAssignmentRule implements AssignmentRule {
   canAssign(table: ExtraDutyTable, worker: WorkerInfo, dayIndex: number, dutyIndex: number): boolean {
     if (worker.gender !== 'female') return true;
 
-    const duty = table.getDay(dayIndex).getDuty(dutyIndex);
+    const duty = table
+      .getDay(dayIndex)
+      .getDuty(dutyIndex);
 
-    return duty.genderQuantity('male') > 0; 
+    return duty.genderQuantity('male') > 0;
   }
 
   canAssignInDay(): boolean {
