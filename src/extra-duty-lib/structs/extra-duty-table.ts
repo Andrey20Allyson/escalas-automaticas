@@ -89,10 +89,6 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
     }
   }
 
-  toArray() {
-    return Array.from(this);
-  }
-
   getDay(day: number) {
     return this.days.at(day) ?? new DayOfExtraDuty(day, this);
   }
