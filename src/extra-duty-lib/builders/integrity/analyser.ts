@@ -1,10 +1,10 @@
 import { ExtraDutyTable } from "../..";
-import { RuleChecker } from "./rules";
+import { IntegrityChecker } from "./checkers";
 import { TableIntegrity } from "./table-integrity";
 
 export class TableIntegrityAnalyser {
   constructor(
-    private checkers: RuleChecker[] = [],
+    private checkers: IntegrityChecker[] = [],
     private penalityLimit: number,
   ) { }
 
@@ -18,11 +18,11 @@ export class TableIntegrityAnalyser {
     return integrity;
   }
 
-  addRule(checker: RuleChecker) {
+  addRule(checker: IntegrityChecker) {
     this.checkers.push(checker);
   }
 
-  addRules(checkers: RuleChecker[]) {
+  addRules(checkers: IntegrityChecker[]) {
     for (const checker of checkers) {
       this.addRule(checker);
     }

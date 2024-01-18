@@ -1,5 +1,5 @@
 import { TableIntegrityAnalyser } from "./analyser";
-import { GCMOnlyChecker, FemaleOnlyChecker, DutyMinQuantityChecker, CorrectWorkerAllocationChecker } from "./rules";
+import { GCMOnlyChecker, FemaleOnlyChecker, DutyMinQuantityChecker, CorrectWorkerAllocationChecker } from "./checkers";
 
 export class DefaultTableIntegrityAnalyser extends TableIntegrityAnalyser {
   constructor(penalityLimit: number = 100_000) {

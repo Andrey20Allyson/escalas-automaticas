@@ -1,6 +1,6 @@
 import { ScheduleAssigner } from "./assigner";
-import { AssignmentRuleStack, AssignmentRule } from "./checking";
-import { JBNightAssignmentRule, JBNightAssignmentRuleOptions } from "./checking/rules/jb-night-rule";
+import { AssignmentRuleStack, AssignmentRule } from "../rule-checking";
+import { JBNightAssignmentRule, JBNightAssignmentRuleOptions } from "../rule-checking/rules/jb-night-rule";
 import { JQScheduleAssigner } from "./jq-assigner";
 
 export interface JBAssignmentRulesOptions {

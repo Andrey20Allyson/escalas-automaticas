@@ -1,5 +1,5 @@
-import { DaysOfWeek } from "../../../../../utils";
-import { ExtraDuty, WorkerInfo } from "../../../../structs";
+import { DaysOfWeek } from "../../../../utils";
+import { ExtraDuty, WorkerInfo } from "../../../structs";
 import { AssignmentRule } from "../assignment-rule";
 
 export interface JBNightAssignmentRuleConfig {

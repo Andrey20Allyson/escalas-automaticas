@@ -1,9 +1,9 @@
 import { ExtraDutyTable } from "../../../structs";
 import { TableIntegrity } from "../table-integrity";
 import { IntegrityWarning } from "../warning";
-import { RuleChecker } from "./rule-checker";
+import { IntegrityChecker } from "../integrity-checker";
 
-export class CorrectWorkerAllocationChecker implements RuleChecker {
+export class CorrectWorkerAllocationChecker implements IntegrityChecker {
   calculatePenality(workerPositionsLeft: number) {
     return 100 * 1.4 * workerPositionsLeft ** 2
   }

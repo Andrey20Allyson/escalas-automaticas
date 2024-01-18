@@ -1,6 +1,14 @@
 import { ScheduleAssigner } from "./assigner";
-import { AssignmentRuleStack } from "./checking";
-import { BusyWorkerAssignmentRule, DutyLimitAssignmentRule, FemaleAssignmentRule, InspAssignmentRule, LicenseAssignmentRule, OrdinaryAssignmentRule, TimeOffAssignmentRule } from "./checking/rules";
+import { AssignmentRuleStack } from "../rule-checking";
+import {
+  BusyWorkerAssignmentRule,
+  DutyLimitAssignmentRule,
+  FemaleAssignmentRule,
+  InspAssignmentRule,
+  LicenseAssignmentRule,
+  OrdinaryAssignmentRule,
+  TimeOffAssignmentRule
+} from "../rule-checking/rules";
 
 export class JQScheduleAssigner extends ScheduleAssigner {
   constructor() {

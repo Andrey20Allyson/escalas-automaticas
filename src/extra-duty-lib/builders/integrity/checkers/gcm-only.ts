@@ -1,8 +1,8 @@
 import { TableIntegrity } from "../table-integrity";
 import { IntegrityWarning } from "../warning";
-import { RuleChecker } from "./rule-checker";
+import { IntegrityChecker } from "../integrity-checker";
 
-export class GCMOnlyChecker implements RuleChecker {
+export class GCMOnlyChecker implements IntegrityChecker {
   constructor(
     public penality: number = 5000,
   ) { }

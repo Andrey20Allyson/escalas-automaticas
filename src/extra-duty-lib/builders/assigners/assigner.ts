@@ -1,6 +1,6 @@
 import { iterRandom, iterWeekends, randomizeArray } from "../../../utils";
 import { ExtraDuty, ExtraDutyTable, WorkerInfo } from "../../structs";
-import { AssignmentRule } from "./checking";
+import { AssignmentRule } from "../rule-checking";
 import { isDailyWorker, isInsp, isMonday, isSubInsp } from "./utils";
 
 export class ScheduleAssigner {

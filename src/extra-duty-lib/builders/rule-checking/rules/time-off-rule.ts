@@ -1,4 +1,4 @@
-import { ExtraDuty, WorkerInfo } from "../../../../structs";
+import { ExtraDuty, WorkerInfo } from "../../../structs";
 import { AssignmentRule } from "../assignment-rule";
 
 export interface TimeOffCollisionTestConfig {
