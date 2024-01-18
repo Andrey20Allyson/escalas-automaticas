@@ -1,5 +1,4 @@
-import { table } from "console";
-import { ExtraDuty, ExtraDutyTable, WorkerInfo } from "../../../../structs";
+import { ExtraDuty, WorkerInfo } from "../../../../structs";
 import { AssignmentRule } from "../assignment-rule";
 
 export class InspAssignmentRule implements AssignmentRule {

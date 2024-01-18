@@ -1,5 +1,5 @@
 import { DaysOfWeek } from "../../../../../utils";
-import { DayOfExtraDuty, DayRestriction, ExtraDuty, ExtraDutyTable, WorkerInfo } from "../../../../structs";
+import { DayOfExtraDuty, DayRestriction, ExtraDuty, WorkerInfo } from "../../../../structs";
 import { AssignmentRule } from "../assignment-rule";
 
 export class OrdinaryAssignmentRule implements AssignmentRule {

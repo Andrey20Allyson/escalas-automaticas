@@ -1,14 +1,20 @@
 import { ScheduleAssigner } from "./assigner";
-import { AssignmentChecker } from "./checking";
-import { JBNightAssignmentRule } from "./checking/rules/jb-night-rule";
+import { AssignmentChecker, AssignmentRule } from "./checking";
+import { JBNightAssignmentRule, JBNightAssignmentRuleOptions } from "./checking/rules/jb-night-rule";
 import { JQScheduleAssigner } from "./jq-assigner";
 
+export interface JBAssignmentRulesOptions {
+  nightRule?: JBNightAssignmentRuleOptions;
+  extend?: AssignmentRule[];
+}
+
 export class JBScheduleAssigner extends ScheduleAssigner {
-  constructor() {
-    const jqAssignmentChecker = new JQScheduleAssigner().assignmentChecker;
+  constructor(options?: JBAssignmentRulesOptions) {
+    const extendedRules = options?.extend ?? new JQScheduleAssigner().assignmentChecker.rules;
+    
     const jbAssignmentChecker = new AssignmentChecker([
-      new JBNightAssignmentRule(),
-    ]).extend(jqAssignmentChecker);
+      new JBNightAssignmentRule(options?.nightRule),
+    ]).use(...extendedRules);
 
     super(jbAssignmentChecker);
   }

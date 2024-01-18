@@ -1,5 +1,4 @@
-import { table } from "console";
-import { DayOfExtraDuty, ExtraDuty, ExtraDutyTable, WorkerInfo } from "../../../../structs";
+import { ExtraDuty, WorkerInfo } from "../../../../structs";
 import { AssignmentRule } from "../assignment-rule";
 
 export interface TimeOffCollisionTestConfig {

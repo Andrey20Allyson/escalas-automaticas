@@ -1,4 +1,4 @@
-import { DayOfExtraDuty, ExtraDuty, ExtraDutyTable, ExtraDutyTableConfig, WorkerInfo } from "../../../../structs";
+import { DayOfExtraDuty, ExtraDuty, ExtraDutyTableConfig, WorkerInfo } from "../../../../structs";
 import { AssignmentRule } from "../assignment-rule";
 
 export class BusyWorkerAssignmentRule implements AssignmentRule {
