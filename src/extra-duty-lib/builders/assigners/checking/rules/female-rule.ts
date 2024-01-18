@@ -7,8 +7,4 @@ export class FemaleAssignmentRule implements AssignmentRule {
 
     return duty.genderQuantity('male') > 0;
   }
-
-  canAssignInDay(): boolean {
-    return true;
-  }
 }

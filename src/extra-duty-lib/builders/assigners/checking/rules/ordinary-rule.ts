@@ -1,5 +1,5 @@
 import { DaysOfWeek } from "../../../../../utils";
-import { DayOfExtraDuty, DayRestriction, ExtraDuty, WorkerInfo } from "../../../../structs";
+import { ExtraDuty, WorkerInfo } from "../../../../structs";
 import { AssignmentRule } from "../assignment-rule";
 
 export class OrdinaryAssignmentRule implements AssignmentRule {
@@ -42,9 +42,5 @@ export class OrdinaryAssignmentRule implements AssignmentRule {
     return this.collidesWithTodayWork(worker, duty)
       || this.collidesWithTomorrowWork(worker, duty)
       || this.collidesWithYesterdayWork(worker, duty);
-  }
-
-  canAssignInDay(worker: WorkerInfo, day: DayOfExtraDuty): boolean {
-    return worker.daysOfWork.get(day.index) === DayRestriction.ORDINARY_WORK;
   }
 }

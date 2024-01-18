@@ -27,8 +27,4 @@ export class JBNightAssignmentRule implements AssignmentRule {
     return this.config.blockAll === false
       && this.config.allowedWeekDays.includes(duty.weekDay);
   }
-
-  canAssignInDay(): boolean {
-    return true;
-  }
 }

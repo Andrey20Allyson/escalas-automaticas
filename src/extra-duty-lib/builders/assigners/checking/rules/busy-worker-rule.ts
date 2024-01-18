@@ -1,4 +1,4 @@
-import { DayOfExtraDuty, ExtraDuty, ExtraDutyTableConfig, WorkerInfo } from "../../../../structs";
+import { ExtraDuty, ExtraDutyTableConfig, WorkerInfo } from "../../../../structs";
 import { AssignmentRule } from "../assignment-rule";
 
 export class BusyWorkerAssignmentRule implements AssignmentRule {
@@ -8,9 +8,5 @@ export class BusyWorkerAssignmentRule implements AssignmentRule {
   
   canAssign(worker: WorkerInfo, duty: ExtraDuty): boolean {
     return this.isBusy(worker, duty.config);
-  }
-
-  canAssignInDay(worker: WorkerInfo, day: DayOfExtraDuty): boolean {
-    return this.isBusy(worker, day.config);
   }
 }

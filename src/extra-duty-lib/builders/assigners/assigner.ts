@@ -1,10 +1,10 @@
 import { iterRandom, iterWeekends, randomizeArray } from "../../../utils";
 import { ExtraDuty, ExtraDutyTable, WorkerInfo } from "../../structs";
-import { AssignmentChecker } from "./checking";
-import { isInsp, isSubInsp, workerIsCompletelyBusy, isMonday, isDailyWorker } from "./utils";
+import { AssignmentRule } from "./checking";
+import { isDailyWorker, isInsp, isMonday, isSubInsp, workerIsCompletelyBusy } from "./utils";
 
 export class ScheduleAssigner {
-  constructor(readonly assignmentChecker: AssignmentChecker) { }
+  constructor(readonly checker: AssignmentRule) { }
 
   assignInto(table: ExtraDutyTable, workers: WorkerInfo[]): ExtraDutyTable {
     this._assignDailyWorkerArray(table, workers);
@@ -17,7 +17,7 @@ export class ScheduleAssigner {
   }
 
   assignWorker(worker: WorkerInfo, duty: ExtraDuty): boolean {
-    if (this.assignmentChecker.checkDuty(worker, duty)) {
+    if (this.checker.canAssign(worker, duty)) {
       duty.add(worker);
 
       return true;

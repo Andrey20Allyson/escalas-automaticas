@@ -31,8 +31,4 @@ export class TimeOffAssignmentRule implements AssignmentRule {
     return this.collidesWithTimeOff({ worker, duty, place }) === false
       && this.collidesWithTimeOff({ worker, duty, distance: 1 }) === false;
   }
-
-  canAssignInDay(): boolean {
-    return true;
-  }
 }

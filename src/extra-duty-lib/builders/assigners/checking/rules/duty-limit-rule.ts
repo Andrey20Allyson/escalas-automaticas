@@ -5,8 +5,4 @@ export class DutyLimitAssignmentRule implements AssignmentRule {
   canAssign(_worker: WorkerInfo, duty: ExtraDuty): boolean {
     return duty.getSize() <= duty.config.dutyCapacity;
   }
-
-  canAssignInDay(): boolean {
-    return true;
-  }
 }
