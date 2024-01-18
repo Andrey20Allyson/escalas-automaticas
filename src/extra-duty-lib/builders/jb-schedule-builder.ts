@@ -3,7 +3,7 @@ import { JBScheduleAssigner } from "./assigners/jb-assigner";
 import { DefaultScheduleClassifier } from "./classifiers/classifier";
 import { ClassifyingScheduleBuilder } from "./classifying-schedule-builder";
 
-export class JBDayScheduleBuilder extends ClassifyingScheduleBuilder {
+export class JBScheduleBuilder extends ClassifyingScheduleBuilder {
   constructor(
     tries: number,
   ) {
