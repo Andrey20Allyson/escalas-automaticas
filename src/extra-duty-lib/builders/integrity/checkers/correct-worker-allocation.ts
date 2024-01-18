@@ -1,7 +1,6 @@
-import { ExtraDutyTable } from "../../../structs";
+import { IntegrityWarning } from "../inconsistences/warning";
 import { TableIntegrity } from "../table-integrity";
-import { IntegrityWarning } from "../warning";
-import { IntegrityChecker } from "../integrity-checker";
+import { IntegrityChecker } from "./integrity-checker";
 
 export class CorrectWorkerAllocationChecker implements IntegrityChecker {
   calculatePenality(workerPositionsLeft: number) {

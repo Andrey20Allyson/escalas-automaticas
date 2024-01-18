@@ -1,7 +1,7 @@
 import clone from "clone";
 import { ExtraDutyTable } from "../../structs";
-import { IntegrityFailure } from "./failure";
-import { IntegrityWarning } from "./warning";
+import { IntegrityFailure } from "./inconsistences/failure";
+import { IntegrityWarning } from "./inconsistences/warning";
 
 export class TableIntegrity {
   readonly failures: Map<string, IntegrityFailure> = new Map();

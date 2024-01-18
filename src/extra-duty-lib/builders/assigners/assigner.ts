@@ -1,9 +1,12 @@
-import { iterRandom, iterWeekends, randomizeArray } from "../../../utils";
+import { isMonday, iterRandom, iterWeekends, randomizeArray } from "../../../utils";
 import { ExtraDuty, ExtraDutyTable, WorkerInfo } from "../../structs";
 import { AssignmentRule } from "../rule-checking";
-import { isDailyWorker, isInsp, isMonday, isSubInsp } from "./utils";
 
 export class ScheduleAssigner {
+  isDailyWorker = (worker: WorkerInfo) => worker.daysOfWork.isDailyWorker;
+  isInsp = (worker: WorkerInfo) => worker.graduation === 'insp';
+  isSubInsp = (worker: WorkerInfo) => worker.graduation === 'sub-insp';
+  
   constructor(readonly checker: AssignmentRule) { }
 
   assignInto(table: ExtraDutyTable, workers: WorkerInfo[]): ExtraDutyTable {
@@ -27,13 +30,13 @@ export class ScheduleAssigner {
   }
 
   private _assignInspArray(table: ExtraDutyTable, workers: WorkerInfo[]): void {
-    const inspWorkers = workers.filter(isInsp, true);
+    const inspWorkers = workers.filter(this.isInsp, true);
 
     this._assignArray(table, inspWorkers, 1, 1);
   }
 
   private _assignSubInspArray(table: ExtraDutyTable, workers: WorkerInfo[]): void {
-    const subInspWorkers = workers.filter(isSubInsp);
+    const subInspWorkers = workers.filter(this.isSubInsp);
 
     this._assignArray(table, subInspWorkers, 1, 2, true);
   }
@@ -99,7 +102,7 @@ export class ScheduleAssigner {
   }
 
   private _assignDailyWorkerArray(table: ExtraDutyTable, workers: WorkerInfo[]): void {
-    const dailyWorkers = randomizeArray(workers.filter(isDailyWorker), true);
+    const dailyWorkers = randomizeArray(workers.filter(this.isDailyWorker), true);
 
     for (const worker of dailyWorkers) {
       this._assignOnAllWeekEnds(table, worker);

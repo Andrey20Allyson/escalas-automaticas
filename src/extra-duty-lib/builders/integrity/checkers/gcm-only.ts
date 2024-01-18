@@ -1,6 +1,6 @@
 import { TableIntegrity } from "../table-integrity";
-import { IntegrityWarning } from "../warning";
-import { IntegrityChecker } from "../integrity-checker";
+import { IntegrityWarning } from "../inconsistences/warning";
+import { IntegrityChecker } from "./integrity-checker";
 
 export class GCMOnlyChecker implements IntegrityChecker {
   constructor(

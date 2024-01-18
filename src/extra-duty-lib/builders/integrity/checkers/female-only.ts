@@ -1,7 +1,6 @@
-import { ExtraDutyTable } from "../../../structs/extra-duty-table";
-import { IntegrityFailure } from "../failure";
+import { IntegrityFailure } from "../inconsistences/failure";
 import { TableIntegrity } from "../table-integrity";
-import { IntegrityChecker } from "../integrity-checker";
+import { IntegrityChecker } from "./integrity-checker";
 
 export class FemaleOnlyChecker implements IntegrityChecker {
   check(integrity: TableIntegrity): void {

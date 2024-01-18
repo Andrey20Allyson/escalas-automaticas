@@ -46,6 +46,10 @@ export function isBusinessDay(firtMondayDate: number, date: number): boolean {
   return dayOfWeek >= 1 && dayOfWeek <= 5;
 }
 
+export function isMonday(day: number, firstMonday: number): boolean {
+  return day % 7 === firstMonday
+}
+
 export interface Weekend {
   saturday?: number;
   sunday?: number;
