@@ -70,6 +70,10 @@ export class DaysOfWork implements Clonable<DaysOfWork> {
     return this.numOfDaysOff;
   }
 
+  hasDaysOff(): boolean {
+    return this.getNumOfDaysOff() > 0;
+  }
+
   dayOff(day: number) {
     this.set(day, DayRestriction.NONE);
   }

@@ -1,7 +1,7 @@
 import { iterRandom, iterWeekends, randomizeArray } from "../../../utils";
 import { ExtraDuty, ExtraDutyTable, WorkerInfo } from "../../structs";
 import { AssignmentRule } from "./checking";
-import { isDailyWorker, isInsp, isMonday, isSubInsp, workerIsCompletelyBusy } from "./utils";
+import { isDailyWorker, isInsp, isMonday, isSubInsp } from "./utils";
 
 export class ScheduleAssigner {
   constructor(readonly checker: AssignmentRule) { }
@@ -26,26 +26,26 @@ export class ScheduleAssigner {
     return false;
   }
 
-  private _assignInspArray(table: ExtraDutyTable, workers: WorkerInfo[]) {
+  private _assignInspArray(table: ExtraDutyTable, workers: WorkerInfo[]): void {
     const inspWorkers = workers.filter(isInsp, true);
 
     this._assignArray(table, inspWorkers, 1, 1);
   }
 
-  private _assignSubInspArray(table: ExtraDutyTable, workers: WorkerInfo[]) {
+  private _assignSubInspArray(table: ExtraDutyTable, workers: WorkerInfo[]): void {
     const subInspWorkers = workers.filter(isSubInsp);
 
     this._assignArray(table, subInspWorkers, 1, 2, true);
   }
 
-  private _assignArray(table: ExtraDutyTable, workers: WorkerInfo[], min: number, max: number, excludeMondays = false) {
+  private _assignArray(table: ExtraDutyTable, workers: WorkerInfo[], min: number, max: number, excludeMondays = false): void {
     const oldDutyCapacity = table.config.dutyCapacity;
 
     for (let capacity = min; capacity <= max; capacity++) {
       table.config.dutyCapacity = capacity;
 
       for (const day of iterRandom(table)) {
-        let filteredWorkers = workers.filter(workerIsCompletelyBusy);
+        let filteredWorkers = workers.filter(worker => table.limiter.isLimitOut(worker));
 
         if (filteredWorkers.length === 0) break;
 
@@ -67,7 +67,7 @@ export class ScheduleAssigner {
     table.config.dutyCapacity = oldDutyCapacity;
   }
 
-  private _assignOnAllWeekEnds(table: ExtraDutyTable, worker: WorkerInfo): boolean {
+  private _assignOnAllWeekEnds(table: ExtraDutyTable, worker: WorkerInfo): void {
     const oldDutyMinDistance = table.config.dutyMinDistance;
     const oldDutyCapacity = table.config.dutyCapacity;
 
@@ -96,23 +96,13 @@ export class ScheduleAssigner {
 
     table.config.dutyMinDistance = oldDutyMinDistance;
     table.config.dutyCapacity = oldDutyCapacity;
-
-    return worker.isCompletelyBusy();
   }
 
-  private _assignDailyWorkerArray(table: ExtraDutyTable, workers: WorkerInfo[]): boolean {
+  private _assignDailyWorkerArray(table: ExtraDutyTable, workers: WorkerInfo[]): void {
     const dailyWorkers = randomizeArray(workers.filter(isDailyWorker), true);
 
-    let success = true;
-
     for (const worker of dailyWorkers) {
-      let assignSuccess = this._assignOnAllWeekEnds(table, worker);
-
-      if (success && !assignSuccess) {
-        success = false;
-      }
+      this._assignOnAllWeekEnds(table, worker);
     }
-
-    return success;
   }
 }

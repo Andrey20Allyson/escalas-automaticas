@@ -95,7 +95,7 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
   add(worker: WorkerInfo) {
     this.workers.add(this.config.currentPlace, worker);
 
-    worker.occupyPositions(this.config.dutyPositionSize);
+    this.table.limiter.increase(worker);
   }
 
   delete(worker: WorkerInfo) {
@@ -103,15 +103,11 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
 
     if (!existed) return;
 
-    worker.leavePositions(this.config.dutyPositionSize);
+    this.table.limiter.decrease(worker);
   }
 
-  clear() {
-    for (const [_, worker] of this) {
-      worker.leavePositions(this.config.dutyPositionSize);
-    }
-
-    this.workers.clear();
+  clear(place?: string) {
+    this.workers.clear(place);
   }
 
   static dutiesFrom(day: DayOfExtraDuty): readonly ExtraDuty[] {

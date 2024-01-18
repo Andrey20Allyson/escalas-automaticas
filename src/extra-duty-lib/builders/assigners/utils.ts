@@ -1,8 +1,4 @@
-import { WorkerInfo, ExtraDuty } from "../../structs";
-
-export function workerIsCompletelyBusy(worker: WorkerInfo) {
-  return !worker.isCompletelyBusy();
-}
+import { ExtraDuty, WorkerInfo } from "../../structs";
 
 export function isDailyWorker(worker: WorkerInfo) {
   return worker.daysOfWork.isDailyWorker

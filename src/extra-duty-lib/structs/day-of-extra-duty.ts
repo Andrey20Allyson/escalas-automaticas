@@ -27,9 +27,9 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
     return this.duties[Symbol.iterator]();
   }
 
-  clear() {
+  clear(place?: string) {
     for (const duty of this) {
-      duty.clear();
+      duty.clear(place);
     }
   }
 

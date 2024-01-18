@@ -95,7 +95,15 @@ export class WorkingPlaceStorage {
     return worker.fullWorkerID;
   }
 
-  clear(): void {
+  clear(place?: string): void {
+    if (place !== undefined) {
+      this.places.delete(place);
+      this.gender.reset(place);
+      this.graduation.reset(place);
+
+      return;
+    }
+
     this.places.clear();
     this.gender.clear();
     this.graduation.clear();

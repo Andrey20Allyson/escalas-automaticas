@@ -2,6 +2,7 @@ import clone from 'clone';
 import { DayOfExtraDuty, ExtraDuty, WorkerInfo } from '.';
 import { firstMondayFromYearAndMonth, getNumOfDaysInMonth, thisMonth, thisYear } from '../../utils';
 import { ExtraPlace } from './extra-place';
+import { PositionLimiter } from './position-limiter';
 
 export interface ExtraDutyTableConfig {
   readonly dutyPositionSize: number;
@@ -24,6 +25,7 @@ export interface ExtraDutyTableEntry {
 export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
   readonly days: readonly DayOfExtraDuty[];
   readonly config: ExtraDutyTableConfig;
+  readonly limiter: PositionLimiter;
   readonly firstMonday: number;
   readonly width: number;
 
@@ -32,6 +34,7 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
 
     this.width = getNumOfDaysInMonth(this.config.month, this.config.year);
     this.days = DayOfExtraDuty.daysFrom(this);
+    this.limiter = new PositionLimiter(this);
 
     this.firstMonday = firstMondayFromYearAndMonth(this.config.year, this.config.month);
   }
@@ -83,10 +86,12 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
     return Array.from(workersSet);
   }
 
-  clear() {
+  clear(place?: string) {
     for (const day of this) {
-      day.clear();
+      day.clear(place);
     }
+    
+    this.limiter.clear(place);
   }
 
   getDay(day: number) {

@@ -24,7 +24,7 @@ export class DefaultScheduleClassifier implements ScheduleClassifier {
     let bestIntegrity: TableIntegrity | null = null;
 
     for (let i = 0; i < this.tries; i++) {
-      tableClone.clear();
+      tableClone.clear(tableClone.config.currentPlace);
 
       this.assigner.assignInto(tableClone, workers);
 

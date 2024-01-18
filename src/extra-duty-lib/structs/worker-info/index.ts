@@ -1,5 +1,7 @@
 import { getMonth } from "../../../utils";
 import { DaysOfWork } from '../days-of-work';
+import { Limitable } from "../limitable";
+import { WorkLimit } from "../work-limit";
 import { WorkTime } from '../work-time';
 
 export interface WorkerInfoConfig extends Worker {
@@ -9,7 +11,6 @@ export interface WorkerInfoConfig extends Worker {
   readonly workerID: number;
   readonly postWorkerID: number;
   readonly individualRegistry: number;
-  startPositionsLeft?: number;
 }
 
 export interface Worker {
@@ -27,7 +28,7 @@ export type WorkerToMapEntryCallback = (this: typeof WorkerInfo, worker: WorkerI
 export type Graduation = 'sub-insp' | 'insp' | 'gcm';
 export type Gender = 'N/A' | 'female' | 'male';
 
-export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
+export class WorkerInfo implements Limitable, Worker, Clonable<WorkerInfo> {
   static readonly genderMap: NodeJS.Dict<Gender> = {
     'F': 'female',
     'M': 'male',
@@ -39,8 +40,8 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
     'SI': 'sub-insp',
   };
 
-  positionsLeft: number;
-  readonly startPositionsLeft: number;
+  readonly id: number;
+  readonly limit: WorkLimit;
 
   readonly name: string;
   readonly gender: Gender;
@@ -53,41 +54,12 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
     this.name = this.config.name;
     this.daysOfWork = this.config.daysOfWork;
     this.workTime = this.config.workTime;
+    this.limit = new WorkLimit();
 
     this.fullWorkerID = WorkerInfo.workerIDToNumber(this.config.workerID, this.config.postWorkerID);
     this.graduation = WorkerInfo.parseGradutation(config.grad);
     this.gender = WorkerInfo.parseGender(this.config.gender);
-
-    this.startPositionsLeft = this.config.startPositionsLeft ?? 10;
-    this.positionsLeft = this.startPositionsLeft;
-  }
-
-  resetPositionsLeft() {
-    this.positionsLeft = this.startPositionsLeft;
-  }
-
-  occupyPositions(num = 1) {
-    this.positionsLeft -= num;
-  }
-
-  leavePositions(num = 1) {
-    this.positionsLeft += num;
-  }
-
-  isPositionsLeftEqualsToStart() {
-    return this.positionsLeft === this.startPositionsLeft;
-  }
-
-  isCompletelyBusy(positions = 1) {
-    return this.positionsLeft - positions < 0;
-  }
-
-  cantWorkOnExtra() {
-    return !this.canWorkOnExtra();
-  }
-
-  canWorkOnExtra() {
-    return !this.isCompletelyBusy() && this.daysOfWork.getNumOfDaysOff() > 0;
+    this.id = this.fullWorkerID;
   }
 
   isGraduate() {
@@ -95,12 +67,11 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
   }
 
   clone() {
-    const { daysOfWork, grad, individualRegistry, name, post, postWorkerID, workTime, workerID, startPositionsLeft, gender } = this.config;
+    const { daysOfWork, grad, individualRegistry, name, post, postWorkerID, workTime, workerID, gender } = this.config;
 
     const config: WorkerInfoConfig = {
       daysOfWork: daysOfWork.clone(),
       workTime: workTime.clone(),
-      startPositionsLeft,
       individualRegistry,
       postWorkerID,
       workerID,
@@ -111,8 +82,6 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
     };
 
     const clone = new WorkerInfo(config);
-
-    clone.positionsLeft = this.positionsLeft;
 
     return clone;
   }

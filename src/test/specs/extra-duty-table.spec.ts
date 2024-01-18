@@ -17,7 +17,7 @@ test(`#clear shold restart all workers positionsLeft`, () => {
 
   table.clear();
 
-  expect(worker0.isPositionsLeftEqualsToStart()).toBeTruthy();
-  expect(worker1.isPositionsLeftEqualsToStart()).toBeTruthy();
-  expect(worker2.isPositionsLeftEqualsToStart()).toBeTruthy();
+  expect(table.limiter.positionsOf(worker0)).toStrictEqual(0);
+  expect(table.limiter.positionsOf(worker1)).toStrictEqual(0);
+  expect(table.limiter.positionsOf(worker2)).toStrictEqual(0);
 });

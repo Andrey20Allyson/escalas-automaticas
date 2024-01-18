@@ -14,9 +14,9 @@ export class CorrectWorkerAllocationChecker implements RuleChecker {
     if (!isWorkerInsuficient) return;
 
     for (const worker of integrity.table.workers()) {
-      if (worker.cantWorkOnExtra()) continue;
+      if (worker.daysOfWork.hasDaysOff() === false) continue;
 
-      const penality = this.calculatePenality(worker.positionsLeft);
+      const penality = this.calculatePenality(integrity.table.limiter.positionsLeftOf(worker));
 
       integrity.registry(new IntegrityWarning(`workers hasn't correctly allocated`, penality));
     }

@@ -30,7 +30,7 @@ export function analyseResult(table: ExtraDutyTable, colors = true) {
       const size = duty.getSize();
 
       for (const [_, worker] of duty) {
-        if (worker.positionsLeft > 0) workersWithPositionsLeft.add(worker);
+        if (table.limiter.positionsLeftOf(worker) > 0) workersWithPositionsLeft.add(worker);
       }
 
       numOfWorkersInThisDay += size;
@@ -47,7 +47,7 @@ export function analyseResult(table: ExtraDutyTable, colors = true) {
   analysisText.writeLn(chalk.underline(`[ Plantões ]`));
 
   if (workersWithPositionsLeft.size > 0) {
-    const totalOfPositionsLeft = Array.from(workersWithPositionsLeft).reduce((prev, worker) => prev + worker.positionsLeft, 0);
+    const totalOfPositionsLeft = Array.from(workersWithPositionsLeft).reduce((prev, worker) => prev + table.limiter.positionsLeftOf(worker), 0);
 
     analysisText.writeLn(chalk.red(`  Restam ${totalOfPositionsLeft} plantões para serem ocupados!`));
   } else {

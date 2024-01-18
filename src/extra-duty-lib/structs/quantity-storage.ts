@@ -9,7 +9,7 @@ export class QuantityStorage<K extends keyof any> {
 
   copy(storage: QuantityStorage<K>) {
     this.clear();
-    
+
     for (const [place, record] of storage.quantityInPlaces) {
       this.quantityInPlaces.set(place, { ...record });
     }
@@ -31,8 +31,12 @@ export class QuantityStorage<K extends keyof any> {
     counter[key] = this.initializer()[key];
   }
 
-  increment(place: string, key: K): number {
-    return ++this.counterFrom(place)[key];
+  increment(place: string, key: K, count = 1): number {
+    return this.counterFrom(place)[key] += count;
+  }
+
+  decrement(place: string, key: K, count = 1): number {
+    return this.counterFrom(place)[key] -= count;
   }
 
   counterFrom(place: string) {
@@ -45,10 +49,6 @@ export class QuantityStorage<K extends keyof any> {
     }
 
     return counter;
-  }
-
-  decrement(place: string, key: K) {
-    return --this.counterFrom(place)[key];
   }
 
   quantityFrom(place: string, key: K): number {
