@@ -36,8 +36,14 @@ export class PositionLimiter {
     return this.places.decrement(this.config.currentPlace, identifiable.id, this.config.dutyPositionSize);
   }
 
-  reset(identifiable: Identifiable) {
-    return this.places.reset(this.config.currentPlace, identifiable.id);
+  set(identifiable: Identifiable, value: number): this {
+    this.places.counterFrom(this.config.currentPlace)[identifiable.id] = value;
+    return this;
+  }
+
+  reset(identifiable: Identifiable): this {
+    this.places.reset(this.config.currentPlace, identifiable.id);
+    return this;
   }
 
   clear(place?: string): void {

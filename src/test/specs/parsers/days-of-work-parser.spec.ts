@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'vitest';
-import { DaysOfWorkParser } from '../../extra-duty-lib/structs/days-of-work/parser';
-import { Month } from '../../extra-duty-lib/structs/month';
-import { iterRange } from '../../utils';
-import { createRandomHourly } from './days-of-work-parser.mock';
+import { DaysOfWorkParser } from '../../../extra-duty-lib/structs/days-of-work/parser';
+import { Month } from '../../../extra-duty-lib/structs/month';
+import { iterRange } from '../../../utils';
+import { createRandomHourly } from '../mocking/days-of-work-parser.mock';
 
 function testParsePeriodic(index?: number) {
   const now = new Date();

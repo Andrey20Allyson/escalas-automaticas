@@ -11,6 +11,7 @@ export interface WorkerInfoConfig extends Worker {
   readonly workerID: number;
   readonly postWorkerID: number;
   readonly individualRegistry: number;
+  limit?: WorkLimit;
 }
 
 export interface Worker {
@@ -54,7 +55,7 @@ export class WorkerInfo implements Limitable, Worker, Clonable<WorkerInfo> {
     this.name = this.config.name;
     this.daysOfWork = this.config.daysOfWork;
     this.workTime = this.config.workTime;
-    this.limit = new WorkLimit();
+    this.limit = config.limit ?? new WorkLimit();
 
     this.fullWorkerID = WorkerInfo.workerIDToNumber(this.config.workerID, this.config.postWorkerID);
     this.graduation = WorkerInfo.parseGradutation(config.grad);
@@ -88,7 +89,7 @@ export class WorkerInfo implements Limitable, Worker, Clonable<WorkerInfo> {
 
   private static _fakeCount = 0;
 
-  static fakeFromName(name: string) {
+  static fakeFromName(name: string, config?: Partial<WorkerInfoConfig>) {
     return new WorkerInfo({
       name,
       post: 'N/A',
@@ -99,6 +100,7 @@ export class WorkerInfo implements Limitable, Worker, Clonable<WorkerInfo> {
       gender: 'U',
       workTime: new WorkTime(7, 8),
       daysOfWork: DaysOfWork.fromDays([], 2023, getMonth()),
+      ...config,
     });
   }
 

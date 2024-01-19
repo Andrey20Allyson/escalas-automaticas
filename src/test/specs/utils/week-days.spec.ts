@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest';
-import { firstMonday, isBusinessDay } from '../../utils/week-days';
+import { firstMonday, isBusinessDay } from '../../../utils/week-days';
 
 function runFirstMondayTest(weekDay: number, monthDay: number, sholdReturn: number) {
   test(`${firstMonday.name} shold return ${sholdReturn} if weekDay is ${weekDay} and monthDay is ${monthDay}`, () => {

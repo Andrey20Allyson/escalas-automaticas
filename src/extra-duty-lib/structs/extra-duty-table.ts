@@ -90,12 +90,18 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
     for (const day of this) {
       day.clear(place);
     }
-    
+
     this.limiter.clear(place);
   }
 
-  getDay(day: number) {
+  getDay(day: number): DayOfExtraDuty {
     return this.days.at(day) ?? new DayOfExtraDuty(day, this);
+  }
+
+  getDuty(dayIndex: number, dutyIndex: number): ExtraDuty {
+    return this
+      .getDay(dayIndex)
+      .getDuty(dutyIndex);
   }
 
   static createConfigFrom(partialConfig?: Partial<ExtraDutyTableConfig>): ExtraDutyTableConfig {

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { WorkTimeParser } from '../../extra-duty-lib/structs/work-time/parser';
-import { WORK_TIME_PARSE_TESTS, WorkTimeParseTestEntry } from './work-time.mock';
+import { WorkTimeParser } from '../../../extra-duty-lib/structs/work-time/parser';
+import { WORK_TIME_PARSE_TESTS, WorkTimeParseTestEntry } from '../mocking/work-time.mock';
 
 function testWorkTimeParser(entry: WorkTimeParseTestEntry, index: number){
   test(`test #${index} : Shold parse '${entry.input}' to '${JSON.stringify(entry.expectedResult)}'`, () => {
