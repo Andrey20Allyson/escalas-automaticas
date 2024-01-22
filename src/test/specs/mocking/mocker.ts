@@ -5,9 +5,13 @@ export interface DutyMockOptions {
   dutyIndex?: number,
 }
 
+export interface WorkerMockOptions extends Partial<WorkerInfoConfig> {
+  name?: string;
+}
+
 export interface WorkerAndDutyMockOptions {
   table?: Partial<ExtraDutyTableConfig>;
-  worker?: Partial<WorkerInfoConfig>;
+  worker?: WorkerMockOptions;
   duty?: DutyMockOptions;
 }
 
@@ -18,7 +22,10 @@ export function mock(options?: WorkerAndDutyMockOptions) {
     .getDay(options?.duty?.dayIndex ?? 0)
     .getDuty(options?.duty?.dutyIndex ?? 0);
 
-  const worker = WorkerInfo.fakeFromName('John Due', options?.worker);
+  const worker = WorkerInfo.fakeFromName(
+    options?.worker?.name ?? 'John Due',
+    options?.worker,
+  );
 
   return { table, duty, worker };
 }
