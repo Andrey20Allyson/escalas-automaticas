@@ -22,10 +22,16 @@ export function mock(options?: WorkerAndDutyMockOptions) {
     .getDay(options?.duty?.dayIndex ?? 0)
     .getDuty(options?.duty?.dutyIndex ?? 0);
 
-  const worker = WorkerInfo.fakeFromName(
-    options?.worker?.name ?? 'John Due',
-    options?.worker,
-  );
+  const worker = mock.worker(options?.worker);
 
   return { table, duty, worker };
+}
+
+export module mock {
+  export function worker(options?: WorkerMockOptions): WorkerInfo {
+    return WorkerInfo.fakeFromName(
+      options?.name ?? 'John Due',
+      options,
+    );
+  }
 }
