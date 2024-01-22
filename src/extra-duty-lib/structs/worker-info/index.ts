@@ -1,16 +1,15 @@
-import { getMonth } from "../../../utils";
 import { DaysOfWork } from '../days-of-work';
 import { Limitable } from "../limitable";
 import { WorkLimit } from "../work-limit";
 import { WorkTime } from '../work-time';
+import { WorkerIdentifier } from '../worker-identifier';
 
 export interface WorkerInfoConfig extends Worker {
   readonly post: string;
   readonly grad: string;
   readonly gender: string;
-  readonly workerID: number;
-  readonly postWorkerID: number;
-  readonly individualRegistry: number;
+  readonly identifier: WorkerIdentifier;
+  readonly individualId: number;
   limit?: WorkLimit;
 }
 
@@ -43,24 +42,23 @@ export class WorkerInfo implements Limitable, Worker, Clonable<WorkerInfo> {
 
   readonly id: number;
   readonly limit: WorkLimit;
-
+  readonly identifier: WorkerIdentifier;
   readonly name: string;
   readonly gender: Gender;
   readonly daysOfWork: DaysOfWork;
   readonly graduation: Graduation;
   readonly workTime: WorkTime;
-  readonly fullWorkerID: number;
 
   constructor(readonly config: WorkerInfoConfig) {
+    this.identifier = config.identifier;
     this.name = this.config.name;
     this.daysOfWork = this.config.daysOfWork;
     this.workTime = this.config.workTime;
     this.limit = config.limit ?? new WorkLimit();
 
-    this.fullWorkerID = WorkerInfo.workerIDToNumber(this.config.workerID, this.config.postWorkerID);
     this.graduation = WorkerInfo.parseGradutation(config.grad);
     this.gender = WorkerInfo.parseGender(this.config.gender);
-    this.id = this.fullWorkerID;
+    this.id = this.identifier.id;
   }
 
   isGraduate() {
@@ -68,14 +66,13 @@ export class WorkerInfo implements Limitable, Worker, Clonable<WorkerInfo> {
   }
 
   clone() {
-    const { daysOfWork, grad, individualRegistry, name, post, postWorkerID, workTime, workerID, gender } = this.config;
+    const { daysOfWork, grad, individualId, name, post, workTime, gender, identifier } = this.config;
 
     const config: WorkerInfoConfig = {
       daysOfWork: daysOfWork.clone(),
       workTime: workTime.clone(),
-      individualRegistry,
-      postWorkerID,
-      workerID,
+      individualId,
+      identifier,
       gender,
       grad,
       name,
@@ -94,10 +91,6 @@ export class WorkerInfo implements Limitable, Worker, Clonable<WorkerInfo> {
     return [id, postID];
   }
 
-  static workerIDToNumber(id: number, postID: number): number {
-    return id * 10 + postID;
-  }
-
   static parseGender(gender?: string): Gender {
     if (!gender) return 'N/A';
 
@@ -113,7 +106,7 @@ export class WorkerInfo implements Limitable, Worker, Clonable<WorkerInfo> {
   }
 
   static workerToMapEntry: WorkerToMapEntryCallback = (worker) => {
-    return [worker.fullWorkerID, worker];
+    return [worker.id, worker];
   };
 }
 

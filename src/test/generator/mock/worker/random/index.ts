@@ -1,5 +1,6 @@
 import { MockFactory } from "../..";
 import { WorkerInfo } from "../../../../../extra-duty-lib";
+import { WorkerIdentifier } from "../../../../../extra-duty-lib/structs/worker-identifier";
 import { randomIntFromInterval } from "../../../../../utils";
 import { randomDaysOfWork } from "./days-of-work";
 import { randomGender } from "./gender";
@@ -31,6 +32,10 @@ export class RandomWorkerMockFactory implements MockFactory<WorkerInfo> {
     const grad = randomGrad();
     const daysOfWork = randomDaysOfWork({ month, year });
     const workTime = randomWorkTime(daysOfWork.isDailyWorker);
+    const identifier = new WorkerIdentifier(
+      randomIntFromInterval(0, 999_999),
+      randomIntFromInterval(0, 9),
+    );
 
     const worker = new WorkerInfo({
       name,
@@ -38,9 +43,8 @@ export class RandomWorkerMockFactory implements MockFactory<WorkerInfo> {
       daysOfWork,
       gender: gender === 'female' ? 'F' : 'M',
       post: 'BRIGADA AMBIENTAL',
-      workerID: randomIntFromInterval(0, 999_999),
-      postWorkerID: randomIntFromInterval(0, 9),
-      individualRegistry: randomIntFromInterval(0, 99_999_999_999),
+      identifier,
+      individualId: randomIntFromInterval(0, 99_999_999_999),
       workTime,
     });
 

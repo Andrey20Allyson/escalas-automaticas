@@ -65,8 +65,8 @@ export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: Scr
       const worker = DEFAULT_WORKER_INFO_PARSER.parse({
         name: nameCell.value,
         hourly: hourlyCell.value,
-        registration: registrationCell.value,
-        individualRegistry: workerData?.individualID,
+        workerId: registrationCell.value,
+        individualId: workerData?.individualID,
         gender: workerData?.gender,
         grad: gradCell.value,
         post: postCell.value ?? '',

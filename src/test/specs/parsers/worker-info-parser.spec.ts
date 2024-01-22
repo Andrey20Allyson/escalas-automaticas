@@ -18,7 +18,7 @@ describe(WorkerInfoParser.name, () => {
           year: randomIntFromInterval(2000, 3000),
           name: 'John Due',
           post: licenseStr,
-          registration: '14242-43',
+          workerId: '14242-43',
         });
       } catch {
         expect.fail(`Expected a return, but it throwned`);

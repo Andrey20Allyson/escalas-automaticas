@@ -26,7 +26,7 @@ export function toDayGridEntry(day: DayOfExtraDuty, duty: ExtraDuty, worker: Wor
 
   return {
     duty: toDutyDesc(normalizedDutyStartTime, normalizedDutyEndTime),
-    id: parseWorkerID(worker.fullWorkerID),
+    id: parseWorkerID(worker.id),
     name: `${namePrefix} ${worker.name}`,
   };
 }

@@ -1,4 +1,5 @@
 import { DaysOfWork, ExtraDutyTable, ExtraDutyTableConfig, WorkTime, WorkerInfo, WorkerInfoConfig } from "../../../extra-duty-lib";
+import { WorkerIdentifier } from "../../../extra-duty-lib/structs/worker-identifier";
 import { getMonth } from "../../../utils";
 
 export interface DutyMockOptions {
@@ -34,9 +35,8 @@ export module mock {
       name: 'John Due',
       post: 'N/A',
       grad: 'GCM',
-      workerID: workerIdCount++,
-      postWorkerID: 0,
-      individualRegistry: 0,
+      identifier: new WorkerIdentifier(workerIdCount, 0),
+      individualId: 0,
       gender: 'U',
       workTime: new WorkTime(7, 8),
       daysOfWork: DaysOfWork.fromDays([], 2023, getMonth()),

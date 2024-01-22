@@ -1,5 +1,4 @@
 import { ExtraDutyTableEntry } from "../../extra-duty-lib";
-import { ExcelDate } from "../../xlsx-handlers/utils";
 
 export enum OutputCollumns {
   NAME = 'B',
@@ -44,9 +43,9 @@ export function* iterRows(entries: Iterable<ExtraDutyTableEntry>): Iterable<Extr
       const workerConfig = entry.worker.config;
 
       const name = workerConfig.name;
-      const registration = workerConfig.workerID * 10 + workerConfig.postWorkerID;
+      const registration = workerConfig.identifier.id;
       const grad = workerConfig.grad;
-      const individualRegistry = workerConfig.individualRegistry;
+      const individualRegistry = workerConfig.individualId;
 
       yield {
         date,
@@ -70,5 +69,5 @@ export function sortByGrad(a: ExtraDutyTableEntry, b: ExtraDutyTableEntry) {
 }
 
 export function sortByRegistration(a: ExtraDutyTableEntry, b: ExtraDutyTableEntry) {
-  return a.worker.config.workerID - b.worker.config.workerID;
+  return a.worker.id - b.worker.id;
 }
