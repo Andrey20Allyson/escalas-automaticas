@@ -41,6 +41,10 @@ export class PositionLimiter {
     return this;
   }
 
+  copy(otherLimiter: PositionLimiter) {
+    this.places.copy(otherLimiter.places);
+  }
+
   reset(identifiable: Identifiable): this {
     this.places.reset(this.config.currentPlace, identifiable.id);
     return this;

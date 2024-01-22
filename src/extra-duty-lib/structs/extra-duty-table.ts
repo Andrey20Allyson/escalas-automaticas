@@ -55,6 +55,8 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
         .copy(otherDuty);
     }
 
+    this.limiter.copy(other.limiter);
+
     return this;
   }
 
