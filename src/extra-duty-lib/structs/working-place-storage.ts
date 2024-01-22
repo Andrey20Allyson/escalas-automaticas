@@ -45,7 +45,7 @@ export class WorkingPlaceStorage {
   has(workerId: number, place?: string): boolean;
   has(worker: WorkerInfo, place?: string): boolean;
   has(arg0: number | WorkerInfo, place?: string): boolean {
-    const id = typeof arg0 === 'number' ? arg0 : this.keyFrom(arg0);
+    const id = typeof arg0 === 'number' ? arg0 : arg0.id;
 
     if (place !== undefined) {
       return this
@@ -61,14 +61,14 @@ export class WorkingPlaceStorage {
   }
 
   add(place: string, worker: WorkerInfo): void {
-    this._mutPlaceFrom(place).set(this.keyFrom(worker), worker);
+    this._mutPlaceFrom(place).set(worker.id, worker);
 
     this.graduation.increment(place, worker.graduation);
     this.gender.increment(place, worker.gender);
   }
 
   remove(place: string, worker: WorkerInfo): boolean {
-    const existed = this._mutPlaceFrom(place).delete(this.keyFrom(worker));
+    const existed = this._mutPlaceFrom(place).delete(worker.id);
 
     if (!existed) return false;
 
@@ -89,10 +89,6 @@ export class WorkingPlaceStorage {
     }
 
     return this;
-  }
-
-  keyFrom(worker: WorkerInfo): number {
-    return worker.fullWorkerID;
   }
 
   clear(place?: string): void {

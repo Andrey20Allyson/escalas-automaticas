@@ -62,10 +62,6 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     return this.weekDay === weekDay;
   }
 
-  isWorkerInsuficient() {
-    return this.getSize() < 2;
-  }
-
   *[Symbol.iterator](): Iterator<[string, WorkerInfo]> {
     for (const [_, worker] of this.workers.placeFrom(this.config.currentPlace)) {
       yield [worker.name, worker];
@@ -82,10 +78,6 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
 
   has(worker: WorkerInfo, place?: string) {
     return this.workers.has(worker, place);
-  }
-
-  keyFrom(worker: WorkerInfo) {
-    return worker.fullWorkerID;
   }
 
   getSize(): number {
