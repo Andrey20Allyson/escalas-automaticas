@@ -3,6 +3,6 @@ import { AssignmentRule } from "../assignment-rule";
 
 export class DutyLimitAssignmentRule implements AssignmentRule {
   canAssign(_worker: WorkerInfo, duty: ExtraDuty): boolean {
-    return duty.getSize() <= duty.config.dutyCapacity;
+    return duty.getSize() < duty.config.dutyCapacity;
   }
 }
