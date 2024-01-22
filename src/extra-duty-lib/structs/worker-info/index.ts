@@ -87,23 +87,6 @@ export class WorkerInfo implements Limitable, Worker, Clonable<WorkerInfo> {
     return clone;
   }
 
-  private static _fakeCount = 0;
-
-  static fakeFromName(name: string, config?: Partial<WorkerInfoConfig>) {
-    return new WorkerInfo({
-      name,
-      post: 'N/A',
-      grad: 'GCM',
-      workerID: WorkerInfo._fakeCount++,
-      postWorkerID: 0,
-      individualRegistry: 0,
-      gender: 'U',
-      workTime: new WorkTime(7, 8),
-      daysOfWork: DaysOfWork.fromDays([], 2023, getMonth()),
-      ...config,
-    });
-  }
-
   static parseWorkerID(value: number): [number, number] {
     const id = Math.trunc(value / 10);
     const postID = value - id * 10;

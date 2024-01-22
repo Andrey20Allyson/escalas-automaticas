@@ -1,11 +1,11 @@
 import { expect, test } from 'vitest';
 import { ExtraDutyTable } from '../../../extra-duty-lib/structs/extra-duty-table';
-import { WorkerInfo } from '../../../extra-duty-lib/structs/worker-info';
+import { mock } from '../mocking/mocker';
 
 test(`#clear shold restart all workers positionsLeft`, () => {
-  const worker0 = WorkerInfo.fakeFromName('Jose');
-  const worker1 = WorkerInfo.fakeFromName('Roberto');
-  const worker2 = WorkerInfo.fakeFromName('Cariane');
+  const worker0 = mock.worker({ name: 'Jose' });
+  const worker1 = mock.worker({ name: 'Roberto' });
+  const worker2 = mock.worker({ name: 'Cariane' });
 
   const table = new ExtraDutyTable();
 

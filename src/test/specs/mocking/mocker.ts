@@ -1,13 +1,12 @@
-import { WorkerInfoConfig, ExtraDutyTable, WorkerInfo, ExtraDutyTableConfig } from "../../../extra-duty-lib";
+import { DaysOfWork, ExtraDutyTable, ExtraDutyTableConfig, WorkTime, WorkerInfo, WorkerInfoConfig } from "../../../extra-duty-lib";
+import { getMonth } from "../../../utils";
 
 export interface DutyMockOptions {
   dayIndex?: number,
   dutyIndex?: number,
 }
 
-export interface WorkerMockOptions extends Partial<WorkerInfoConfig> {
-  name?: string;
-}
+export interface WorkerMockOptions extends Partial<WorkerInfoConfig> { }
 
 export interface WorkerAndDutyMockOptions {
   table?: Partial<ExtraDutyTableConfig>;
@@ -28,10 +27,20 @@ export function mock(options?: WorkerAndDutyMockOptions) {
 }
 
 export module mock {
+  let workerIdCount = 0;
+
   export function worker(options?: WorkerMockOptions): WorkerInfo {
-    return WorkerInfo.fakeFromName(
-      options?.name ?? 'John Due',
-      options,
-    );
+    return new WorkerInfo({
+      name: 'John Due',
+      post: 'N/A',
+      grad: 'GCM',
+      workerID: workerIdCount++,
+      postWorkerID: 0,
+      individualRegistry: 0,
+      gender: 'U',
+      workTime: new WorkTime(7, 8),
+      daysOfWork: DaysOfWork.fromDays([], 2023, getMonth()),
+      ...options,
+    });
   }
 }
