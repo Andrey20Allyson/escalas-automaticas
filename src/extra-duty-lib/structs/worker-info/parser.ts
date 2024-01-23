@@ -1,4 +1,4 @@
-import { WorkerInfo } from ".";
+import { Gender, Graduation, WorkerInfo } from ".";
 import { parseNumberOrThrow } from "../../../utils";
 import { DEFAULT_DAYS_OF_WORK_PARSER, DaysOfWorkParser } from "../days-of-work";
 import { IWorkTimeParser, WorkTimeParser } from "../work-time/parser";
@@ -17,6 +17,17 @@ export interface WorkerInfoParseData {
 }
 
 export class WorkerInfoParser {
+  private readonly genderMap: NodeJS.Dict<Gender> = {
+    'F': 'female',
+    'M': 'male',
+  };
+
+  private readonly graduationMap: NodeJS.Dict<Graduation> = {
+    'INSP': 'insp',
+    'GCM': 'gcm',
+    'SI': 'sub-insp',
+  };
+
   readonly daysOfWorkParser: DaysOfWorkParser;
   readonly workTimeParser: IWorkTimeParser;
   readonly identifierParser: WorkerIdentifierParser;
@@ -37,15 +48,29 @@ export class WorkerInfoParser {
 
     return new WorkerInfo({
       name: data.name,
-      grad: data.grad,
       post: data.post,
       workTime,
       daysOfWork,
       identifier,
-      gender: data.gender ?? 'U',
+      graduation: this.parseGradutation(data.grad),
+      gender: this.parseGender(data.gender ?? 'U'),
       individualId: data.individualId !== undefined ? parseNumberOrThrow(data.individualId.replace(/\.|\-/g, '')) : 0,
     });
   }
+
+  parseGender(gender?: string): Gender {
+    if (gender === undefined) return 'N/A';
+
+    return this.genderMap[gender] ?? 'N/A';
+  }
+
+  parseGradutation(grad: string): Graduation {
+    return this.graduationMap[grad] ?? raise(new Error(`Unknow graduation named '${grad}'!`));
+  }
+}
+
+function raise(error: unknown): never {
+  throw error;
 }
 
 export const DEFAULT_WORKER_INFO_PARSER = new WorkerInfoParser();

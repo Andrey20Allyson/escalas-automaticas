@@ -59,7 +59,7 @@ export class DayListTableFactory implements TableFactory {
 
     const sortedWorkersAndDays = Array.from(workerDaysMap)
       .sort(([workerA], [workerB]) => workerA.id - workerB.id)
-      .sort(([workerA], [workerB]) => getGradNum(workerA.config.grad) - getGradNum(workerB.config.grad));
+      .sort(([workerA], [workerB]) => getGradNum(workerA.config.graduation) - getGradNum(workerB.config.graduation));
 
     const book = new Workbook();
 

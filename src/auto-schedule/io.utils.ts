@@ -119,7 +119,7 @@ export function scrappeTable(buffer: Buffer, workers: WorkerInfo[], options: Scr
     year,
   });
 
-  const workerMap = WorkerInfo.createMap(workers);
+  const workerMap = WorkerInfo.mapFrom(workers);
 
   for (const line of sheet.iterLines(15)) {
     const selectionResult = CellHandler.safeTypeAll(line.getCells(finalTableCollumns), finalTableCellTypes);

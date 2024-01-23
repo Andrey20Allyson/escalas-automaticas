@@ -44,7 +44,7 @@ export function* iterRows(entries: Iterable<ExtraDutyTableEntry>): Iterable<Extr
 
       const name = workerConfig.name;
       const registration = workerConfig.identifier.id;
-      const grad = workerConfig.grad;
+      const grad = workerConfig.graduation;
       const individualRegistry = workerConfig.individualId;
 
       yield {
@@ -65,7 +65,7 @@ export function getGradNum(grad: string) {
 }
 
 export function sortByGrad(a: ExtraDutyTableEntry, b: ExtraDutyTableEntry) {
-  return getGradNum(a.worker.config.grad) - getGradNum(b.worker.config.grad);
+  return getGradNum(a.worker.config.graduation) - getGradNum(b.worker.config.graduation);
 }
 
 export function sortByRegistration(a: ExtraDutyTableEntry, b: ExtraDutyTableEntry) {

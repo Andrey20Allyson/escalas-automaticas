@@ -29,7 +29,7 @@ export class RandomWorkerMockFactory implements MockFactory<WorkerInfo> {
 
     const gender = randomGender();
     const name = randomName(gender);
-    const grad = randomGrad();
+    const graduation = randomGrad();
     const daysOfWork = randomDaysOfWork({ month, year });
     const workTime = randomWorkTime(daysOfWork.isDailyWorker);
     const identifier = new WorkerIdentifier(
@@ -39,9 +39,9 @@ export class RandomWorkerMockFactory implements MockFactory<WorkerInfo> {
 
     const worker = new WorkerInfo({
       name,
-      grad,
+      graduation,
       daysOfWork,
-      gender: gender === 'female' ? 'F' : 'M',
+      gender,
       post: 'BRIGADA AMBIENTAL',
       identifier,
       individualId: randomIntFromInterval(0, 99_999_999_999),

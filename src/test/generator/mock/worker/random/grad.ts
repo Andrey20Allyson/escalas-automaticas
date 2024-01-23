@@ -1,8 +1,10 @@
-export function randomGrad(): string {
+import { Graduation } from "../../../../../extra-duty-lib";
+
+export function randomGrad(): Graduation {
   const choice = Math.random();
 
-  if (choice < .5) return 'GCM';
-  if (choice < .8) return 'SI';
+  if (choice < .5) return 'gcm';
+  if (choice < .8) return 'sub-insp';
 
-  return 'INSP';
+  return 'insp';
 }

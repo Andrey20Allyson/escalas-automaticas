@@ -34,10 +34,10 @@ export module mock {
     return new WorkerInfo({
       name: 'John Due',
       post: 'N/A',
-      grad: 'GCM',
+      graduation: 'gcm',
       identifier: new WorkerIdentifier(workerIdCount, 0),
       individualId: 0,
-      gender: 'U',
+      gender: 'N/A',
       workTime: new WorkTime(7, 8),
       daysOfWork: DaysOfWork.fromDays([], 2023, getMonth()),
       ...options,
