@@ -3,6 +3,8 @@ import { DutyLimitAssignmentRule } from "../../../extra-duty-lib/builders/rule-c
 import { mock } from "../mocking/mocker";
 
 describe(DutyLimitAssignmentRule.name, () => {
+  const checker = new DutyLimitAssignmentRule();
+
   test(`Shold return false if duty is full`, () => {
     const { duty, worker } = mock({
       table: {
@@ -12,10 +14,18 @@ describe(DutyLimitAssignmentRule.name, () => {
 
     duty.add(worker);
 
-    const canAssign = new DutyLimitAssignmentRule()
-      .canAssign(worker, duty);
-
-    expect(canAssign)
+    expect(checker.canAssign(worker, duty))
       .toBeFalsy();
+  });
+
+  test(`Shold return true if duty have free space`, () => {
+    const { duty, worker } = mock({
+      table: {
+        dutyCapacity: 1,
+      }
+    });
+
+    expect(checker.canAssign(worker, duty))
+      .toBeTruthy();
   });
 });
