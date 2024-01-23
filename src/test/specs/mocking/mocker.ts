@@ -28,14 +28,14 @@ export function mock(options?: WorkerAndDutyMockOptions) {
 }
 
 export module mock {
-  let workerIdCount = 0;
+  let workerIdCount = 1;
 
   export function worker(options?: WorkerMockOptions): WorkerInfo {
     return new WorkerInfo({
       name: 'John Due',
       post: 'N/A',
       graduation: 'gcm',
-      identifier: new WorkerIdentifier(workerIdCount, 0),
+      identifier: new WorkerIdentifier(workerIdCount++, 0),
       individualId: 0,
       gender: 'N/A',
       workTime: new WorkTime(7, 8),
