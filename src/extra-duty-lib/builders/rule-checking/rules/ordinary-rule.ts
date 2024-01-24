@@ -39,8 +39,8 @@ export class OrdinaryAssignmentRule implements AssignmentRule {
   canAssign(worker: WorkerInfo, duty: ExtraDuty): boolean {
     if (this.isDailyWorkerAtFridayAtNight(worker, duty)) return false;
 
-    return this.collidesWithTodayWork(worker, duty)
-      || this.collidesWithTomorrowWork(worker, duty)
-      || this.collidesWithYesterdayWork(worker, duty);
+    return !this.collidesWithTodayWork(worker, duty)
+      && !this.collidesWithTomorrowWork(worker, duty)
+      && !this.collidesWithYesterdayWork(worker, duty);
   }
 }
