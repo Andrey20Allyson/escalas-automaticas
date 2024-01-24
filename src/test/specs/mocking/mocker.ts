@@ -19,15 +19,18 @@ export interface WorkerAndDutyMockOptions {
 }
 
 export function mock(options?: WorkerAndDutyMockOptions) {
-  const table = new ExtraDutyTable({ month: 0, ...options?.table });
-  const month = new Month(table.config.year, table.config.month);
+  const month = mock.month();
+  const table = new ExtraDutyTable({ month: month.index, year: month.year, ...options?.table });
 
   const duty = table
     .getDay(options?.duty?.dayIndex ?? 0)
     .getDuty(options?.duty?.dutyIndex ?? 0);
 
   const worker = mock.worker({
-    month,
+    month: new Month(
+      table.config.year,
+      table.config.month,
+    ),
     ...options?.worker
   });
 
