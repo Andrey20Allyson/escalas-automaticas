@@ -86,6 +86,10 @@ export class DaysOfWork implements Clonable<DaysOfWork> {
     this.set(day, DayRestriction.LICENCE);
   }
 
+  free(day: number) {
+    this.set(day, DayRestriction.NONE);
+  }
+
   set(day: number, restriction: DayRestriction) {
     if (day < 0 || day >= this.length || this.days[day] === restriction) return;
 
