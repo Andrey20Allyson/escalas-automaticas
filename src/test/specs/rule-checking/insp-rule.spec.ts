@@ -31,7 +31,7 @@ describe(InspAssignmentRule.name, () => {
       .toBeFalsy();
   });
 
-  test(`Shold return true if is trying to assign a non 'insp' in a duty that have a 'insp'`, () => {
+  test(`Shold return true if is trying to assign a 'insp' in a duty that only have non 'insp'`, () => {
     const { duty, worker } = mock({
       worker: {
         graduation: 'insp',
@@ -40,6 +40,19 @@ describe(InspAssignmentRule.name, () => {
 
     duty.add(mock.worker({ graduation: 'sub-insp' }));
     duty.add(mock.worker({ graduation: 'gcm' }));
+
+    expect(checker.canAssign(worker, duty))
+      .toBeTruthy();
+  });
+
+  test(`Shold return true if is trying to assing a non 'insp' in a duty that have a 'insp'`, () => {
+    const { duty, worker } = mock({
+      worker: {
+        graduation: 'sub-insp',
+      }
+    });
+
+    duty.add(mock.worker({ graduation: 'insp' }));
 
     expect(checker.canAssign(worker, duty))
       .toBeTruthy();
