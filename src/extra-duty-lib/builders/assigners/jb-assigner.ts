@@ -1,6 +1,6 @@
-import { ScheduleAssigner } from "./assigner";
-import { AssignmentRuleStack, AssignmentRule } from "../rule-checking";
+import { AssignmentRule, AssignmentRuleStack } from "../rule-checking";
 import { JBNightAssignmentRule, JBNightAssignmentRuleOptions } from "../rule-checking/rules/jb-night-rule";
+import { ScheduleAssignerV1 } from "./assigner-v1";
 import { JQScheduleAssigner } from "./jq-assigner";
 
 export interface JBAssignmentRulesOptions {
@@ -8,7 +8,7 @@ export interface JBAssignmentRulesOptions {
   extend?: AssignmentRule[];
 }
 
-export class JBScheduleAssigner extends ScheduleAssigner {
+export class JBScheduleAssigner extends ScheduleAssignerV1 {
   constructor(options?: JBAssignmentRulesOptions) {
     const extendedRules = options?.extend ?? [new JQScheduleAssigner().checker];
     

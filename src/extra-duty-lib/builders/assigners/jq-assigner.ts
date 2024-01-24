@@ -1,4 +1,3 @@
-import { ScheduleAssigner } from "./assigner";
 import { AssignmentRuleStack } from "../rule-checking";
 import {
   BusyWorkerAssignmentRule,
@@ -9,8 +8,9 @@ import {
   OrdinaryAssignmentRule,
   TimeOffAssignmentRule
 } from "../rule-checking/rules";
+import { ScheduleAssignerV1 } from "./assigner-v1";
 
-export class JQScheduleAssigner extends ScheduleAssigner {
+export class JQScheduleAssigner extends ScheduleAssignerV1 {
   constructor() {
     super(
       new AssignmentRuleStack([
