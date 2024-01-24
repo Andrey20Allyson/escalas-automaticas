@@ -47,6 +47,12 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
     }
   }
 
+  findDuty(predicate: (duty: ExtraDuty) => boolean, start: number = 0): ExtraDuty | undefined {
+    for (const duty of this.iterDuties()) {
+      if (predicate(duty) === true) return duty;
+    }
+  }
+
   copy(other: ExtraDutyTable) {
     for (const otherDuty of other.iterDuties()) {
       this
