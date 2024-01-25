@@ -1,7 +1,12 @@
 import { Gender, Graduation, WorkerInfo } from ".";
 import { parseNumberOrThrow } from "../../../utils";
-import { DEFAULT_DAYS_OF_WORK_PARSER, DaysOfWorkParser } from "../days-of-work";
-import { IWorkTimeParser, WorkTimeParser } from "../work-time/parser";
+import { Parser } from "../base/parser";
+import { DEFAULT_DAYS_OF_WORK_PARSER, DaysOfWork } from "../days-of-work";
+import { WorkLimit } from "../work-limit";
+import { WorkLimitParser } from "../work-limit/parser";
+import { WorkTime } from "../work-time";
+import { WorkTimeParser } from "../work-time/parser";
+import { WorkerIdentifier } from "../worker-identifier";
 import { WorkerIdentifierParser } from "../worker-identifier/parser";
 
 export interface WorkerInfoParseData {
@@ -14,6 +19,14 @@ export interface WorkerInfoParseData {
   gender?: string;
   workerId: string;
   individualId?: string;
+  workLimit?: string;
+}
+
+export interface WorkerInfoParserOptions {
+  daysOfWorkParser?: Parser<WorkerInfoParseData, DaysOfWork>;
+  workTimeParser?: Parser<WorkerInfoParseData, WorkTime>;
+  identifierParser?: Parser<WorkerInfoParseData, WorkerIdentifier>;
+  workLimitParser?: Parser<WorkerInfoParseData, WorkLimit>;
 }
 
 export class WorkerInfoParser {
@@ -28,14 +41,16 @@ export class WorkerInfoParser {
     'SI': 'sub-insp',
   };
 
-  readonly daysOfWorkParser: DaysOfWorkParser;
-  readonly workTimeParser: IWorkTimeParser;
-  readonly identifierParser: WorkerIdentifierParser;
+  readonly daysOfWorkParser: Parser<WorkerInfoParseData, DaysOfWork>;
+  readonly workTimeParser: Parser<WorkerInfoParseData, WorkTime>;
+  readonly identifierParser: Parser<WorkerInfoParseData, WorkerIdentifier>;
+  readonly workLimitParser: Parser<WorkerInfoParseData, WorkLimit>;
 
-  constructor() {
-    this.daysOfWorkParser = DEFAULT_DAYS_OF_WORK_PARSER;
-    this.workTimeParser = new WorkTimeParser();
-    this.identifierParser = new WorkerIdentifierParser();
+  constructor(options?: WorkerInfoParserOptions) {
+    this.daysOfWorkParser = options?.daysOfWorkParser ?? DEFAULT_DAYS_OF_WORK_PARSER;
+    this.workTimeParser = options?.workTimeParser ?? new WorkTimeParser();
+    this.identifierParser = options?.identifierParser ?? new WorkerIdentifierParser();
+    this.workLimitParser = options?.workLimitParser ?? new WorkLimitParser();
   }
 
   parse(data: WorkerInfoParseData): WorkerInfo | null {
@@ -45,11 +60,13 @@ export class WorkerInfoParser {
     const workTime = this.workTimeParser.parse(data);
     const daysOfWork = this.daysOfWorkParser.parse(data);
     const identifier = this.identifierParser.parse(data);
+    const limit = this.workLimitParser.parse(data);
 
     return new WorkerInfo({
       name: data.name,
       post: data.post,
       workTime,
+      limit,
       daysOfWork,
       identifier,
       graduation: this.parseGradutation(data.grad),
