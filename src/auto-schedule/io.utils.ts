@@ -1,9 +1,9 @@
 import * as XLSX from 'xlsx';
 import { ExtraDutyTable, Holidays, WorkerInfo, WorkerRegistriesMap } from "../extra-duty-lib";
+import { WorkerInfoParser } from '../extra-duty-lib/structs/worker-info/parser';
 import { Result, ResultError, ResultType } from "../utils";
 import { BookHandler, CellHandler, LineHander } from "../xlsx-handlers";
 import { ExcelTime } from "../xlsx-handlers/utils";
-import { DEFAULT_WORKER_INFO_PARSER } from '../extra-duty-lib/structs/worker-info/parser';
 
 export enum WorkerInfoCollumns {
   NAME = 'd',
@@ -11,6 +11,7 @@ export enum WorkerInfoCollumns {
   GRAD = 'b',
   POST = 'e',
   REGISTRATION = 'c',
+  LIMIT = 'g',
 }
 
 export const workersTableCollumns = LineHander.collumnTuple([
@@ -18,7 +19,8 @@ export const workersTableCollumns = LineHander.collumnTuple([
   WorkerInfoCollumns.HOURLY,
   WorkerInfoCollumns.GRAD,
   WorkerInfoCollumns.POST,
-  WorkerInfoCollumns.REGISTRATION
+  WorkerInfoCollumns.REGISTRATION,
+  WorkerInfoCollumns.LIMIT,
 ]);
 
 export const workersTableCellTypes = CellHandler.typeTuple([
@@ -26,7 +28,8 @@ export const workersTableCellTypes = CellHandler.typeTuple([
   'string',
   'string',
   'string?',
-  'string'
+  'string',
+  'string?',
 ]);
 
 export function scrappeWorkersFromBook(book: XLSX.WorkBook, options: ScrappeWorkersOptions) {
@@ -48,6 +51,7 @@ export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: Scr
   if (ResultError.isError(sheet)) return sheet;
 
   const workerInfos: WorkerInfo[] = [];
+  const parser = new WorkerInfoParser();
 
   for (const line of sheet.iterLines(2)) {
     const cellsResult = line.safeGetCells(workersTableCollumns);
@@ -56,16 +60,24 @@ export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: Scr
     const typedCellsResult = CellHandler.safeTypeAll(cellsResult, workersTableCellTypes);
     if (ResultError.isError(typedCellsResult)) return typedCellsResult;
 
-    const [nameCell, hourlyCell, gradCell, postCell, registrationCell] = typedCellsResult;
+    const [
+      nameCell,
+      hourlyCell,
+      gradCell,
+      postCell,
+      registrationCell,
+      workLimitCell,
+    ] = typedCellsResult;
 
     const workerData = options.workerRegistryMap?.get(registrationCell.value);
     if (ResultError.isError(workerData)) return workerData;
 
     try {
-      const worker = DEFAULT_WORKER_INFO_PARSER.parse({
+      const worker = parser.parse({
         name: nameCell.value,
         hourly: hourlyCell.value,
         workerId: registrationCell.value,
+        workLimit: workLimitCell.value,
         individualId: workerData?.individualID,
         gender: workerData?.gender,
         grad: gradCell.value,
