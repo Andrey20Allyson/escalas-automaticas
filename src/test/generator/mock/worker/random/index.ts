@@ -18,8 +18,10 @@ export interface RandomWorkerMockFactoryConfig {
   year?: number;
 }
 
-export class RandomWorkerMockFactory implements MockFactory<WorkerInfo> {
-  constructor(readonly config: RandomWorkerMockFactoryConfig = {}) { }
+export class RandomWorkerMockFactory extends MockFactory<WorkerInfo> {
+  constructor(readonly config: RandomWorkerMockFactoryConfig = {}) {
+    super();
+  }
 
   create(): WorkerInfo {
     const {

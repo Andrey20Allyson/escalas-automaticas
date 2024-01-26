@@ -2,18 +2,19 @@ import fs from 'fs/promises';
 import path from 'path';
 import { parseWorkers } from '../../auto-schedule/io';
 import { MainTableFactory } from '../../auto-schedule/table-factories';
-import { ExtraDutyTable, Holidays, WorkerRegistriesMap } from '../../extra-duty-lib';
+import { ExtraDutyTable, Holidays, WorkerInfo, WorkerRegistriesMap } from '../../extra-duty-lib';
 import { DefaultTableIntegrityAnalyser } from '../../extra-duty-lib/builders/integrity';
 import { JQScheduleBuilder } from '../../extra-duty-lib/builders/jq-schedule-builder';
 import { DEFAULT_MONTH_PARSER, Month } from '../../extra-duty-lib/structs/month';
 import { Benchmarker, Result, analyseResult } from '../../utils';
 import { argvCompiler } from '../../utils/cli';
-import { WorkerMocker } from './mock/worker';
+import { RandomWorkerMockFactory } from './mock/worker/random';
+import { MockFactory } from './mock';
 
 function mockWorkers(year: number, month: number) {
-  const workerMocker = new WorkerMocker();
+  const workerMocker: MockFactory<WorkerInfo> = new RandomWorkerMockFactory({ month, year });
 
-  return workerMocker.createArray(28, { mode: 'random', config: { month, year } });
+  return workerMocker.array(28);
 }
 
 async function loadWorkers(year: number, month: number, inputFile: string) {
