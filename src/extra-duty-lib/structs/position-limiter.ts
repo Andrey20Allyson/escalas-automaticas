@@ -29,11 +29,19 @@ export class PositionLimiter {
   }
 
   increase(identifiable: Identifiable): number {
-    return this.places.increment(this.config.currentPlace, identifiable.id, this.config.dutyPositionSize);
+    return this.increaseFrom(this.config.currentPlace, identifiable);
+  }
+
+  increaseFrom(place: string, identifiable: Identifiable): number {
+    return this.places.increment(place, identifiable.id, this.config.dutyPositionSize);
   }
 
   decrease(identifiable: Identifiable): number {
-    return this.places.decrement(this.config.currentPlace, identifiable.id, this.config.dutyPositionSize);
+    return this.decreaseFrom(this.config.currentPlace, identifiable);
+  }
+
+  decreaseFrom(place: string, identifiable: Identifiable): number {
+    return this.places.decrement(place, identifiable.id, this.config.dutyPositionSize);
   }
 
   set(identifiable: Identifiable, value: number): this {

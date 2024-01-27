@@ -22,6 +22,12 @@ export class WorkingPlaceStorage {
     }));
   }
 
+  *iterPlaceNames(): Iterable<string> {
+    for (const [placeName] of this.places) {
+      yield placeName;
+    }
+  }
+
   placeFrom(place: string): ReadonlyMap<number, WorkerInfo> {
     return this._mutPlaceFrom(place);
   }

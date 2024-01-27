@@ -99,6 +99,18 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
   }
 
   clear(place?: string) {
+    if (place === undefined) {
+      for (const place of this.workers.iterPlaceNames()) {
+        this.clear(place);
+      }
+
+      return;
+    }
+
+    for (const [_, worker] of this.workers.placeFrom(place)) {
+      this.table.limiter.decreaseFrom(place, worker);
+    }
+
     this.workers.clear(place);
   }
 
