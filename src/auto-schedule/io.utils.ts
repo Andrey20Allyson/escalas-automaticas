@@ -4,6 +4,8 @@ import { WorkerInfoParser } from '../extra-duty-lib/structs/worker-info/parser';
 import { Result, ResultError, ResultType } from "../utils";
 import { BookHandler, CellHandler, LineHander } from "../xlsx-handlers";
 import { ExcelTime } from "../xlsx-handlers/utils";
+import { WorkerRegistry } from './registries/worker-registry';
+import { WorkerRegistryStorage } from './registries/worker-registry/storage';
 
 export enum WorkerInfoCollumns {
   NAME = 'd',
@@ -41,7 +43,7 @@ export interface ScrappeWorkersOptions {
   month: number;
   sheetName?: string;
   holidays?: Holidays;
-  workerRegistryMap?: WorkerRegistriesMap;
+  workerRegistries?: WorkerRegistry[];
 }
 
 export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: ScrappeWorkersOptions): ResultType<WorkerInfo[]> {
@@ -52,6 +54,8 @@ export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: Scr
 
   const workerInfos: WorkerInfo[] = [];
   const parser = new WorkerInfoParser();
+
+  const workerRegistries = options.workerRegistries ? new WorkerRegistryStorage(options.workerRegistries) : undefined; 
 
   for (const line of sheet.iterLines(2)) {
     const cellsResult = line.safeGetCells(workersTableCollumns);
@@ -69,7 +73,7 @@ export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: Scr
       workLimitCell,
     ] = typedCellsResult;
 
-    const workerData = options.workerRegistryMap?.get(registrationCell.value);
+    const workerData = workerRegistries?.get(registrationCell.value, nameCell.value);
     if (ResultError.isError(workerData)) return workerData;
 
     try {
@@ -78,7 +82,7 @@ export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: Scr
         hourly: hourlyCell.value,
         workerId: registrationCell.value,
         workLimit: workLimitCell.value,
-        individualId: workerData?.individualID,
+        individualId: workerData?.individualId,
         gender: workerData?.gender,
         grad: gradCell.value,
         post: postCell.value ?? '',

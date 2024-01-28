@@ -1,16 +1,17 @@
-import { ExtraDutyTable, Holidays, WorkerInfo, WorkerRegistriesMap } from '../extra-duty-lib';
+import { ExtraDutyTable, Holidays, WorkerInfo } from '../extra-duty-lib';
 import { JQScheduleBuilder } from '../extra-duty-lib/builders/jq-schedule-builder';
 import { getMonth, getYear } from '../utils';
 import { analyseResult } from '../utils/analyser';
 import { Benchmarker } from '../utils/benchmark';
 import { parseTable, parseWorkers, serializeTable } from './io';
 import { ScrappeTableOptions } from './io.utils';
+import { WorkerRegistry } from './registries/worker-registry';
 import { MainTableFactory } from './table-factories/main-factory';
 
 export interface GenerateOptions extends GenerateFromWorkersOptions {
   holidays?: Holidays;
   inputSheetName?: string;
-  workerRegistryMap?: WorkerRegistriesMap;
+  workerRegistries?: WorkerRegistry[];
 }
 
 export function generate(data: Buffer, options: GenerateOptions = {}): Promise<Buffer> {
@@ -19,7 +20,7 @@ export function generate(data: Buffer, options: GenerateOptions = {}): Promise<B
 
   const workersParseProcess = options.benchmarker?.start('parse workers');
   const workers = parseWorkers(data, {
-    workerRegistryMap: options.workerRegistryMap,
+    workerRegistries: options.workerRegistries,
     sheetName: options.inputSheetName,
     holidays: options.holidays,
     month,
@@ -83,3 +84,4 @@ export function tableFrom(buffer: Buffer, workers: WorkerInfo[], options: Scrapp
 
 export * as io from './io';
 export * as serializers from './table-factories';
+

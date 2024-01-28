@@ -4,7 +4,7 @@ import path from 'path';
 import { z } from 'zod';
 import { parseWorkers } from '../../auto-schedule/io';
 import { MainTableFactory } from '../../auto-schedule/table-factories';
-import { ExtraDutyTable, Holidays, WorkerInfo, WorkerRegistriesMap } from '../../extra-duty-lib';
+import { ExtraDutyTable, WorkerInfo, WorkerRegistriesMap } from '../../extra-duty-lib';
 import { DefautlScheduleBuilder } from '../../extra-duty-lib/builders/default-builder';
 import { DefaultTableIntegrityAnalyser } from '../../extra-duty-lib/builders/integrity';
 import { DEFAULT_MONTH_PARSER, Month } from '../../extra-duty-lib/structs/month';
@@ -12,6 +12,8 @@ import { Benchmarker, Result, analyseResult } from '../../utils';
 import { OptionInfoBuilder, loadCommand } from './cli';
 import { MockFactory } from './mock';
 import { RandomWorkerMockFactory } from './mock/worker/random';
+import { WorkerRegistry } from '../../auto-schedule/registries/worker-registry';
+import { FirebaseWorkerRegistryLoader } from '../../auto-schedule/registries/worker-registry/loader';
 
 function mockWorkers(year: number, month: number) {
   const workerMocker: MockFactory<WorkerInfo> = new RandomWorkerMockFactory({ month, year });
@@ -21,16 +23,11 @@ function mockWorkers(year: number, month: number) {
 
 async function loadWorkers(year: number, month: number, inputFile: string) {
   const inputBuffer = await fs.readFile(inputFile);
-  const registriesFileBuffer = await fs.readFile('input/registries.json');
-  const holidaysFileBuffer = await fs.readFile('./input/feriados.json');
-
-  const workerRegistryMap = Result.unwrap(WorkerRegistriesMap.parseJSON(registriesFileBuffer));
-
-  const holidays = Result.unwrap(Holidays.safeParse(holidaysFileBuffer));
+  const loader = new FirebaseWorkerRegistryLoader();
+  const workerRegistries = await loader.load();
 
   return parseWorkers(inputBuffer, {
-    workerRegistryMap,
-    holidays,
+    workerRegistries,
     month,
     year,
   });
