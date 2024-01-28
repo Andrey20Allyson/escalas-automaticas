@@ -1,23 +1,18 @@
 import { WorkerRegistry } from ".";
-import { adminFirestore } from "../../../firebase";
-import { Loader } from "../loader";
-import { WorkerRegistryParser } from "./parser";
+import { Loader, LoaderOptions } from "../loader";
+import { WorkerRegistryChunkStorage } from "./chunk";
 
 export class FirebaseWorkerRegistryLoader implements Loader<WorkerRegistry[]> {
-  readonly parser: WorkerRegistryParser;
+  
+  readonly storage: WorkerRegistryChunkStorage;
 
   constructor() {
-    this.parser = new WorkerRegistryParser();
+    this.storage = new WorkerRegistryChunkStorage();
   }
 
-  async load(): Promise<WorkerRegistry[]> {
-    const snapshot = await adminFirestore
-      .collection('worker-registries')
-      .get();
+  async load(options?: LoaderOptions): Promise<WorkerRegistry[]> {
+    const chunk = await this.storage.at(0);
 
-    return snapshot
-      .docs
-      .filter(doc => doc.id.startsWith('@') === false)
-      .map(doc => this.parser.parse(doc.data()));
+    return chunk.data.workers;
   }
 }

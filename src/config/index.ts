@@ -1,21 +1,14 @@
 import fs from "fs";
 import path from "path";
 import { z } from "zod";
+import { AUTO_SCHEDULE_CONFIG_SCHEMA } from "./schema";
 
 const CONFIG_PATH = path.resolve(
   process.cwd(),
   `auto-schedule.config.json`,
 );
 
-const configSchema = z.object({
-  firebase: z.object({
-    key: z
-      .string()
-      .default('input/firebase-key.json'),
-  }).default({}),
-});
-
-export type AutoScheduleConfig = z.infer<typeof configSchema>;
+export type AutoScheduleConfig = z.infer<typeof AUTO_SCHEDULE_CONFIG_SCHEMA>;
 
 let configFileExists: boolean;
 
@@ -27,7 +20,7 @@ try {
 }
 
 const configBuffer = configFileExists ? fs.readFileSync(CONFIG_PATH, { encoding: 'utf-8' }) : '{}';
-export const config = configSchema.parse(JSON.parse(configBuffer));
+export const config = AUTO_SCHEDULE_CONFIG_SCHEMA.parse(JSON.parse(configBuffer));
 
 type RecursivePartial<T> = { [K in keyof T]?: T[K] extends object ? RecursivePartial<T[K]> : T[K] };
 
@@ -47,11 +40,9 @@ function recursiveAssign<T>(partialValue: RecursivePartial<T> | undefined | null
 }
 
 export function createAutoScheduleConfig(factory: (config: AutoScheduleConfig) => RecursivePartial<AutoScheduleConfig>): AutoScheduleConfig {
-  const defaultConfig = configSchema.parse({});
+  const defaultConfig = AUTO_SCHEDULE_CONFIG_SCHEMA.parse({});
 
   const partialConfig = factory(defaultConfig);
 
   return recursiveAssign(partialConfig, defaultConfig);
 }
-
-console.log(config);

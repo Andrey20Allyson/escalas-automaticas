@@ -1,3 +1,9 @@
+export class LoaderOptions {
+  static ids(ids: number[]) {
+
+  }
+}
+
 export interface Loader<T> {
-  load(): Promise<T>;
+  load(options?: LoaderOptions): Promise<T>;
 }

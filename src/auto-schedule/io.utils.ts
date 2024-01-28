@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { ExtraDutyTable, Holidays, WorkerInfo, WorkerRegistriesMap } from "../extra-duty-lib";
+import { ExtraDutyTable, Holidays, WorkerInfo } from "../extra-duty-lib";
 import { WorkerInfoParser } from '../extra-duty-lib/structs/worker-info/parser';
 import { Result, ResultError, ResultType } from "../utils";
 import { BookHandler, CellHandler, LineHander } from "../xlsx-handlers";
@@ -73,8 +73,8 @@ export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: Scr
       workLimitCell,
     ] = typedCellsResult;
 
-    const workerData = workerRegistries?.get(registrationCell.value, nameCell.value);
-    if (ResultError.isError(workerData)) return workerData;
+    const workerRegistry = workerRegistries?.get(registrationCell.value, nameCell.value);
+    if (ResultError.isError(workerRegistry)) return workerRegistry;
 
     try {
       const worker = parser.parse({
@@ -82,8 +82,8 @@ export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: Scr
         hourly: hourlyCell.value,
         workerId: registrationCell.value,
         workLimit: workLimitCell.value,
-        individualId: workerData?.individualId,
-        gender: workerData?.gender,
+        individualId: workerRegistry?.individualId,
+        gender: workerRegistry?.gender,
         grad: gradCell.value,
         post: postCell.value ?? '',
         month: options.month,
