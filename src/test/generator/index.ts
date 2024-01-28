@@ -1,15 +1,17 @@
+import { program } from 'commander';
 import fs from 'fs/promises';
 import path from 'path';
+import { z } from 'zod';
 import { parseWorkers } from '../../auto-schedule/io';
 import { MainTableFactory } from '../../auto-schedule/table-factories';
 import { ExtraDutyTable, Holidays, WorkerInfo, WorkerRegistriesMap } from '../../extra-duty-lib';
+import { DefautlScheduleBuilder } from '../../extra-duty-lib/builders/default-builder';
 import { DefaultTableIntegrityAnalyser } from '../../extra-duty-lib/builders/integrity';
-import { JQScheduleBuilder } from '../../extra-duty-lib/builders/jq-schedule-builder';
 import { DEFAULT_MONTH_PARSER, Month } from '../../extra-duty-lib/structs/month';
 import { Benchmarker, Result, analyseResult } from '../../utils';
-import { argvCompiler } from '../../utils/cli';
-import { RandomWorkerMockFactory } from './mock/worker/random';
+import { OptionInfoBuilder, loadCommand } from './cli';
 import { MockFactory } from './mock';
+import { RandomWorkerMockFactory } from './mock/worker/random';
 
 function mockWorkers(year: number, month: number) {
   const workerMocker: MockFactory<WorkerInfo> = new RandomWorkerMockFactory({ month, year });
@@ -34,23 +36,13 @@ async function loadWorkers(year: number, month: number, inputFile: string) {
   });
 }
 
-export type WorkersLoadMode = 'mock' | 'input-file';
-
-export interface TestExecOptions {
-  mode?: WorkersLoadMode;
-  inputFile?: string;
-  outputFile?: string;
-  tries?: number;
-  month?: Month;
-}
-
-async function exec(options: TestExecOptions = {}) {
+export async function generate(options: GenerateCommandOptions = {}) {
   const {
-    mode = options.inputFile !== undefined ? 'input-file' : 'mock',
-    inputFile = 'input/data.xlsx',
+    mode = options.input !== undefined ? 'input-file' : 'mock',
+    input: inputFile = 'input/data.xlsx',
     tries = 7000,
-    outputFile,
-    month = Month.now(),
+    output: outputFile,
+    date: month = Month.now(),
   } = options;
 
   const beckmarker = new Benchmarker();
@@ -66,8 +58,9 @@ async function exec(options: TestExecOptions = {}) {
 
   const tableAssignBenchmark = beckmarker.start('talbe assign');
 
-  new JQScheduleBuilder(tries)
-    .build(table, workers);
+  const builder = new DefautlScheduleBuilder(tries);
+
+  builder.build(table, workers);
 
   tableAssignBenchmark.end();
 
@@ -98,32 +91,50 @@ async function exec(options: TestExecOptions = {}) {
   }
 }
 
-async function runCli() {
-  const cliController = argvCompiler.compile();
+const generateOptionsSchema = z.object({
+  mode: z
+    .enum(['input-file', 'mock'])
+    .optional(),
+  input: z
+    .string()
+    .optional(),
+  output: z
+    .string()
+    .optional(),
+  tries: z
+    .number({ coerce: true })
+    .optional(),
+  date: z
+    .string()
+    .transform(s => DEFAULT_MONTH_PARSER.parse(s))
+    .optional(),
+});
 
-  if (cliController.hasFlag('help', 'h')) {
-    console.log(
-      'flags:\n' +
-      '  --mode <"mock" | "input-file"> : select the execution mode (aliases to -m)\n' +
-      '  --input <string> : the input file path (aliases to -i)\n' +
-      '  --output <string> : the output file path (aliases to -o)\n' +
-      '  --tries <number> : the number of times that the program will try generate the table (aliases to -t)\n' +
-      '  --date <mm/yy> : the month of extra duty table (aliases to -d)'
-    );
+export type GenerateCommandOptions = z.infer<typeof generateOptionsSchema>;
 
-    return;
-  }
+loadCommand({
+  schema: generateOptionsSchema,
+  command: 'generate',
+  aliases: ['gen', 'g'],
+  description: `Generates a extra schedule`,
+  optionInfos: {
+    date: OptionInfoBuilder
+      .alias('d')
+      .describe('the month of extra duty table'),
+    input: OptionInfoBuilder
+      .alias('i')
+      .describe('the input file path'),
+    output: OptionInfoBuilder
+      .alias('o')
+      .describe('the output file path'),
+    tries: OptionInfoBuilder
+      .alias('t')
+      .describe('the number of times that the program will try generate the table'),
+    mode: OptionInfoBuilder
+      .alias('m')
+      .describe('select the execution mode'),
+  },
+  action: generate,
+});
 
-  const rawDate = cliController.optionalFlag('date', 'd')?.asString();
-  const month = rawDate ? DEFAULT_MONTH_PARSER.parse(rawDate) : undefined;
-
-  exec({
-    mode: cliController.optionalFlag('mode', 'm')?.asEnum(['mock', 'input-file']),
-    inputFile: cliController.optionalFlag('input', 'i')?.asString(),
-    outputFile: cliController.optionalFlag('output', 'o')?.asString(),
-    tries: cliController.optionalFlag('tries', 't')?.asNumber(),
-    month,
-  });
-}
-
-runCli();
+program.parse();
