@@ -1,6 +1,6 @@
 import { WorkerRegistry } from ".";
 import { Loader, LoaderOptions } from "../loader";
-import { WorkerRegistryChunkStorage } from "./chunk";
+import { WorkerRegistryChunkStorage } from "./chunk-storage";
 
 export class FirebaseWorkerRegistryLoader implements Loader<WorkerRegistry[]> {
   
@@ -11,8 +11,8 @@ export class FirebaseWorkerRegistryLoader implements Loader<WorkerRegistry[]> {
   }
 
   async load(options?: LoaderOptions): Promise<WorkerRegistry[]> {
-    const chunk = await this.storage.at(0);
+    const chunk = await this.storage.get(0);
 
-    return chunk.data.workers;
+    return chunk.registries();
   }
 }

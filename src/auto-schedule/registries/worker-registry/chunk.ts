@@ -1,95 +1,153 @@
-import { DocumentReference, CollectionReference, Query } from "firebase-admin/firestore";
-import { WorkerRegistry } from ".";
-import { adminFirestore } from "../../../firebase";
-import { access, mkdir, readFile, writeFile } from 'fs/promises';
+import clone from "clone";
+import { Query, QueryDocumentSnapshot, QuerySnapshot } from "firebase-admin/firestore";
+import fs from 'fs/promises';
+import { WorkerRegistry, WorkerRegistryInit } from ".";
 import { config } from "../../../config";
-import path from "path";
+import { adminFirestore } from "../../../firebase";
+import { ChunkNotFoundError, WorkerRegistryChunkStorage } from "./chunk-storage";
 
 export type WorkerRegistryChunkData = {
-  idx: number;
-  version: number;
+  readonly idx: number;
+  readonly type: string;
   workers: WorkerRegistry[];
-}
-
-export class WorkerRegistryChunk {
-  constructor(
-    readonly data: WorkerRegistryChunkData,
-    private readonly doc: DocumentReference,
-  ) { }
-
-  persist() {
-    this.data.version++;
-
-    return this.doc.set(this.data);
-  }
-}
-
-export type GetChunkMode = 'default' | 'only-version';
-
-export type GetChunkResult<M extends GetChunkMode> = M extends 'default' ? {
-  doc: DocumentReference;
-  data: WorkerRegistryChunkData;
-} : {
-  doc: DocumentReference;
   version: number;
 };
 
-export class WorkerRegistryChunkStorage {
-  readonly collection: CollectionReference;
+export type WorkerRegistryChunkVersion = {
+  version: number;
+}
 
-  constructor() {
-    this.collection = adminFirestore.collection('worker-registries');
+export type RegistryChangeInfo = {
+  readonly registry: WorkerRegistry;
+};
+
+export class WorkerRegistryChunk {
+  private _updates: Map<string, WorkerRegistry> = new Map();
+  private _remotions: Set<string> = new Set();
+  private _insertions: Map<string, WorkerRegistry> = new Map();
+  private _data: WorkerRegistryChunkData;
+
+  constructor(
+    data: WorkerRegistryChunkData,
+    readonly storage: WorkerRegistryChunkStorage,
+  ) {
+    this._data = clone(data);
   }
 
-  private fileDirOf(idx: number): string {
-    return path.resolve(
-      config.registries.cacheDir,
-      `worker-registries.chunk-${idx}.json`,
-    );
+  index() {
+    return this._data.idx;
   }
 
-  private async get<M extends GetChunkMode = 'default'>(idx: number, mode: M = 'default' as M): Promise<GetChunkResult<M>> {
-    let query = this.collection
-      .where('type', '==', 'registry-chunk')
-      .where('idx', '==', idx)
-      .limit(1);
+  type() {
+    return this._data.type;
+  }
 
-    if (mode === 'only-version') {
-      query = query.select('version');
+  version() {
+    return this._data.version;
+  }
+
+  update(registry: WorkerRegistry): this {
+    this._updates.set(registry.workerId, {
+      ...registry,
+      createdAtVersion: this.version(),
+    });
+
+    return this;
+  }
+
+  add(registry: WorkerRegistryInit): this {
+    this._insertions.set(registry.workerId, {
+      ...registry,
+      createdAtVersion: this.version(),
+    });
+
+    return this;
+  }
+
+  delete(id: string): this {
+    if (this._insertions.has(id)) {
+      this._insertions.delete(id);
     }
 
-    const snapshot = await query
-      .get()
-      .then(query => query.docs.at(0) ?? Promise.reject(new Error(`Can't find chunk with idx ${idx}`)));
+    this._remotions.add(id);
 
-    if (mode === 'only-version') {
-      return {
-        version: snapshot.data().version,
-        doc: snapshot.ref,
-      } as GetChunkResult<M>;
-    }
-
-    return {
-      data: snapshot.data(),
-      doc: snapshot.ref,
-    } as GetChunkResult<M>;
+    return this;
   }
 
-  async at(idx: number): Promise<WorkerRegistryChunk> {
-    const cache = await readFile(this.fileDirOf(idx), { encoding: 'utf-8' })
-      .then(buffer => JSON.parse(buffer) as WorkerRegistryChunkData)
-      .catch(() => null);
+  registries(): WorkerRegistry[];
+  registries(oldRegistries: WorkerRegistry[]): WorkerRegistry[];
+  registries(oldRegistries?: WorkerRegistry[]): WorkerRegistry[] {
+    const registries = oldRegistries ?? this._data.workers;
 
-    const { doc, version: latestVersion } = await this.get(idx, 'only-version');
-    if (cache !== null && cache.version >= latestVersion) return new WorkerRegistryChunk(cache, doc);
+    return registries
+      .filter(registry => this._remotions.has(registry.workerId) === false || this._data.version < registry.createdAtVersion)
+      .concat(Array.from(this._insertions.values()))
+      .map(registry => this._data.version < registry.createdAtVersion ? registry : (this._updates.get(registry.workerId) ?? registry));
+  }
 
-    const { data } = await this.get(idx);
+  snapshot(): Promise<QueryDocumentSnapshot<WorkerRegistryChunkData>>;
+  snapshot(querySnapshot: QuerySnapshot<WorkerRegistryChunkData>): Promise<QueryDocumentSnapshot<WorkerRegistryChunkData>>;
+  async snapshot(querySnapshot?: QuerySnapshot<WorkerRegistryChunkData>): Promise<QueryDocumentSnapshot<WorkerRegistryChunkData>> {
+    const _querySnapshot = querySnapshot ?? await this.query().get();
 
-    await access(config.registries.cacheDir)
-      .catch(() => mkdir(config.registries.cacheDir, { recursive: true }));
+    return _querySnapshot.docs.at(0) ?? ChunkNotFoundError.reject(this._data.idx);
+  }
 
-    await writeFile(this.fileDirOf(idx), JSON.stringify(data));
+  async reload(): Promise<void> {
+    const doc = await this.snapshot();
 
-    return new WorkerRegistryChunk(data, doc);
+    this._data = doc.data();
+  }
+
+  query(): Query<WorkerRegistryChunkData> {
+    return this.storage.collection
+      .where('type', '==', this._data.type)
+      .where('idx', '==', this._data.idx)
+      .limit(1) as Query<WorkerRegistryChunkData>;
+  }
+
+  async cache(): Promise<void> {
+    await fs.access(config.registries.cacheDir)
+      .catch(() => fs.mkdir(config.registries.cacheDir, { recursive: true }));
+
+    await fs.writeFile(this.storage.cacheDirOf(this._data.idx), JSON.stringify(this._data));
+  }
+
+  changed(): boolean {
+    return this._insertions.size > 0
+      || this._remotions.size > 0
+      || this._updates.size > 0;
+  }
+
+  clearChanges() {
+    this._insertions.clear();
+    this._updates.clear();
+    this._remotions.clear();
+  }
+
+  async persist(): Promise<void> {
+    if (this.changed() === false) return;
+
+    await adminFirestore.runTransaction(async transaction => {
+      const doc = await transaction
+        .get(this.query())
+        .then(qs => this.snapshot(qs));
+
+      const data = doc.data();
+
+      const newData: WorkerRegistryChunkData = {
+        idx: data.idx,
+        type: data.type,
+        version: data.version + 1,
+        workers: this.registries(data.workers),
+      };
+
+      this._data = newData;
+      this.clearChanges();
+
+      transaction.set(doc.ref, newData);
+    });
+
+    await this.cache();
   }
 }
