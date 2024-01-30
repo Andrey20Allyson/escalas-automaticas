@@ -13,8 +13,6 @@ export class WorkLimitParser implements Parser<WorkLimitParserData, WorkLimit> {
 
     const limits = this.parseNumberList(data.workLimit);
 
-    console.log(limits);
-
     const limitEntries: WorkLimitEntry[] = [];
 
     const jqLimit = limits.at(0);
