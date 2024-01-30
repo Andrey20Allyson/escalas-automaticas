@@ -22,7 +22,7 @@ function mockWorkers(year: number, month: number) {
 
 async function loadWorkers(year: number, month: number, inputFile: string) {
   const inputBuffer = await fs.readFile(inputFile);
-  const loader = new FirebaseWorkerRegistryLoader();
+  const loader = new FirebaseWorkerRegistryLoader({ cacheOnly: true });
   const workerRegistries = await loader.load();
 
   return parseWorkers(inputBuffer, {
