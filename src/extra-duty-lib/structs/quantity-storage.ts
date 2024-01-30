@@ -32,11 +32,23 @@ export class QuantityStorage<K extends keyof any> {
   }
 
   increment(place: string, key: K, count = 1): number {
-    return this.counterFrom(place)[key] += count;
+    const record = this.counterFrom(place);
+
+    if (key in record === false) {
+      record[key] = 0;
+    }
+
+    return record[key] += count;
   }
 
   decrement(place: string, key: K, count = 1): number {
-    return this.counterFrom(place)[key] -= count;
+    const record = this.counterFrom(place);
+
+    if (key in record === false) {
+      record[key] = 0;
+    }
+
+    return record[key] -= count;
   }
 
   counterFrom(place: string) {
