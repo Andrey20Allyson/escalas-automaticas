@@ -3,17 +3,16 @@ import fs from 'fs/promises';
 import path from 'path';
 import { z } from 'zod';
 import { parseWorkers } from '../../auto-schedule/io';
+import { FirebaseWorkerRegistryLoader } from '../../auto-schedule/registries/worker-registry/loader';
 import { MainTableFactory } from '../../auto-schedule/table-factories';
-import { ExtraDutyTable, WorkerInfo, WorkerRegistriesMap } from '../../extra-duty-lib';
+import { ExtraDutyTable, WorkerInfo } from '../../extra-duty-lib';
 import { DefautlScheduleBuilder } from '../../extra-duty-lib/builders/default-builder';
 import { DefaultTableIntegrityAnalyser } from '../../extra-duty-lib/builders/integrity';
 import { DEFAULT_MONTH_PARSER, Month } from '../../extra-duty-lib/structs/month';
-import { Benchmarker, Result, analyseResult } from '../../utils';
+import { Benchmarker, analyseResult } from '../../utils';
 import { OptionInfoBuilder, loadCommand } from './cli';
 import { MockFactory } from './mock';
 import { RandomWorkerMockFactory } from './mock/worker/random';
-import { WorkerRegistry } from '../../auto-schedule/registries/worker-registry';
-import { FirebaseWorkerRegistryLoader } from '../../auto-schedule/registries/worker-registry/loader';
 
 function mockWorkers(year: number, month: number) {
   const workerMocker: MockFactory<WorkerInfo> = new RandomWorkerMockFactory({ month, year });
