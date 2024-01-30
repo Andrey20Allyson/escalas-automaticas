@@ -1,4 +1,4 @@
-import { randomizeArray } from "./random";
+import { random } from "./random";
 
 export function* iterRange(start: number, end: number): Generator<number> {
   for (let i = start; i < end; i++) {
@@ -18,7 +18,7 @@ export function* enumerate<T>(iter: Iterable<T>): Iterable<[number, T]> {
 export function iterRandomInRange(start: number, end: number): Iterable<number> {
   const array = Array.from(iterRange(start, end));
 
-  return randomizeArray(array, true)[Symbol.iterator]();
+  return random.array(array, true)[Symbol.iterator]();
 }
 
 export function* iterReverse<T>(array: ArrayLike<T>): Iterable<T> {
@@ -35,7 +35,7 @@ export function* iterRandom<T>(iter: Iterable<T> | ArrayLike<T>): Iterable<T> {
       yield iter[i];
     }
   } else {
-    let array = randomizeArray(Array.from(iter), true);
+    let array = random.array(Array.from(iter), true);
 
     for (const item of array) {
       yield item;
