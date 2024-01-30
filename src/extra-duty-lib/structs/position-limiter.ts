@@ -17,7 +17,7 @@ export class PositionLimiter {
   isLimitOut(limitable: Limitable): boolean {
     const workerPositions = this.places.quantityFrom(this.config.currentPlace, limitable.id);
     
-    return workerPositions + this.config.dutyPositionSize >= limitable.limit.of(this.config.currentPlace);
+    return workerPositions + this.config.dutyPositionSize > limitable.limit.of(this.config.currentPlace);
   }
 
   positionsOf(identifiable: Identifiable): number {
