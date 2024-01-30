@@ -1,11 +1,21 @@
-import { iterRandom, isMonday, iterWeekends, randomizeArray } from "../../../utils";
-import { WorkerInfo, ExtraDutyTable, ExtraDuty } from "../../structs";
+import { isMonday, iterRandom, randomizeArray } from "../../../utils";
+import { ExtraDutyTable, WorkerInfo } from "../../structs";
+import { AssignmentRule, AssignmentRuleStack } from "../rule-checking";
+import { BusyWorkerAssignmentRule } from "../rule-checking/rules";
 import { BaseScheduleAssigner } from "./base-assigner";
 
 export class ScheduleAssignerV1 extends BaseScheduleAssigner {
+  private _busyWorkerRule: BusyWorkerAssignmentRule | null;
+
   isDailyWorker = (worker: WorkerInfo) => worker.daysOfWork.isDailyWorker;
   isInsp = (worker: WorkerInfo) => worker.graduation === 'insp';
   isSubInsp = (worker: WorkerInfo) => worker.graduation === 'sub-insp';
+
+  constructor(checker: AssignmentRule) {
+    super(checker);
+
+    this._busyWorkerRule = AssignmentRuleStack.find(this.checker, rule => rule instanceof BusyWorkerAssignmentRule);
+  }
 
   assignInto(table: ExtraDutyTable, workers: WorkerInfo[]): ExtraDutyTable {
     this._assignDailyWorkerArray(table, workers);
@@ -17,14 +27,10 @@ export class ScheduleAssignerV1 extends BaseScheduleAssigner {
     return table;
   }
 
-  assignWorker(worker: WorkerInfo, duty: ExtraDuty): boolean {
-    if (this.checker.canAssign(worker, duty)) {
-      duty.add(worker);
+  private _isWorkerFree(worker: WorkerInfo, table: ExtraDutyTable): boolean {
+    if (this._busyWorkerRule === null) return true;
 
-      return true;
-    }
-
-    return false;
+    return this._busyWorkerRule.canAssign(worker, table);
   }
 
   private _assignInspArray(table: ExtraDutyTable, workers: WorkerInfo[]): void {
@@ -46,7 +52,7 @@ export class ScheduleAssignerV1 extends BaseScheduleAssigner {
       table.config.dutyCapacity = capacity;
 
       for (const day of iterRandom(table)) {
-        let filteredWorkers = workers.filter(worker => table.limiter.isLimitOut(worker));
+        let filteredWorkers = workers.filter(worker => this._isWorkerFree(worker, table));
 
         if (filteredWorkers.length === 0) break;
 
