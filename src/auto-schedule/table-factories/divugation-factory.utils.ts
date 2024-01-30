@@ -76,7 +76,7 @@ export function fromExcelDim(dim: number) {
 
 export function* iterGrids(table: ExtraDutyTable): Iterable<DayGrid> {
   for (const day of table) {
-    const weekDay = dayOfWeekFrom(table.firstMonday, day.index);
+    const weekDay = dayOfWeekFrom(table.month.getFirstMonday(), day.index);
 
     const weekDayName = weekDayNames.at(weekDay) ?? 'Unknow';
 

@@ -15,7 +15,7 @@ export function createRandomHourly(month: Month): HourlyMock {
 
   const start = randomIntFromInterval(2, 3);
 
-  for (let i = start; i < month.numOfDays(); i++) {
+  for (let i = start; i < month.getNumOfDays(); i++) {
     const consecutiveDays = randomIntFromInterval(2, 3);
     for (let j = 0; j < consecutiveDays; j++, i++) {
       daysOfOrdinary.push(i);

@@ -23,7 +23,7 @@ export class DutyMinQuantityChecker implements IntegrityChecker {
     for (const duty of integrity.table.iterDuties()) {
       if (duty.getSize() >= 2) continue;
 
-      const dutyQuantityPenality = -this.calculateDutyPontuation(duty, integrity.table.firstMonday);
+      const dutyQuantityPenality = -this.calculateDutyPontuation(duty, integrity.table.month.getFirstMonday());
       integrity.registry(new IntegrityWarning('insuficient num of workers in duty', dutyQuantityPenality));
     }
   }

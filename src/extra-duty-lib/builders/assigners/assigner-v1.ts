@@ -50,10 +50,12 @@ export class ScheduleAssignerV1 extends BaseScheduleAssigner {
 
         if (filteredWorkers.length === 0) break;
 
-        const duties = isMonday(day.index, table.firstMonday) ? day : iterRandom(day);
+        const duties = isMonday(day.index, table.month.getFirstMonday())
+          ? day
+          : iterRandom(day);
 
         for (const duty of duties) {
-          const passDuty = duty.isFull() || (excludeMondays && isMonday(duty.day.index, table.firstMonday));
+          const passDuty = duty.isFull() || (excludeMondays && isMonday(duty.day.index, table.month.getFirstMonday()));
           if (passDuty) continue;
 
           for (const worker of iterRandom(filteredWorkers)) {
@@ -75,7 +77,7 @@ export class ScheduleAssignerV1 extends BaseScheduleAssigner {
     table.config.dutyMinDistance = 1;
     table.config.dutyCapacity = 3;
 
-    const weekends = iterRandom(iterWeekends(table.firstMonday));
+    const weekends = iterRandom(table.month.iterWeekends());
 
     for (const weekend of weekends) {
       if (weekend.saturday) {
