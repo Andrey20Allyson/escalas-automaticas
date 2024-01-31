@@ -21,10 +21,14 @@ export class BenchmarkInstance {
     this.endTime = Date.now();
   }
 
-  dif(): string {
+  difInMillis(): number {
     if (this.endTime < 0) this.endTime = Date.now();
 
-    const dif = this.endTime - this.startTime;
+    return this.endTime - this.startTime;
+  }
+
+  difString(): string {
+    const dif = this.difInMillis();
 
     if (this.metric === 'millis') {
       return `${dif} miliseconds`;
@@ -34,7 +38,7 @@ export class BenchmarkInstance {
   }
 
   toString(): string {
-    return `${chalk.greenBright(`"${this.name}"`)} ended in ${chalk.yellow(this.dif())} `;
+    return `${chalk.greenBright(`"${this.name}"`)} ended in ${chalk.yellow(this.difString())} `;
   }
 }
 

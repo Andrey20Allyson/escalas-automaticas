@@ -5,8 +5,8 @@ import { StackScheduleBuilder } from "./stack-schedule-builder";
 export class DefautlScheduleBuilder extends StackScheduleBuilder {
   constructor(tries: number) {
     super([
-      new JQScheduleBuilder(tries),
       new JBScheduleBuilder(tries),
+      new JQScheduleBuilder(tries),
     ]);
   }
 }
