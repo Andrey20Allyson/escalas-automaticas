@@ -1,5 +1,4 @@
 import { Month } from ".";
-import { Year } from "../year";
 
 export interface MonthParserConfig {
   separator?: string;
