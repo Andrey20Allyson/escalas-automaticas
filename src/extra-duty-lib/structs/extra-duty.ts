@@ -24,7 +24,7 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
 
     this.workers = new WorkingPlaceStorage();
 
-    this.start = this.config.firstDutyTime + this.config.dutyInterval * index;
+    this.start = this.config.firstDutyTime + this.config.dutyDuration * index;
     this.end = this.start + this.config.dutyDuration;
     this.offTimeEnd = this.end + this.config.dutyDuration;
     this.isNightly = this.start >= 18 || this.start < 7;

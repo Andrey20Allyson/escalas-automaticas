@@ -83,7 +83,7 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
   }
 
   private getMaxDuties() {
-    return Math.floor(24 / this.config.dutyInterval);
+    return Math.floor(24 / this.config.dutyDuration);
   }
 
   static daysFrom(table: ExtraDutyTable): readonly DayOfExtraDuty[] {

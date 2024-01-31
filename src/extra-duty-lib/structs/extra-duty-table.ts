@@ -7,9 +7,8 @@ import { PositionLimiter } from './position-limiter';
 
 export interface ExtraDutyTableConfig {
   readonly dutyPositionSize: number;
-  readonly firstDutyTime: number;
-  readonly dutyInterval: number;
   readonly dutyDuration: number;
+  readonly firstDutyTime: number;
   readonly month: number;
   readonly year: number;
   dutyMinDistance: number;
@@ -115,11 +114,10 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
 
   static createConfigFrom(partialConfig?: Partial<ExtraDutyTableConfig>): ExtraDutyTableConfig {
     return {
-      dutyPositionSize: partialConfig?.dutyPositionSize ?? 2,
-      dutyMinDistance: partialConfig?.dutyMinDistance ?? 4,
-      firstDutyTime: partialConfig?.firstDutyTime ?? 7,
-      dutyInterval: partialConfig?.dutyInterval ?? 12,
-      dutyDuration: partialConfig?.dutyDuration ?? 12,
+      dutyPositionSize: partialConfig?.dutyPositionSize ?? 1,
+      dutyMinDistance: partialConfig?.dutyMinDistance ?? 8,
+      firstDutyTime: partialConfig?.firstDutyTime ?? 1,
+      dutyDuration: partialConfig?.dutyDuration ?? 6,
       dutyCapacity: partialConfig?.dutyCapacity ?? 2,
       month: partialConfig?.month ?? thisMonth,
       year: partialConfig?.year ?? thisYear,
