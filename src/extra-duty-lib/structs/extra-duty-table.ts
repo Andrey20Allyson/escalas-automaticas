@@ -1,6 +1,6 @@
 import clone from 'clone';
 import { DayOfExtraDuty, ExtraDuty, WorkerInfo } from '.';
-import { getNumOfDaysInMonth, thisMonth, thisYear } from '../../utils';
+import { thisMonth, thisYear } from '../../utils';
 import { ExtraPlace } from './extra-place';
 import { Month } from './month';
 import { PositionLimiter } from './position-limiter';
