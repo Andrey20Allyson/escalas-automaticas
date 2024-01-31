@@ -7,6 +7,7 @@ export class BenchmarkInstance {
 
   constructor(
     readonly name: string,
+    readonly metric: BenchmarkMetric = 'millis',
   ) {
     this.startTime = Date.now();
     this.endTime = -1;
@@ -20,26 +21,41 @@ export class BenchmarkInstance {
     this.endTime = Date.now();
   }
 
-  dif() {
+  dif(): string {
     if (this.endTime < 0) this.endTime = Date.now();
 
-    return this.endTime - this.startTime;
+    const dif = this.endTime - this.startTime;
+
+    if (this.metric === 'millis') {
+      return `${dif} miliseconds`;
+    }
+
+    return `${(dif / 1000).toFixed(2)} seconds`;
   }
 
-  toString() {
-    return `${chalk.greenBright(`"${this.name}"`)} ended in ${chalk.yellow(this.dif())} miliseconds`;
+  toString(): string {
+    return `${chalk.greenBright(`"${this.name}"`)} ended in ${chalk.yellow(this.dif())} `;
   }
+}
+
+export type BenchmarkMetric = 'millis' | 'sec';
+
+export interface BenchmarkOptions {
+  metric?: BenchmarkMetric;
 }
 
 export class Benchmarker {
   private map: Map<string, BenchmarkInstance>;
+  readonly metric: BenchmarkMetric;
 
-  constructor() {
+  constructor(options?: BenchmarkOptions) {
     this.map = new Map();
+
+    this.metric = options?.metric ?? 'millis';
   }
 
   start(title: string): BenchmarkInstance {
-    const instance = new BenchmarkInstance(title);
+    const instance = new BenchmarkInstance(title, this.metric);
 
     this.map.set(instance.name, instance);
 
