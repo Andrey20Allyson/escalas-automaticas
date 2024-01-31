@@ -32,11 +32,12 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
   constructor(config?: Partial<ExtraDutyTableConfig>) {
     this.config = ExtraDutyTable.createConfigFrom(config);
 
-    this.width = getNumOfDaysInMonth(this.config.month, this.config.year);
+    this.month = new Month(this.config.year, this.config.month);
+    this.width = this.month.getNumOfDays();
     this.days = DayOfExtraDuty.daysFrom(this);
     this.limiter = new PositionLimiter(this);
 
-    this.month = new Month(this.config.year, this.config.month);
+    this._validateConfig();
   }
 
   *iterDuties(): Iterable<ExtraDuty> {
@@ -110,6 +111,12 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
     return this
       .getDay(dayIndex)
       .getDuty(dutyIndex);
+  }
+
+  private _validateConfig() {
+    if (24 % this.config.dutyDuration !== 0) {
+      throw new Error(`dutyDuration shold be a number divisor of 24`);
+    }
   }
 
   static createConfigFrom(partialConfig?: Partial<ExtraDutyTableConfig>): ExtraDutyTableConfig {
