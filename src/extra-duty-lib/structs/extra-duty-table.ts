@@ -6,11 +6,11 @@ import { Month } from './month';
 import { PositionLimiter } from './position-limiter';
 
 export interface ExtraDutyTableConfig {
-  readonly dutyPositionSize: number;
   readonly dutyDuration: number;
   readonly firstDutyTime: number;
   readonly month: number;
   readonly year: number;
+  dutyPositionSize: number;
   dutyMinDistance: number;
   dutyCapacity: number;
   currentPlace: string;

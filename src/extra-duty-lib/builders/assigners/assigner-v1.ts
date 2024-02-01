@@ -1,4 +1,4 @@
-import { isMonday, iterRandom, randomizeArray } from "../../../utils";
+import { DaysOfWeek as DayOfWeek, isMonday, iterRandom, randomizeArray } from "../../../utils";
 import { DayOfExtraDuty, ExtraDutyTable, WorkerInfo } from "../../structs";
 import { AssignmentRule, AssignmentRuleStack } from "../rule-checking";
 import { BusyWorkerAssignmentRule } from "../rule-checking/rules";
@@ -66,7 +66,7 @@ export class ScheduleAssignerV1 extends BaseScheduleAssigner {
       : iterRandom(day.pair());
 
     for (const duties of pair) {
-      const passDuty = duties.someIsFull() //|| (excludeMondays && isMonday(duties.day.index, table.month.getFirstMonday()));
+      const passDuty = duties.someIsFull();
       if (passDuty) continue;
 
       for (const worker of iterRandom(workers)) {
@@ -103,6 +103,10 @@ export class ScheduleAssignerV1 extends BaseScheduleAssigner {
       for (const day of iterRandom(table)) {
         let filteredWorkers = workers.filter(worker => this._isWorkerFree(worker, table));
         if (filteredWorkers.length === 0) break;
+
+        if (options.excludeMondays && day.isWeekDay(DayOfWeek.MONDAY))) {
+          continue;
+        }
 
         if (inPairs) {
           this._assignInPair(day, filteredWorkers);

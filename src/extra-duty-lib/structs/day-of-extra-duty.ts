@@ -1,6 +1,8 @@
 import type { ExtraDutyTable, ExtraDutyTableConfig } from './extra-duty-table';
 import { WorkerInfo } from './worker-info';
 import { ExtraDuty } from './extra-duty';
+import { DaysOfWeek, dayOfWeekFrom } from '../../utils';
+import { Month } from './month';
 
 export interface DayOfExtraDutyFillOptions {
   start?: number;
@@ -65,15 +67,19 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
   private readonly duties: readonly ExtraDuty[];
   private readonly size: number;
   readonly config: ExtraDutyTableConfig;
+  readonly weekDay: number;
+  readonly month: Month;
 
   constructor(
     readonly index: number,
     readonly table: ExtraDutyTable,
   ) {
     this.config = table.config;
+    this.month = table.month;
+    this.weekDay = dayOfWeekFrom(this.month.getFirstMonday(), this.index);
 
     this.size = this.getMaxDuties();
-
+    
     this.duties = ExtraDuty.dutiesFrom(this);
   }
 
@@ -148,6 +154,10 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
 
   has(worker: WorkerInfo, dutyIndex: number, place?: string): boolean {
     return this.at(dutyIndex)?.has(worker, place) ?? false;
+  }
+
+  isWeekDay(weekDay: DaysOfWeek) {
+    return this.weekDay === weekDay;
   }
 
   private getMaxDuties() {
