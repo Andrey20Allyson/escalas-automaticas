@@ -1,11 +1,11 @@
-import { DaysOfWeek } from "../../../../utils";
+import { DayOfWeek } from "../../../../utils";
 import { ExtraDuty, WorkerInfo } from "../../../structs";
 import { AssignmentRule } from "../assignment-rule";
 
 export interface JBNightAssignmentRuleConfig {
   active: boolean;
   blockAll: boolean;
-  allowedWeekDays: DaysOfWeek[];
+  allowedWeekDays: DayOfWeek[];
 }
 
 export type JBNightAssignmentRuleOptions = Partial<JBNightAssignmentRuleConfig>;
@@ -17,7 +17,7 @@ export class JBNightAssignmentRule implements AssignmentRule {
     this.config = {
       active: options?.active ?? true,
       blockAll: options?.blockAll ?? false,
-      allowedWeekDays: options?.allowedWeekDays ?? [DaysOfWeek.FRIDAY, DaysOfWeek.SATURDAY, DaysOfWeek.SUMDAY],
+      allowedWeekDays: options?.allowedWeekDays ?? [DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUMDAY],
     };
   }
 

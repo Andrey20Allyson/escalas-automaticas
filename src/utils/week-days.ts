@@ -6,7 +6,7 @@ const date = new Date();
 export const thisMonthFirstMonday = firstMonday(date.getDay(), date.getDate() - 1);
 export const thisMonthWeekends = Array.from(iterWeekendsFromThisMonth());
 
-export enum DaysOfWeek {
+export enum DayOfWeek {
   SUMDAY,
   MONDAY,
   TUESDAY,

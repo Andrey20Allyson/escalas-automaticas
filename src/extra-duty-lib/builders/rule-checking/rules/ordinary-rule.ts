@@ -1,4 +1,4 @@
-import { DaysOfWeek } from "../../../../utils";
+import { DayOfWeek } from "../../../../utils";
 import { ExtraDuty, ExtraPlace, WorkerInfo } from "../../../structs";
 import { AssignmentRule } from "../assignment-rule";
 
@@ -33,7 +33,7 @@ export class OrdinaryAssignmentRule implements AssignmentRule {
   }
 
   isDailyWorkerAtFridayAtNight(worker: WorkerInfo, duty: ExtraDuty) {
-    const isFriday = duty.weekDay === DaysOfWeek.FRIDAY;
+    const isFriday = duty.weekDay === DayOfWeek.FRIDAY;
 
     return worker.daysOfWork.isDailyWorker && isFriday && duty.isNighttime();
   }

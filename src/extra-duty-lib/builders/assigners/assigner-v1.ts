@@ -1,4 +1,4 @@
-import { DaysOfWeek as DayOfWeek, isMonday, iterRandom, randomizeArray } from "../../../utils";
+import { DayOfWeek, isMonday, iterRandom, randomizeArray } from "../../../utils";
 import { DayOfExtraDuty, ExtraDutyTable, WorkerInfo } from "../../structs";
 import { AssignmentRule, AssignmentRuleStack } from "../rule-checking";
 import { BusyWorkerAssignmentRule } from "../rule-checking/rules";
@@ -104,7 +104,7 @@ export class ScheduleAssignerV1 extends BaseScheduleAssigner {
         let filteredWorkers = workers.filter(worker => this._isWorkerFree(worker, table));
         if (filteredWorkers.length === 0) break;
 
-        if (options.excludeMondays && day.isWeekDay(DayOfWeek.MONDAY))) {
+        if (options.excludeMondays && day.isWeekDay(DayOfWeek.MONDAY)) {
           continue;
         }
 

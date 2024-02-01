@@ -1,7 +1,7 @@
 import type { ExtraDutyTable, ExtraDutyTableConfig } from './extra-duty-table';
 import { WorkerInfo } from './worker-info';
 import { ExtraDuty } from './extra-duty';
-import { DaysOfWeek, dayOfWeekFrom } from '../../utils';
+import { DayOfWeek, dayOfWeekFrom } from '../../utils';
 import { Month } from './month';
 
 export interface DayOfExtraDutyFillOptions {
@@ -156,7 +156,7 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
     return this.at(dutyIndex)?.has(worker, place) ?? false;
   }
 
-  isWeekDay(weekDay: DaysOfWeek) {
+  isWeekDay(weekDay: DayOfWeek) {
     return this.weekDay === weekDay;
   }
 
