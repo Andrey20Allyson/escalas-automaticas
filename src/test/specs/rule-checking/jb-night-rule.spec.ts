@@ -10,7 +10,7 @@ export interface FindDutyWhereOptions {
 }
 
 function findDutyWhere(table: ExtraDutyTable, options: FindDutyWhereOptions): ExtraDuty {
-  return table.findDuty(duty => duty.isNightly === options.isNightly && duty.weekDay === options.weekDay)
+  return table.findDuty(duty => duty.isNighttime() === options.isNightly && duty.weekDay === options.weekDay)
     ?? expect.fail(`Can't find a ${DaysOfWeek[options.weekDay].toLowerCase()} duty at ${options.isNightly ? 'nighttime' : 'daytime'}`);
 }
 

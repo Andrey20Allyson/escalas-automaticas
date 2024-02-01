@@ -6,7 +6,7 @@ import { WorkingPlaceStorage } from "./working-place-storage";
 
 export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
   readonly offTimeEnd: number;
-  readonly isNightly: boolean;
+  private readonly _isNightly: boolean;
   readonly start: number;
   readonly end: number;
   readonly firstMonday: number;
@@ -27,9 +27,17 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     this.start = this.config.firstDutyTime + this.config.dutyDuration * index;
     this.end = this.start + this.config.dutyDuration;
     this.offTimeEnd = this.end + this.config.dutyDuration;
-    this.isNightly = this.start >= 18 || this.start < 7;
+    this._isNightly = this.start >= 18 || this.start < 7;
     this.firstMonday = firstMondayFromYearAndMonth(this.config.year, this.config.month);
     this.weekDay = dayOfWeekFrom(this.firstMonday, this.day.index);
+  }
+
+  isNighttime(): boolean {
+    return this._isNightly;
+  }
+
+  isDaytime(): boolean {
+    return !this._isNightly;
   }
 
   copy(other: ExtraDuty): this {

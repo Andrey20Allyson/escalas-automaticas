@@ -64,7 +64,7 @@ export class Fancyfier {
       table.config.currentPlace = place;
 
       const freeWorkerDescriptions = workers
-        .filter(wr => wr.limit.of(ExtraPlace.JARDIM_BOTANICO) > 0 && table.limiter.positionsLeftOf(wr) > 3)
+        .filter(wr => wr.limit.of(place) > 0 && table.limiter.positionsLeftOf(wr) > 0)
         .map(wr => `'${chalk.green(wr.name)}' - ${table.limiter.positionsLeftOf(wr)}/${wr.limit.of(place)}`);
 
       if (freeWorkerDescriptions.length === 0) continue;

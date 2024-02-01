@@ -7,6 +7,60 @@ export interface DayOfExtraDutyFillOptions {
   end?: number;
 }
 
+export class ExtraDutyArray extends Array<ExtraDuty> {
+  someIsFull(): boolean {
+    for (const duty of this) {
+      if (duty.isFull()) return true;
+    }
+
+    return false;
+  }
+
+  add(worker: WorkerInfo): this {
+    this.forEach(duty => duty.add(worker));
+
+    return this;
+  }
+
+  static fromIter(iterable: Iterable<ExtraDuty>): ExtraDutyArray {
+    return new this(...iterable);
+  }
+}
+
+export class ExtraDutiesPair implements Iterable<ExtraDutyArray> {
+  private readonly _daytime: ExtraDutyArray = new ExtraDutyArray();
+  private readonly _nighttime: ExtraDutyArray = new ExtraDutyArray();
+
+  add(duty: ExtraDuty): this {
+    if (duty.isNighttime()) {
+      this._nighttime.push(duty);
+
+      return this;
+    }
+
+    this._daytime.push(duty);
+
+    return this;
+  }
+
+  daytime(): ExtraDutyArray {
+    return this._daytime;
+  }
+
+  nighttime(): ExtraDutyArray {
+    return this._nighttime;
+  }
+
+  all(): ExtraDutyArray {
+    return new ExtraDutyArray(...this._daytime, ...this._nighttime);
+  }
+  
+  *[Symbol.iterator](): Iterator<ExtraDutyArray> {
+    yield this.daytime();
+    yield this.nighttime();
+  }
+}
+
 export class DayOfExtraDuty implements Iterable<ExtraDuty> {
   private readonly duties: readonly ExtraDuty[];
   private readonly size: number;
@@ -17,7 +71,7 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
     readonly table: ExtraDutyTable,
   ) {
     this.config = table.config;
-    
+
     this.size = this.getMaxDuties();
 
     this.duties = ExtraDuty.dutiesFrom(this);
@@ -42,7 +96,7 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
 
     if (index < 0) {
       const dayIndex = this.index + Math.floor(index / maxDuties);
-      if (dayIndex < 0) return; 
+      if (dayIndex < 0) return;
 
       const dayOfExtraDuty = this.table.getDay(dayIndex);
 
@@ -58,6 +112,20 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
     }
 
     return this.getDuty(index);
+  }
+
+  pair(offset: number = 1): ExtraDutiesPair {
+    const pair = new ExtraDutiesPair();
+    const end = this.size + offset;
+
+    for (let i = offset; i < end; i++) {
+      const duty = this.at(i);
+      if (duty === undefined) continue;
+
+      pair.add(duty);
+    }
+
+    return pair;
   }
 
   getDuty(dutyIndex: number): ExtraDuty {

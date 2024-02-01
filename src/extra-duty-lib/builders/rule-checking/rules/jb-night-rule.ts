@@ -22,7 +22,7 @@ export class JBNightAssignmentRule implements AssignmentRule {
   }
 
   canAssign(_worker: WorkerInfo, duty: ExtraDuty): boolean {
-    if (this.config.active === false || duty.isNightly === false) return true;
+    if (this.config.active === false || duty.isNighttime() === false) return true;
 
     return this.config.blockAll === false
       && this.config.allowedWeekDays.includes(duty.weekDay);

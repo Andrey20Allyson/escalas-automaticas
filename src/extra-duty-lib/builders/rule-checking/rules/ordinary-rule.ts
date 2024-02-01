@@ -1,5 +1,5 @@
 import { DaysOfWeek } from "../../../../utils";
-import { ExtraDuty, WorkerInfo } from "../../../structs";
+import { ExtraDuty, ExtraPlace, WorkerInfo } from "../../../structs";
 import { AssignmentRule } from "../assignment-rule";
 
 export class OrdinaryAssignmentRule implements AssignmentRule {
@@ -13,6 +13,8 @@ export class OrdinaryAssignmentRule implements AssignmentRule {
   }
 
   collidesWithYesterdayWork(worker: WorkerInfo, duty: ExtraDuty) {
+    if (duty.config.currentPlace === ExtraPlace.JARDIM_BOTANICO) return false;
+    
     const workYesterday = worker.daysOfWork.workOn(duty.day.index - 1);
     if (!workYesterday) return false;
 
@@ -33,7 +35,7 @@ export class OrdinaryAssignmentRule implements AssignmentRule {
   isDailyWorkerAtFridayAtNight(worker: WorkerInfo, duty: ExtraDuty) {
     const isFriday = duty.weekDay === DaysOfWeek.FRIDAY;
 
-    return worker.daysOfWork.isDailyWorker && isFriday && duty.isNightly;
+    return worker.daysOfWork.isDailyWorker && isFriday && duty.isNighttime();
   }
 
   canAssign(worker: WorkerInfo, duty: ExtraDuty): boolean {

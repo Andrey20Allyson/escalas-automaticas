@@ -34,8 +34,7 @@ export function analyseResult(table: ExtraDutyTable, colors = true) {
       }
 
       numOfWorkersInThisDay += size;
-      numOfWorkersMap[duty.index * 2] += size;
-      numOfWorkersMap[duty.index * 2 + 1] += size;
+      numOfWorkersMap[duty.index] = size;
     }
 
     const formatedDay = chalk.white(String(day.index + 1).padStart(2, '0'));
