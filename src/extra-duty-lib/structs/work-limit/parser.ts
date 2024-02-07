@@ -9,7 +9,7 @@ export interface WorkLimitParserData {
 
 export const JQ_DEFAULT_LIMIT = 10;
 export const JB_DAYTIME_DEFAULT_LIMIT = 0;
-export const JB_NIGHTTIME_DEFAULT_LIMIT = 0;
+export const SUPPORT_TO_CITY_HALL_DEFAULT_LIMIT = 0;
 
 export class WorkLimitParser implements Parser<WorkLimitParserData, WorkLimit> {
   parse(data: WorkLimitParserData): WorkLimit {
@@ -34,8 +34,8 @@ export class WorkLimitParser implements Parser<WorkLimitParserData, WorkLimit> {
 
     const jbNighttimeLimit = limits.at(2);
     limitEntries.push({
-      limit: jbNighttimeLimit ?? JB_NIGHTTIME_DEFAULT_LIMIT,
-      place: ExtraEventName.JARDIM_BOTANICO_DAYTIME,
+      limit: jbNighttimeLimit ?? SUPPORT_TO_CITY_HALL_DEFAULT_LIMIT,
+      place: ExtraEventName.SUPPORT_TO_CITY_HALL,
     });
 
     return new WorkLimit(limitEntries);

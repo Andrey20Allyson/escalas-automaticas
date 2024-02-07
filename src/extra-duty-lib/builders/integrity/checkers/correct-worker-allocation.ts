@@ -7,7 +7,7 @@ import { IntegrityChecker } from "./integrity-checker";
 
 export class CorrectWorkerAllocationChecker implements IntegrityChecker {
   constructor(
-    readonly basePenality: number = 200,
+    readonly basePenality: number = 12000,
     readonly extraEventAllowedTimeRule = new ExtraEventAllowedTimeRule(),
   ) { }
 

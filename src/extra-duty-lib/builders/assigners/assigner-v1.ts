@@ -1,5 +1,12 @@
 import { DayOfWeek, isMonday, iterRandom, randomizeArray } from "../../../utils";
-import { DayOfExtraDuty, ExtraDutyArray, ExtraDutyTable, ExtraEventName, WorkerInfo } from "../../structs";
+import {
+  DayOfExtraDuty,
+  ExtraDuty,
+  ExtraDutyArray,
+  ExtraDutyTable,
+  ExtraEventName,
+  WorkerInfo
+} from "../../structs";
 import { AssignmentRule, AssignmentRuleStack } from "../rule-checking";
 import { BusyWorkerAssignmentRule } from "../rule-checking/rules";
 import { BaseScheduleAssigner } from "./base-assigner";
@@ -7,6 +14,7 @@ import { BaseScheduleAssigner } from "./base-assigner";
 export interface AssingOptions {
   passDayWhen?: (day: DayOfExtraDuty) => boolean;
   passDutyPairWhen?: (duties: ExtraDutyArray) => boolean;
+  passDutyWhen?: (duty: ExtraDuty) => boolean;
   /**
    * @default true
    */
@@ -33,13 +41,14 @@ export class ScheduleAssignerV1 extends BaseScheduleAssigner {
   }
 
   assignInto(table: ExtraDutyTable, workers: WorkerInfo[]): ExtraDutyTable {
-    // if (table.config.currentPlace === ExtraPlace.JARDIM_BOTANICO) {
-    //   const nightAllowedJBWorkers = workers.filter(worker => table.config.allowedIdsAtJBNight.includes(worker.id));
+    // if (table.config.currentPlace === ExtraEventName.JIQUIA) {
+    //   const dailyWorkers = workers.filter(this.isDailyWorker);
 
-    //   this._assignArray(table, nightAllowedJBWorkers, {
+    //   this._assignArray(table, dailyWorkers, {
     //     min: 1,
-    //     max: 2,
-    //     passDutyPairWhen: pair => pair.at(0)?.isDaytime() === true
+    //     max: 1,
+    //     inPairs: false,
+    //     passDutyWhen: duty => duty.start !== 19,
     //   });
     // }
 
@@ -80,13 +89,13 @@ export class ScheduleAssignerV1 extends BaseScheduleAssigner {
     });
   }
 
-  private _assignInPair(day: DayOfExtraDuty, workers: WorkerInfo[], config: AssingOptions) {
+  private _assignInPair(day: DayOfExtraDuty, workers: WorkerInfo[], options: AssingOptions) {
     const pair = isMonday(day.index, day.table.month.getFirstMonday())
       ? day.pair()
       : iterRandom(day.pair());
 
     for (const duties of pair) {
-      const passDuty = duties.someIsFull() || config.passDutyPairWhen?.(duties) === true;
+      const passDuty = duties.someIsFull() || options.passDutyPairWhen?.(duties) === true;
       if (passDuty) continue;
 
       for (const worker of iterRandom(workers)) {
@@ -97,9 +106,11 @@ export class ScheduleAssignerV1 extends BaseScheduleAssigner {
     }
   }
 
-  private _assignInDay(day: DayOfExtraDuty, workers: WorkerInfo[]) {
+  private _assignInDay(day: DayOfExtraDuty, workers: WorkerInfo[], options: AssingOptions) {
     for (const duty of iterRandom(day)) {
-      if (duty.isFull()) continue;
+      const passDuty = duty.isFull() || options.passDutyWhen?.(duty) === true;
+
+      if (passDuty) continue;
 
       for (const worker of iterRandom(workers)) {
         this.assignWorker(worker, duty);
@@ -134,7 +145,7 @@ export class ScheduleAssignerV1 extends BaseScheduleAssigner {
           continue;
         }
 
-        this._assignInDay(day, filteredWorkers);
+        this._assignInDay(day, filteredWorkers, options);
       }
     }
 

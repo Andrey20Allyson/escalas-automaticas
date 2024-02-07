@@ -28,11 +28,11 @@ export function analyseResult(table: ExtraDutyTable, colors = true) {
 
     const formatedDutySizesList: string[] = [];
 
-    for (const place of [ExtraEventName.JIQUIA, ExtraEventName.JARDIM_BOTANICO_DAYTIME]) {
+    for (const place of Object.values(ExtraEventName)) {
       let dutySizeCounters: number[] = [0, 0, 0, 0];
       table.config.currentPlace = place;
 
-      for (const [i, duty] of enumerate(day.pair().all())) {
+      for (const [i, duty] of enumerate(day)) {
         const size = duty.getSize();
   
         for (const [_, worker] of duty) {

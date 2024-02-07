@@ -12,6 +12,7 @@ import { Fancyfier, UnassignedWorkersMessageData } from "../../utils/fancyfier";
 import { MockFactory } from "./mock";
 import { RandomWorkerMockFactory } from "./mock/worker/random";
 import fs from 'fs/promises';
+import { exit } from "process";
 
 function mockWorkers(year: number, month: number) {
   const workerMocker: MockFactory<WorkerInfo> = new RandomWorkerMockFactory({ month, year });
@@ -45,16 +46,11 @@ export async function generate(options: GenerateCommandOptions = {}) {
   let workers = mode === 'mock'
     ? mockWorkers(month.year, month.index)
     : await loadWorkers(month.year, month.index, inputFile);
-  
+
   const table = new ExtraDutyTable({
     year: month.year,
     month: month.index,
-    allowedIdsAtJBNight: [
-      29_069_6,
-    ]
   });
-
-  // workers = workers.filter(worker => table.config.allowedIdsAtJBNight.includes(worker.id));
 
   const tableAssignBenchmark = beckmarker.start('talbe assign');
 
@@ -71,7 +67,12 @@ export async function generate(options: GenerateCommandOptions = {}) {
     .analyse(table);
 
   const fancyfier = new Fancyfier();
-  fancyfier.log(new UnassignedWorkersMessageData(table, workers, [ExtraEventName.JIQUIA, ExtraEventName.JARDIM_BOTANICO_DAYTIME]));
+  fancyfier.log(new UnassignedWorkersMessageData(table, workers, [
+    ExtraEventName.JIQUIA,
+    ExtraEventName.JARDIM_BOTANICO_DAYTIME,
+    ExtraEventName.SUPPORT_TO_CITY_HALL,
+  ]));
+  
   fancyfier.log(beckmarker);
   fancyfier.log(integrity);
   console.log(`pode ser utilizado: ${integrity.isCompliant()}`);

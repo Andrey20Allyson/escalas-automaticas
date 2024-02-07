@@ -6,7 +6,7 @@ export class ExtraEventStartDayRule implements AssignmentRule {
   canAssign(_worker: WorkerInfo, duty: ExtraDuty): boolean {
     const { eventStartDay } = ExtraEventConfig.from(duty.config);
     
-    if (eventStartDay === undefined) {
+    if (eventStartDay === null) {
       return true;
     }
 

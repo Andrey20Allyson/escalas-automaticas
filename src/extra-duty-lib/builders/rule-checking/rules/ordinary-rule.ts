@@ -3,8 +3,20 @@ import { ExtraDuty, ExtraEventName, WorkerInfo } from "../../../structs";
 import { AssignmentRule } from "../assignment-rule";
 
 export class OrdinaryAssignmentRule implements AssignmentRule {
-  private _isJardimBotanico(duty: ExtraDuty) {
-    return duty.config.currentPlace === ExtraEventName.JARDIM_BOTANICO_DAYTIME;
+  private hasntTimeoff(worker: WorkerInfo, duty: ExtraDuty) {
+    const { currentPlace } = duty.config;
+    
+    if (currentPlace === ExtraEventName.JARDIM_BOTANICO_DAYTIME
+      || currentPlace === ExtraEventName.SUPPORT_TO_CITY_HALL) {
+        return true;
+      }
+      
+      // TODO remove daily worker at extra with out timeoff from ordinary at jiquia
+    if (currentPlace === ExtraEventName.JIQUIA && worker.daysOfWork.isDailyWorker) {
+      return true;
+    }
+
+    return false;
   }
 
   collidesWithTodayWork(worker: WorkerInfo, duty: ExtraDuty) {
@@ -13,7 +25,7 @@ export class OrdinaryAssignmentRule implements AssignmentRule {
 
     const { workTime } = worker;
 
-    if (this._isJardimBotanico(duty)) {
+    if (this.hasntTimeoff(worker, duty)) {
       return duty.end > workTime.start && workTime.end > duty.start;
     }
 
@@ -26,7 +38,7 @@ export class OrdinaryAssignmentRule implements AssignmentRule {
 
     const { workTime } = worker;
 
-    if (this._isJardimBotanico(duty)) {
+    if (this.hasntTimeoff(worker, duty)) {
       return workTime.end - 24 > duty.start;
     }
 
@@ -39,7 +51,7 @@ export class OrdinaryAssignmentRule implements AssignmentRule {
 
     const { workTime } = worker;
 
-    if (this._isJardimBotanico(duty)) {
+    if (this.hasntTimeoff(worker, duty)) {
       return duty.end > workTime.start + 24;
     }
 

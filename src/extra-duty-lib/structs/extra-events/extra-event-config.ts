@@ -6,7 +6,7 @@ export interface ExtraEventConfig {
   readonly allowDaytime: boolean;
   readonly allowNighttime: boolean;
   readonly allowedWeekdays: 'every' | DayOfWeek[];
-  readonly eventStartDay?: Day;
+  readonly eventStartDay: Day | null;
 }
 
 export namespace ExtraEventConfig {
@@ -20,7 +20,8 @@ export class ExtraEventConfigBuilder {
     return {
       allowDaytime: partialConfig?.allowDaytime ?? true,
       allowNighttime: partialConfig?.allowNighttime ?? true,
-      allowedWeekdays: 'every',
+      allowedWeekdays: partialConfig?.allowedWeekdays ?? 'every',
+      eventStartDay: partialConfig?.eventStartDay ?? null,
     }
   }
 }
