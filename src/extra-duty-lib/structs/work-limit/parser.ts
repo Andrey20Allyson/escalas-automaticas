@@ -1,11 +1,15 @@
 import { WorkLimit, WorkLimitEntry } from ".";
 import { enumerate, isDigit, parseNumberOrThrow } from "../../../utils";
 import { Parser } from "../base/parser";
-import { ExtraPlace } from "../extra-place";
+import { ExtraEventName } from "../extra-place";
 
 export interface WorkLimitParserData {
   workLimit?: string;
 }
+
+export const JQ_DEFAULT_LIMIT = 10;
+export const JB_DAYTIME_DEFAULT_LIMIT = 0;
+export const JB_NIGHTTIME_DEFAULT_LIMIT = 0;
 
 export class WorkLimitParser implements Parser<WorkLimitParserData, WorkLimit> {
   parse(data: WorkLimitParserData): WorkLimit {
@@ -16,20 +20,23 @@ export class WorkLimitParser implements Parser<WorkLimitParserData, WorkLimit> {
     const limitEntries: WorkLimitEntry[] = [];
 
     const jqLimit = limits.at(0);
-    if (jqLimit !== undefined) {
-      limitEntries.push({
-        limit: jqLimit,
-        place: ExtraPlace.JIQUIA,
-      });
-    }
 
-    const jbLimit = limits.at(1);
-    if (jbLimit !== undefined) {
-      limitEntries.push({
-        limit: jbLimit,
-        place: ExtraPlace.JARDIM_BOTANICO,
-      });
-    }
+    limitEntries.push({
+      limit: jqLimit ?? JQ_DEFAULT_LIMIT,
+      place: ExtraEventName.JIQUIA,
+    });
+
+    const jbDaytimeLimit = limits.at(1);
+    limitEntries.push({
+      limit: jbDaytimeLimit ?? JB_DAYTIME_DEFAULT_LIMIT,
+      place: ExtraEventName.JARDIM_BOTANICO_DAYTIME,
+    });
+
+    const jbNighttimeLimit = limits.at(2);
+    limitEntries.push({
+      limit: jbNighttimeLimit ?? JB_NIGHTTIME_DEFAULT_LIMIT,
+      place: ExtraEventName.JARDIM_BOTANICO_DAYTIME,
+    });
 
     return new WorkLimit(limitEntries);
   }

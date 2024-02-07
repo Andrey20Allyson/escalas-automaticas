@@ -3,7 +3,7 @@ import { GenerateCommandOptions } from ".";
 import { parseWorkers } from "../../auto-schedule/io";
 import { FirebaseWorkerRegistryLoader } from "../../auto-schedule/registries/worker-registry/loader";
 import { MainTableFactory } from "../../auto-schedule/table-factories";
-import { WorkerInfo, ExtraDutyTable, ExtraPlace } from "../../extra-duty-lib";
+import { WorkerInfo, ExtraDutyTable, ExtraEventName } from "../../extra-duty-lib";
 import { DefautlScheduleBuilder } from "../../extra-duty-lib/builders/default-builder";
 import { DefaultTableIntegrityAnalyser } from "../../extra-duty-lib/builders/integrity";
 import { Month } from "../../extra-duty-lib/structs/month";
@@ -71,7 +71,7 @@ export async function generate(options: GenerateCommandOptions = {}) {
     .analyse(table);
 
   const fancyfier = new Fancyfier();
-  fancyfier.log(new UnassignedWorkersMessageData(table, workers, [ExtraPlace.JIQUIA, ExtraPlace.JARDIM_BOTANICO]));
+  fancyfier.log(new UnassignedWorkersMessageData(table, workers, [ExtraEventName.JIQUIA, ExtraEventName.JARDIM_BOTANICO_DAYTIME]));
   fancyfier.log(beckmarker);
   fancyfier.log(integrity);
   console.log(`pode ser utilizado: ${integrity.isCompliant()}`);

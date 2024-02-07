@@ -1,10 +1,10 @@
 import { DayOfWeek } from "../../../../utils";
-import { ExtraDuty, ExtraPlace, WorkerInfo } from "../../../structs";
+import { ExtraDuty, ExtraEventName, WorkerInfo } from "../../../structs";
 import { AssignmentRule } from "../assignment-rule";
 
 export class OrdinaryAssignmentRule implements AssignmentRule {
   private _isJardimBotanico(duty: ExtraDuty) {
-    return duty.config.currentPlace === ExtraPlace.JARDIM_BOTANICO;
+    return duty.config.currentPlace === ExtraEventName.JARDIM_BOTANICO_DAYTIME;
   }
 
   collidesWithTodayWork(worker: WorkerInfo, duty: ExtraDuty) {

@@ -1,4 +1,4 @@
-import { ExtraPlace } from "../structs";
+import { ExtraEventName } from "../structs";
 import { JBScheduleAssigner } from "./assigners/jb-assigner";
 import { DefaultScheduleClassifier } from "./classifiers/classifier";
 import { ClassifyingScheduleBuilder } from "./classifying-schedule-builder";
@@ -8,7 +8,7 @@ export class JBScheduleBuilder extends ClassifyingScheduleBuilder {
     tries: number,
   ) {
     super(
-      ExtraPlace.JARDIM_BOTANICO,
+      ExtraEventName.JARDIM_BOTANICO_DAYTIME,
       new DefaultScheduleClassifier(tries, new JBScheduleAssigner({ nightRule: { blockAll: false } })),
     );
   }

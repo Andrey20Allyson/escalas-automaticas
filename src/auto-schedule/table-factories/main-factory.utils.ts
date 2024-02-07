@@ -1,4 +1,4 @@
-import { ExtraDuty, ExtraDutyTable, ExtraDutyTableEntry, ExtraPlace, Graduation } from "../../extra-duty-lib";
+import { ExtraDuty, ExtraDutyTable, ExtraDutyTableEntry, ExtraEventName, Graduation } from "../../extra-duty-lib";
 
 export enum OutputCollumns {
   NAME = 'B',
@@ -45,13 +45,13 @@ export function parseGraduationToPayment(graduation: Graduation): string {
 
 export function eventFromDuty(duty: ExtraDuty): string {
   switch (duty.config.currentPlace) {
-    case ExtraPlace.JARDIM_BOTANICO:
+    case ExtraEventName.JARDIM_BOTANICO_DAYTIME:
       const compl = (duty.isNighttime()
         ? 'NOTURNAS'
         : 'DIURNAS');
 
       return 'JARDIM BOTÂNICO APOIO AS AÇÔES ' + compl;
-    case ExtraPlace.JIQUIA:
+    case ExtraEventName.JIQUIA:
       return 'PARQUE DO JIQUIÁ';
   }
 
@@ -64,7 +64,7 @@ export function sortByDaytimeAndNighttime(entry1: ExtraDutyTableEntry, entry2: E
 
 export function* iterRows(table: ExtraDutyTable): Iterable<ExtraXLSXTableRow> {
 
-  for (const place of [ExtraPlace.JIQUIA, ExtraPlace.JARDIM_BOTANICO]) {
+  for (const place of [ExtraEventName.JIQUIA, ExtraEventName.JARDIM_BOTANICO_DAYTIME]) {
     table.config.currentPlace = place;
 
     const entries = Array.from(table.entries());
@@ -73,7 +73,7 @@ export function* iterRows(table: ExtraDutyTable): Iterable<ExtraXLSXTableRow> {
 
     entries.sort(sortByGrad);
 
-    if (place === ExtraPlace.JARDIM_BOTANICO) entries.sort(sortByDaytimeAndNighttime);
+    if (place === ExtraEventName.JARDIM_BOTANICO_DAYTIME) entries.sort(sortByDaytimeAndNighttime);
 
     for (const entry of entries) {
       const startTime = (entry.duty.start % 24) / 24;

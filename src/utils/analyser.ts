@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import { Text } from './text';
-import { ExtraDutyTable, ExtraPlace, WorkerInfo } from "../extra-duty-lib";
+import { ExtraDutyTable, ExtraEventName, WorkerInfo } from "../extra-duty-lib";
 import { enumerate } from "./iteration";
 
 export function numberToColoredString(value: number) {
@@ -28,7 +28,7 @@ export function analyseResult(table: ExtraDutyTable, colors = true) {
 
     const formatedDutySizesList: string[] = [];
 
-    for (const place of [ExtraPlace.JIQUIA, ExtraPlace.JARDIM_BOTANICO]) {
+    for (const place of [ExtraEventName.JIQUIA, ExtraEventName.JARDIM_BOTANICO_DAYTIME]) {
       let dutySizeCounters: number[] = [0, 0, 0, 0];
       table.config.currentPlace = place;
 

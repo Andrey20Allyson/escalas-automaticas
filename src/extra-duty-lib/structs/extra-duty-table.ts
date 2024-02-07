@@ -1,7 +1,7 @@
 import clone from 'clone';
 import { DayOfExtraDuty, ExtraDuty, WorkerInfo } from '.';
 import { thisMonth, thisYear } from '../../utils';
-import { ExtraPlace } from './extra-place';
+import { ExtraEventName } from './extra-place';
 import { Month } from './month';
 import { PositionLimiter } from './position-limiter';
 
@@ -131,7 +131,7 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
       dutyCapacity: partialConfig?.dutyCapacity ?? 2,
       month: partialConfig?.month ?? thisMonth,
       year: partialConfig?.year ?? thisYear,
-      currentPlace: partialConfig?.currentPlace ?? ExtraPlace.JIQUIA,
+      currentPlace: partialConfig?.currentPlace ?? ExtraEventName.JIQUIA,
       allowedIdsAtJBNight: partialConfig?.allowedIdsAtJBNight ?? [],
     };
   }

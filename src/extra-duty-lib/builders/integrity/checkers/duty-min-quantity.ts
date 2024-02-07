@@ -1,7 +1,7 @@
 import { TableIntegrity } from "../table-integrity";
 import { IntegrityWarning } from "../inconsistences/warning";
 import { IntegrityChecker } from "./integrity-checker";
-import { ExtraDuty, ExtraPlace } from "../../../structs";
+import { ExtraDuty, ExtraEventName } from "../../../structs";
 import { isMonday } from "../../../../utils";
 
 export type PointGetter = (day: number, firstMonday: number) => number;
@@ -21,7 +21,7 @@ export class DutyMinQuantityChecker implements IntegrityChecker {
 
   check(integrity: TableIntegrity): void {
     for (const duty of integrity.table.iterDuties()) {
-      if (integrity.table.config.currentPlace === ExtraPlace.JARDIM_BOTANICO && duty.isNighttime()) continue;
+      if (integrity.table.config.currentPlace === ExtraEventName.JARDIM_BOTANICO_DAYTIME && duty.isNighttime()) continue;
       if (duty.getSize() >= 2) continue;
 
       const dutyQuantityPenality = -this.calculateDutyPontuation(duty, integrity.table.month.getFirstMonday());

@@ -1,5 +1,5 @@
 import { DayOfWeek, isMonday, iterRandom, randomizeArray } from "../../../utils";
-import { DayOfExtraDuty, ExtraDutyArray, ExtraDutyTable, ExtraPlace, WorkerInfo } from "../../structs";
+import { DayOfExtraDuty, ExtraDutyArray, ExtraDutyTable, ExtraEventName, WorkerInfo } from "../../structs";
 import { AssignmentRule, AssignmentRuleStack } from "../rule-checking";
 import { BusyWorkerAssignmentRule } from "../rule-checking/rules";
 import { BaseScheduleAssigner } from "./base-assigner";
