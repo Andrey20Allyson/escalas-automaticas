@@ -6,6 +6,7 @@ import { Month } from './month';
 import { PositionLimiter } from './position-limiter';
 import { ExtraEventConfig, ExtraEventConfigBuilder } from './extra-events/extra-event-config';
 import { Day } from './day';
+import { exit } from 'process';
 
 export interface ExtraDutyTableConfig {
   readonly dutyDuration: number;
@@ -50,6 +51,18 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
         yield duty;
       }
     }
+  }
+
+  iterPlaces(): Iterable<string> {
+    const placeSet = new Set<string>();
+
+    for (const duty of this.iterDuties()) {
+      for (const place of duty.iterPlaces()) {
+        placeSet.add(place);
+      }
+    }
+
+    return placeSet.values();
   }
 
   findDuty(predicate: (duty: ExtraDuty) => boolean, start: number = 0): ExtraDuty | undefined {

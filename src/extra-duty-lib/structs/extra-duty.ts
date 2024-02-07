@@ -50,6 +50,10 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     return this;
   }
 
+  iterPlaces(): Iterable<string> {
+    return this.workers.iterPlaceNames();    
+  }
+
   gradQuantity(grad: Graduation): number {
     return this.workers.graduation.quantityFrom(this.config.currentPlace, grad);
   }

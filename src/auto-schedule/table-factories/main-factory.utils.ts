@@ -1,3 +1,4 @@
+import { exit } from "process";
 import { ExtraDuty, ExtraDutyTable, ExtraDutyTableEntry, ExtraEventName, Graduation } from "../../extra-duty-lib";
 
 export enum OutputCollumns {
@@ -46,13 +47,11 @@ export function parseGraduationToPayment(graduation: Graduation): string {
 export function eventFromDuty(duty: ExtraDuty): string {
   switch (duty.config.currentPlace) {
     case ExtraEventName.JARDIM_BOTANICO_DAYTIME:
-      const compl = (duty.isNighttime()
-        ? 'NOTURNAS'
-        : 'DIURNAS');
-
-      return 'JARDIM BOTÂNICO APOIO AS AÇÔES ' + compl;
+      return 'JARDIM BOTÂNICO APOIO AS AÇÔES DIURNAS';
     case ExtraEventName.JIQUIA:
       return 'PARQUE DO JIQUIÁ';
+    case ExtraEventName.SUPPORT_TO_CITY_HALL:
+      return 'EVENTOS DE APOIO A PREFEITURA';
   }
 
   throw new Error(`Can't find a event name for place '${duty.config.currentPlace}'`);
@@ -62,9 +61,23 @@ export function sortByDaytimeAndNighttime(entry1: ExtraDutyTableEntry, entry2: E
   return +entry1.duty.isNighttime() - +entry2.duty.isNighttime();
 }
 
-export function* iterRows(table: ExtraDutyTable): Iterable<ExtraXLSXTableRow> {
+const EXTRA_EVENT_SORT_VALUES = new Map<string, number>([
+  [ExtraEventName.JIQUIA, 1],
+  [ExtraEventName.JARDIM_BOTANICO_DAYTIME, 2],
+  [ExtraEventName.SUPPORT_TO_CITY_HALL, 3],
+]);
 
-  for (const place of [ExtraEventName.JIQUIA, ExtraEventName.JARDIM_BOTANICO_DAYTIME]) {
+function sortPlaceByCorrectOrder(placeA: string, placeB: string): number {
+  const a = EXTRA_EVENT_SORT_VALUES.get(placeA) ?? EXTRA_EVENT_SORT_VALUES.size + 1;
+  const b = EXTRA_EVENT_SORT_VALUES.get(placeB) ?? EXTRA_EVENT_SORT_VALUES.size + 1;
+
+  return a - b;
+}
+
+export function* iterRows(table: ExtraDutyTable): Iterable<ExtraXLSXTableRow> {
+  const places = [...table.iterPlaces()].sort(sortPlaceByCorrectOrder);
+
+  for (const place of places) {
     table.config.currentPlace = place;
 
     const entries = Array.from(table.entries());
