@@ -3,12 +3,12 @@ import { GenerateCommandOptions } from ".";
 import { parseWorkers } from "../../auto-schedule/io";
 import { FirebaseWorkerRegistryLoader } from "../../auto-schedule/registries/worker-registry/loader";
 import { MainTableFactory } from "../../auto-schedule/table-factories";
-import { WorkerInfo, ExtraDutyTable } from "../../extra-duty-lib";
+import { WorkerInfo, ExtraDutyTable, ExtraPlace } from "../../extra-duty-lib";
 import { DefautlScheduleBuilder } from "../../extra-duty-lib/builders/default-builder";
 import { DefaultTableIntegrityAnalyser } from "../../extra-duty-lib/builders/integrity";
 import { Month } from "../../extra-duty-lib/structs/month";
 import { Benchmarker, analyseResult } from "../../utils";
-import { Fancyfier, FreeWorkerMessageData } from "../../utils/fancyfier";
+import { Fancyfier, UnassignedWorkersMessageData } from "../../utils/fancyfier";
 import { MockFactory } from "./mock";
 import { RandomWorkerMockFactory } from "./mock/worker/random";
 import fs from 'fs/promises';
@@ -42,14 +42,19 @@ export async function generate(options: GenerateCommandOptions = {}) {
 
   const beckmarker = new Benchmarker({ metric: 'sec' });
 
-  const workers = mode === 'mock'
+  let workers = mode === 'mock'
     ? mockWorkers(month.year, month.index)
     : await loadWorkers(month.year, month.index, inputFile);
-
+  
   const table = new ExtraDutyTable({
     year: month.year,
     month: month.index,
+    allowedIdsAtJBNight: [
+      29_069_6,
+    ]
   });
+
+  // workers = workers.filter(worker => table.config.allowedIdsAtJBNight.includes(worker.id));
 
   const tableAssignBenchmark = beckmarker.start('talbe assign');
 
@@ -61,12 +66,12 @@ export async function generate(options: GenerateCommandOptions = {}) {
 
   const analisysString = analyseResult(table);
   console.log(analisysString);
-  
+
   const integrity = new DefaultTableIntegrityAnalyser()
-  .analyse(table);
-  
+    .analyse(table);
+
   const fancyfier = new Fancyfier();
-  fancyfier.log(new FreeWorkerMessageData(table, workers));
+  fancyfier.log(new UnassignedWorkersMessageData(table, workers, [ExtraPlace.JIQUIA, ExtraPlace.JARDIM_BOTANICO]));
   fancyfier.log(beckmarker);
   fancyfier.log(integrity);
   console.log(`pode ser utilizado: ${integrity.isCompliant()}`);

@@ -1,18 +1,24 @@
 import { Clonable } from "../worker-info";
 
 export class WorkTime implements Clonable<WorkTime> {
+  readonly end: number;
+  readonly offTimeEnd: number;
+
   constructor(
-    readonly startTime: number,
-    readonly totalTime: number,
-  ) { }
+    readonly start: number,
+    readonly duration: number,
+  ) {
+    this.end = this.start + this.duration;
+    this.offTimeEnd = this.end + this.duration;
+  }
 
   clone() {
-    return new WorkTime(this.startTime, this.totalTime);
+    return new WorkTime(this.start, this.duration);
   }
 
   equals(workTime: WorkTime) {
-    return this.startTime === workTime.startTime
-      && this.totalTime === workTime.totalTime;
+    return this.start === workTime.start
+      && this.duration === workTime.duration;
   }
 
   static from(start: number, end: number): WorkTime {

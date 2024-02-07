@@ -21,10 +21,16 @@ export class JBNightAssignmentRule implements AssignmentRule {
     };
   }
 
-  canAssign(_worker: WorkerInfo, duty: ExtraDuty): boolean {
+  canAssign(worker: WorkerInfo, duty: ExtraDuty): boolean {
     if (this.config.active === false || duty.isNighttime() === false) return true;
 
-    return this.config.blockAll === false
+    if (duty.config.allowedIdsAtJBNight.includes(worker.id) === false) {
+      return false;
+    }
+
+    const canAssign = this.config.blockAll === false
       && this.config.allowedWeekDays.includes(duty.weekDay);
+
+    return canAssign;
   }
 }

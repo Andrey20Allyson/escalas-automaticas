@@ -3,39 +3,53 @@ import { ExtraDuty, ExtraPlace, WorkerInfo } from "../../../structs";
 import { AssignmentRule } from "../assignment-rule";
 
 export class OrdinaryAssignmentRule implements AssignmentRule {
+  private _isJardimBotanico(duty: ExtraDuty) {
+    return duty.config.currentPlace === ExtraPlace.JARDIM_BOTANICO;
+  }
+
   collidesWithTodayWork(worker: WorkerInfo, duty: ExtraDuty) {
     const workToday = worker.daysOfWork.workOn(duty.day.index);
     if (!workToday) return false;
 
-    const workStart = worker.workTime.startTime;
+    const { workTime } = worker;
 
-    return duty.offTimeEnd > workStart;
+    if (this._isJardimBotanico(duty)) {
+      return duty.end > workTime.start && workTime.end > duty.start;
+    }
+
+    return duty.offTimeEnd > workTime.start && workTime.offTimeEnd > duty.start;
   }
 
   collidesWithYesterdayWork(worker: WorkerInfo, duty: ExtraDuty) {
-    if (duty.config.currentPlace === ExtraPlace.JARDIM_BOTANICO) return false;
-    
     const workYesterday = worker.daysOfWork.workOn(duty.day.index - 1);
     if (!workYesterday) return false;
 
-    const yesterdayWorkOffTimeEnd = worker.workTime.startTime + worker.workTime.totalTime * 2;
+    const { workTime } = worker;
 
-    return yesterdayWorkOffTimeEnd - 24 > duty.start;
+    if (this._isJardimBotanico(duty)) {
+      return workTime.end - 24 > duty.start;
+    }
+
+    return workTime.offTimeEnd - 24 > duty.start;
   }
 
   collidesWithTomorrowWork(worker: WorkerInfo, duty: ExtraDuty) {
     const workTomorrow = worker.daysOfWork.workOn(duty.day.index + 1);
     if (!workTomorrow) return false;
 
-    const tomorrowWorkStart = worker.workTime.startTime + 24;
+    const { workTime } = worker;
 
-    return duty.offTimeEnd > tomorrowWorkStart;
+    if (this._isJardimBotanico(duty)) {
+      return duty.end > workTime.start + 24;
+    }
+
+    return duty.offTimeEnd > workTime.start + 24;
   }
 
   isDailyWorkerAtFridayAtNight(worker: WorkerInfo, duty: ExtraDuty) {
-    const isFriday = duty.weekDay === DayOfWeek.FRIDAY;
-
-    return worker.daysOfWork.isDailyWorker && isFriday && duty.isNighttime();
+    return worker.daysOfWork.isDailyWorker
+      && duty.isWeekDay(DayOfWeek.FRIDAY)
+      && duty.isNighttime();
   }
 
   canAssign(worker: WorkerInfo, duty: ExtraDuty): boolean {

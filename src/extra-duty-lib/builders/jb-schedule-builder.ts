@@ -9,7 +9,7 @@ export class JBScheduleBuilder extends ClassifyingScheduleBuilder {
   ) {
     super(
       ExtraPlace.JARDIM_BOTANICO,
-      new DefaultScheduleClassifier(tries, new JBScheduleAssigner({ nightRule: { blockAll: true } })),
+      new DefaultScheduleClassifier(tries, new JBScheduleAssigner({ nightRule: { blockAll: false } })),
     );
   }
 }

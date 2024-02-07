@@ -1,8 +1,8 @@
-import type { ExtraDutyTable, ExtraDutyTableConfig } from './extra-duty-table';
-import { WorkerInfo } from './worker-info';
-import { ExtraDuty } from './extra-duty';
 import { DayOfWeek, dayOfWeekFrom } from '../../utils';
+import { ExtraDuty } from './extra-duty';
+import type { ExtraDutyTable, ExtraDutyTableConfig } from './extra-duty-table';
 import { Month } from './month';
+import { WorkerInfo } from './worker-info';
 
 export interface DayOfExtraDutyFillOptions {
   start?: number;
@@ -56,7 +56,7 @@ export class ExtraDutiesPair implements Iterable<ExtraDutyArray> {
   all(): ExtraDutyArray {
     return new ExtraDutyArray(...this._daytime, ...this._nighttime);
   }
-  
+
   *[Symbol.iterator](): Iterator<ExtraDutyArray> {
     yield this.daytime();
     yield this.nighttime();
@@ -79,7 +79,7 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
     this.weekDay = dayOfWeekFrom(this.month.getFirstMonday(), this.index);
 
     this.size = this.getMaxDuties();
-    
+
     this.duties = ExtraDuty.dutiesFrom(this);
   }
 
@@ -126,7 +126,7 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
 
     for (let i = offset; i < end; i++) {
       const duty = this.at(i);
-      if (duty === undefined) continue;
+      if (duty === undefined || duty.day.isLast() && duty.isLast()) continue;
 
       pair.add(duty);
     }
@@ -156,8 +156,12 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
     return this.at(dutyIndex)?.has(worker, place) ?? false;
   }
 
-  isWeekDay(weekDay: DayOfWeek) {
+  isWeekDay(weekDay: DayOfWeek): boolean {
     return this.weekDay === weekDay;
+  }
+
+  isLast(): boolean {
+    return this.index >= this.table.width - 1;
   }
 
   private getMaxDuties() {

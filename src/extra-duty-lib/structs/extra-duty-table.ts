@@ -10,10 +10,12 @@ export interface ExtraDutyTableConfig {
   readonly firstDutyTime: number;
   readonly month: number;
   readonly year: number;
+  dutyOffTimeToOrdinary: number;
   dutyPositionSize: number;
   dutyMinDistance: number;
   dutyCapacity: number;
   currentPlace: string;
+  allowedIdsAtJBNight: number[];
 }
 
 export interface ExtraDutyTableEntry {
@@ -122,13 +124,15 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
   static createConfigFrom(partialConfig?: Partial<ExtraDutyTableConfig>): ExtraDutyTableConfig {
     return {
       dutyPositionSize: partialConfig?.dutyPositionSize ?? 1,
-      dutyMinDistance: partialConfig?.dutyMinDistance ?? 8,
+      dutyMinDistance: partialConfig?.dutyMinDistance ?? 6,
       firstDutyTime: partialConfig?.firstDutyTime ?? 1,
       dutyDuration: partialConfig?.dutyDuration ?? 6,
+      dutyOffTimeToOrdinary: partialConfig?.dutyOffTimeToOrdinary ?? 12,
       dutyCapacity: partialConfig?.dutyCapacity ?? 2,
       month: partialConfig?.month ?? thisMonth,
       year: partialConfig?.year ?? thisYear,
       currentPlace: partialConfig?.currentPlace ?? ExtraPlace.JIQUIA,
+      allowedIdsAtJBNight: partialConfig?.allowedIdsAtJBNight ?? [],
     };
   }
 }

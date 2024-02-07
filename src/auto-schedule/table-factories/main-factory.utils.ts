@@ -1,4 +1,4 @@
-import { ExtraDutyTableEntry } from "../../extra-duty-lib";
+import { ExtraDuty, ExtraDutyTable, ExtraDutyTableEntry, ExtraPlace, Graduation } from "../../extra-duty-lib";
 
 export enum OutputCollumns {
   NAME = 'B',
@@ -24,16 +24,60 @@ export interface ExtraXLSXTableRow {
   grad: string;
   registration: number;
   date: Date;
+  event: string;
   startTime: number;
   endTime: number
   individualRegistry: number;
 }
 
-export function* iterRows(entries: Iterable<ExtraDutyTableEntry>): Iterable<ExtraXLSXTableRow> {
-  for (const entry of entries) {
-    for (let j = 0; j < 2; j++) {
-      const startTime = ((entry.duty.start + 6 * j) % 24) / 24;
-      const endTime = ((entry.duty.start + 6 * (j + 1)) % 24) / 24;
+const PAYMENT_GRADUATION_MAP = new Map<Graduation, string>([
+  ['gcm', 'GCM'],
+  ['sub-insp', 'SI'],
+  ['insp', 'INSP'],
+]);
+
+export function parseGraduationToPayment(graduation: Graduation): string {
+  const parsed = PAYMENT_GRADUATION_MAP.get(graduation);
+  if (parsed === undefined) throw new Error(`Payment Schedule generator can't find grad for '${graduation}'`);
+
+  return parsed;
+}
+
+export function eventFromDuty(duty: ExtraDuty): string {
+  switch (duty.config.currentPlace) {
+    case ExtraPlace.JARDIM_BOTANICO:
+      const compl = (duty.isNighttime()
+        ? 'NOTURNAS'
+        : 'DIURNAS');
+
+      return 'JARDIM BOTÂNICO APOIO AS AÇÔES ' + compl;
+    case ExtraPlace.JIQUIA:
+      return 'PARQUE DO JIQUIÁ';
+  }
+
+  throw new Error(`Can't find a event name for place '${duty.config.currentPlace}'`);
+}
+
+export function sortByDaytimeAndNighttime(entry1: ExtraDutyTableEntry, entry2: ExtraDutyTableEntry): number {
+  return +entry1.duty.isNighttime() - +entry2.duty.isNighttime();
+}
+
+export function* iterRows(table: ExtraDutyTable): Iterable<ExtraXLSXTableRow> {
+
+  for (const place of [ExtraPlace.JIQUIA, ExtraPlace.JARDIM_BOTANICO]) {
+    table.config.currentPlace = place;
+
+    const entries = Array.from(table.entries());
+
+    entries.sort(sortByRegistration);
+
+    entries.sort(sortByGrad);
+
+    if (place === ExtraPlace.JARDIM_BOTANICO) entries.sort(sortByDaytimeAndNighttime);
+
+    for (const entry of entries) {
+      const startTime = (entry.duty.start % 24) / 24;
+      const endTime = (entry.duty.end % 24) / 24;
       const date = new Date(
         entry.day.config.year,
         entry.day.config.month,
@@ -44,7 +88,7 @@ export function* iterRows(entries: Iterable<ExtraDutyTableEntry>): Iterable<Extr
 
       const name = workerConfig.name;
       const registration = workerConfig.identifier.id;
-      const grad = workerConfig.graduation;
+      const grad = parseGraduationToPayment(workerConfig.graduation);
       const individualRegistry = workerConfig.individualId;
 
       yield {
@@ -55,6 +99,7 @@ export function* iterRows(entries: Iterable<ExtraDutyTableEntry>): Iterable<Extr
         individualRegistry,
         registration,
         startTime,
+        event: eventFromDuty(entry.duty),
       };
     }
   }

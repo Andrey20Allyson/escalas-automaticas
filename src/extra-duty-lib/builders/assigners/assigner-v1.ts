@@ -1,11 +1,15 @@
 import { DayOfWeek, isMonday, iterRandom, randomizeArray } from "../../../utils";
-import { DayOfExtraDuty, ExtraDutyTable, WorkerInfo } from "../../structs";
+import { DayOfExtraDuty, ExtraDutyArray, ExtraDutyTable, ExtraPlace, WorkerInfo } from "../../structs";
 import { AssignmentRule, AssignmentRuleStack } from "../rule-checking";
 import { BusyWorkerAssignmentRule } from "../rule-checking/rules";
 import { BaseScheduleAssigner } from "./base-assigner";
 
 export interface AssingOptions {
-  excludeMondays?: boolean;
+  passDayWhen?: (day: DayOfExtraDuty) => boolean;
+  passDutyPairWhen?: (duties: ExtraDutyArray) => boolean;
+  /**
+   * @default true
+   */
   inPairs?: boolean;
   min: number;
   /**
@@ -20,6 +24,7 @@ export class ScheduleAssignerV1 extends BaseScheduleAssigner {
   isDailyWorker = (worker: WorkerInfo) => worker.daysOfWork.isDailyWorker;
   isInsp = (worker: WorkerInfo) => worker.graduation === 'insp';
   isSubInsp = (worker: WorkerInfo) => worker.graduation === 'sub-insp';
+  dayIsMonday = (day: DayOfExtraDuty) => day.isWeekDay(DayOfWeek.MONDAY);
 
   constructor(checker: AssignmentRule) {
     super(checker);
@@ -28,12 +33,27 @@ export class ScheduleAssignerV1 extends BaseScheduleAssigner {
   }
 
   assignInto(table: ExtraDutyTable, workers: WorkerInfo[]): ExtraDutyTable {
+    // if (table.config.currentPlace === ExtraPlace.JARDIM_BOTANICO) {
+    //   const nightAllowedJBWorkers = workers.filter(worker => table.config.allowedIdsAtJBNight.includes(worker.id));
+
+    //   this._assignArray(table, nightAllowedJBWorkers, {
+    //     min: 1,
+    //     max: 2,
+    //     passDutyPairWhen: pair => pair.at(0)?.isDaytime() === true
+    //   });
+    // }
+
     this._assignDailyWorkerArray(table, workers);
+    this._assignArray(table, workers.filter(this.isDailyWorker), { min: 2, inPairs: false });
     this._assignInspArray(table, workers);
     this._assignSubInspArray(table, workers);
-    this._assignArray(table, workers, { min: 1, max: 2, excludeMondays: true });
+    this._assignArray(table, workers, {
+      passDayWhen: this.dayIsMonday,
+      min: 1,
+      max: 2,
+    });
     this._assignArray(table, workers, { min: 2, max: 3 });
-    this._assignArray(table, workers, { min: 3 });
+    this._assignArray(table, workers, { min: 2, max: 3, inPairs: false });
 
     return table;
   }
@@ -54,19 +74,19 @@ export class ScheduleAssignerV1 extends BaseScheduleAssigner {
     const subInspWorkers = workers.filter(this.isSubInsp);
 
     this._assignArray(table, subInspWorkers, {
+      passDayWhen: this.dayIsMonday,
       min: 1,
       max: 2,
-      excludeMondays: true,
     });
   }
 
-  private _assignInPair(day: DayOfExtraDuty, workers: WorkerInfo[]) {
+  private _assignInPair(day: DayOfExtraDuty, workers: WorkerInfo[], config: AssingOptions) {
     const pair = isMonday(day.index, day.table.month.getFirstMonday())
       ? day.pair()
       : iterRandom(day.pair());
 
     for (const duties of pair) {
-      const passDuty = duties.someIsFull();
+      const passDuty = duties.someIsFull() || config.passDutyPairWhen?.(duties) === true;
       if (passDuty) continue;
 
       for (const worker of iterRandom(workers)) {
@@ -104,12 +124,12 @@ export class ScheduleAssignerV1 extends BaseScheduleAssigner {
         let filteredWorkers = workers.filter(worker => this._isWorkerFree(worker, table));
         if (filteredWorkers.length === 0) break;
 
-        if (options.excludeMondays && day.isWeekDay(DayOfWeek.MONDAY)) {
+        if (options.passDayWhen?.(day) === true) {
           continue;
         }
 
         if (inPairs) {
-          this._assignInPair(day, filteredWorkers);
+          this._assignInPair(day, filteredWorkers, options);
 
           continue;
         }

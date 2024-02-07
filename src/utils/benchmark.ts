@@ -34,7 +34,7 @@ export class BenchmarkInstance {
       return `${dif} miliseconds`;
     }
 
-    return `${(dif / 1000).toFixed(2)} seconds`;
+    return `${(dif / 1000).toFixed(3)} seconds`;
   }
 
   toString(): string {

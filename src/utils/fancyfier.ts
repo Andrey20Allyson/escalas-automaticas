@@ -1,13 +1,14 @@
 import chalk from "chalk";
-import { ExtraDutyTable, ExtraPlace, WorkerInfo } from "../extra-duty-lib";
+import { ExtraDutyTable, WorkerInfo } from "../extra-duty-lib";
 import { TableIntegrity } from "../extra-duty-lib/builders/integrity";
 import { Text } from "./text";
 import { Benchmarker } from "./benchmark";
 
-export class FreeWorkerMessageData {
+export class UnassignedWorkersMessageData {
   constructor(
     readonly table: ExtraDutyTable,
     readonly workers: WorkerInfo[],
+    readonly places: string[],
   ) { }
 }
 
@@ -54,26 +55,36 @@ export class Fancyfier {
     return message.toString();
   }
 
-  private _stringifyFreeWorkerMessage(data: FreeWorkerMessageData) {
-    const { table, workers } = data;
+  private _stringifyFreeWorkerMessage(data: UnassignedWorkersMessageData) {
+    const { table, workers, places } = data;
     const message = new Text();
 
-    message.writeLn(`[ Free Workers ]`);
+    message.writeLn(`[ Unassigned Workers ]`);
 
-    for (const place of [ExtraPlace.JARDIM_BOTANICO, ExtraPlace.JIQUIA]) {
+    let everybodyIsAssigned = true;
+
+    for (const place of places) {
       table.config.currentPlace = place;
 
-      const freeWorkerDescriptions = workers
+      const unassignedWorkerDescriptions = workers
         .filter(wr => wr.limit.of(place) > 0 && table.limiter.positionsLeftOf(wr) > 0)
-        .map(wr => `'${chalk.green(wr.name)}' - ${table.limiter.positionsLeftOf(wr)}/${wr.limit.of(place)}`);
+        .map(wr => `'${chalk.yellow(wr.name)}' - ${table.limiter.positionsLeftOf(wr)}/${wr.limit.of(place)}`);
 
-      if (freeWorkerDescriptions.length === 0) continue;
+      if (unassignedWorkerDescriptions.length === 0) continue;
+
+      everybodyIsAssigned = false;
 
       message
         .tab()
-        .writeLn(`[ Place: '${table.config.currentPlace}' ]`);
+        .writeLn(`[ Place: '${chalk.green(table.config.currentPlace)}' ]`);
 
-      freeWorkerDescriptions.forEach(desc => message.tab(2).writeLn(desc));
+      unassignedWorkerDescriptions.forEach(desc => message.tab(2).writeLn(desc));
+    }
+
+    if (everybodyIsAssigned) {
+      message
+        .tab()
+        .writeLn(chalk.greenBright(`All Workers Has Assigned!`))
     }
 
     return message.toString();
@@ -84,7 +95,7 @@ export class Fancyfier {
       return this._stringfyIntegrity(value);
     }
 
-    if (value instanceof FreeWorkerMessageData) {
+    if (value instanceof UnassignedWorkersMessageData) {
       return this._stringifyFreeWorkerMessage(value);
     }
 

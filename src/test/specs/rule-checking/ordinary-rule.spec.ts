@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import { OrdinaryAssignmentRule } from "../../../extra-duty-lib/builders/rule-checking/rules";
 import { mock } from "../mocking/mocker";
 import { iterRange } from "../../../utils";
+import { WorkTime } from "../../../extra-duty-lib";
 
 describe(OrdinaryAssignmentRule.name, () => {
   const checker = new OrdinaryAssignmentRule();
@@ -16,7 +17,11 @@ describe(OrdinaryAssignmentRule.name, () => {
   });
 
   test(`Shold return false if duty collides with worker's ordinary timeoff`, () => {
-    const { table, worker } = mock();
+    const { table, worker } = mock({
+      worker: {
+        workTime: new WorkTime(1, 18),
+      }
+    });
 
     worker.daysOfWork.work(10);
 
