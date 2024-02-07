@@ -1,7 +1,7 @@
 import { WorkLimit, WorkLimitEntry } from ".";
 import { enumerate, isDigit, parseNumberOrThrow } from "../../../utils";
 import { Parser } from "../base/parser";
-import { ExtraEventName } from "../extra-place";
+import { ExtraEventName } from "../extra-events/extra-place";
 
 export interface WorkLimitParserData {
   workLimit?: string;

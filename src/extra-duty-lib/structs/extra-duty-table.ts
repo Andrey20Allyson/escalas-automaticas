@@ -1,15 +1,17 @@
 import clone from 'clone';
 import { DayOfExtraDuty, ExtraDuty, WorkerInfo } from '.';
 import { thisMonth, thisYear } from '../../utils';
-import { ExtraEventName } from './extra-place';
+import { ExtraEventName } from './extra-events/extra-place';
 import { Month } from './month';
 import { PositionLimiter } from './position-limiter';
+import { ExtraEventConfig } from './extra-events/extra-event-config';
 
 export interface ExtraDutyTableConfig {
   readonly dutyDuration: number;
   readonly firstDutyTime: number;
   readonly month: number;
   readonly year: number;
+  readonly extraEvents: Record<string, ExtraEventConfig>;
   dutyOffTimeToOrdinary: number;
   dutyPositionSize: number;
   dutyMinDistance: number;
@@ -131,6 +133,11 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
       dutyCapacity: partialConfig?.dutyCapacity ?? 2,
       month: partialConfig?.month ?? thisMonth,
       year: partialConfig?.year ?? thisYear,
+      extraEvents: {
+        [ExtraEventName.JARDIM_BOTANICO_DAYTIME]: new ExtraEventConfig({ allowNighttime: false }),
+        [ExtraEventName.SUPPORT_TO_CITY_HALL]: new ExtraEventConfig({ allowDaytime: false }),
+        ...partialConfig?.extraEvents,
+      },
       currentPlace: partialConfig?.currentPlace ?? ExtraEventName.JIQUIA,
       allowedIdsAtJBNight: partialConfig?.allowedIdsAtJBNight ?? [],
     };
