@@ -1,16 +1,10 @@
-export interface ExtraEventConfigInit {
+export interface ExtraEventConfig {
   readonly allowDaytime: boolean;
   readonly allowNighttime: boolean;
 }
 
-export class ExtraEventConfig {
-  readonly config: ExtraEventConfigInit; 
-
-  constructor(config?: Partial<ExtraEventConfigInit>) {
-    this.config = ExtraEventConfig.default(config);
-  }
-
-  static default(partialConfig?: Partial<ExtraEventConfigInit>): ExtraEventConfigInit {
+export class ExtraEventConfigBuilder {
+  static default(partialConfig?: Partial<ExtraEventConfig>): ExtraEventConfig {
     return {
       allowDaytime: partialConfig?.allowDaytime ?? true,
       allowNighttime: partialConfig?.allowNighttime ?? true,

@@ -4,7 +4,7 @@ import { thisMonth, thisYear } from '../../utils';
 import { ExtraEventName } from './extra-events/extra-place';
 import { Month } from './month';
 import { PositionLimiter } from './position-limiter';
-import { ExtraEventConfig } from './extra-events/extra-event-config';
+import { ExtraEventConfig, ExtraEventConfigBuilder } from './extra-events/extra-event-config';
 
 export interface ExtraDutyTableConfig {
   readonly dutyDuration: number;
@@ -134,8 +134,8 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
       month: partialConfig?.month ?? thisMonth,
       year: partialConfig?.year ?? thisYear,
       extraEvents: {
-        [ExtraEventName.JARDIM_BOTANICO_DAYTIME]: new ExtraEventConfig({ allowNighttime: false }),
-        [ExtraEventName.SUPPORT_TO_CITY_HALL]: new ExtraEventConfig({ allowDaytime: false }),
+        [ExtraEventName.JARDIM_BOTANICO_DAYTIME]: ExtraEventConfigBuilder.default({ allowNighttime: false }),
+        [ExtraEventName.SUPPORT_TO_CITY_HALL]: ExtraEventConfigBuilder.default({ allowDaytime: false }),
         ...partialConfig?.extraEvents,
       },
       currentPlace: partialConfig?.currentPlace ?? ExtraEventName.JIQUIA,
