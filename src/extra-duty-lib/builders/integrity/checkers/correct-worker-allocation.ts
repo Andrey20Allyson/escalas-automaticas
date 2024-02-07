@@ -1,11 +1,14 @@
 import { ExtraDuty } from "../../../structs";
+import { ExtraEventConfig } from "../../../structs/extra-events/extra-event-config";
+import { ExtraEventAllowedTimeRule } from "../../rule-checking/rules/extra-event-allowed-time-rule";
 import { IntegrityWarning } from "../inconsistences/warning";
 import { TableIntegrity } from "../table-integrity";
 import { IntegrityChecker } from "./integrity-checker";
 
 export class CorrectWorkerAllocationChecker implements IntegrityChecker {
   constructor(
-    readonly basePenality: number = 200
+    readonly basePenality: number = 200,
+    readonly extraEventAllowedTimeRule = new ExtraEventAllowedTimeRule(),
   ) { }
 
   calculatePenality(workerPositionsLeft: number) {
@@ -13,6 +16,8 @@ export class CorrectWorkerAllocationChecker implements IntegrityChecker {
   }
 
   isWorkerInsuficient(duty: ExtraDuty) {
+    if (this.extraEventAllowedTimeRule.canAssign(undefined, duty) === false) return true;
+
     return duty.getSize() < 2;
   }
 

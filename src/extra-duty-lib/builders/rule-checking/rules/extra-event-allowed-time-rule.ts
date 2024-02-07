@@ -3,7 +3,7 @@ import { ExtraEventConfig } from "../../../structs/extra-events/extra-event-conf
 import { AssignmentRule } from "../assignment-rule";
 
 export class ExtraEventAllowedTimeRule implements AssignmentRule {
-  canAssign(_worker: WorkerInfo, duty: ExtraDuty): boolean {
+  canAssign(_worker: WorkerInfo | undefined, duty: ExtraDuty): boolean {
     const eventConfig = ExtraEventConfig.from(duty.config);
 
     if (eventConfig.allowDaytime === false && duty.isDaytime()) {
