@@ -20,6 +20,30 @@ export class Day {
     }
   }
 
+  isBefore(other: Day): boolean {
+    if (this.year < other.year) {
+      return true;
+    }
+
+    if (this.month < other.month) {
+      return true;
+    }
+
+    return this.index < other.index;
+  }
+
+  isAfter(other: Day): boolean {
+    if (this.year > other.year) {
+      return true;
+    }
+
+    if (this.month > other.month) {
+      return true;
+    }
+
+    return this.index > other.index;
+  }
+
   sumIndex(days: number): Day {
     return new Day(
       this.year,

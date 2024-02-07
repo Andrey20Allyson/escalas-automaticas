@@ -5,4 +5,3 @@ export * from './insp-rule';
 export * from './license-rule';
 export * from './time-off-rule';
 export * from './ordinary-rule';
-export * from './jb-night-rule';

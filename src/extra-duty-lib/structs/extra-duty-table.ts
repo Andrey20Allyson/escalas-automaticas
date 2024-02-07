@@ -1,10 +1,11 @@
 import clone from 'clone';
 import { DayOfExtraDuty, ExtraDuty, WorkerInfo } from '.';
-import { thisMonth, thisYear } from '../../utils';
+import { DayOfWeek, thisMonth, thisYear } from '../../utils';
 import { ExtraEventName } from './extra-events/extra-place';
 import { Month } from './month';
 import { PositionLimiter } from './position-limiter';
 import { ExtraEventConfig, ExtraEventConfigBuilder } from './extra-events/extra-event-config';
+import { Day } from './day';
 
 export interface ExtraDutyTableConfig {
   readonly dutyDuration: number;
@@ -134,8 +135,19 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
       month: partialConfig?.month ?? thisMonth,
       year: partialConfig?.year ?? thisYear,
       extraEvents: {
-        [ExtraEventName.JARDIM_BOTANICO_DAYTIME]: ExtraEventConfigBuilder.default({ allowNighttime: false }),
-        [ExtraEventName.SUPPORT_TO_CITY_HALL]: ExtraEventConfigBuilder.default({ allowDaytime: false }),
+        [ExtraEventName.JARDIM_BOTANICO_DAYTIME]: ExtraEventConfigBuilder.default({
+          allowNighttime: false,
+          eventStartDay: new Day(2024, 0, 4),
+        }),
+        [ExtraEventName.SUPPORT_TO_CITY_HALL]: ExtraEventConfigBuilder.default({
+          allowDaytime: false,
+          allowedWeekdays: [
+            DayOfWeek.FRIDAY,
+            DayOfWeek.SATURDAY,
+            DayOfWeek.SUMDAY,
+          ],
+          eventStartDay: new Day(2024, 0, 11),
+        }),
         ...partialConfig?.extraEvents,
       },
       currentPlace: partialConfig?.currentPlace ?? ExtraEventName.JIQUIA,

@@ -1,4 +1,5 @@
 import { DayOfWeek, dayOfWeekFrom } from '../../utils';
+import { Day } from './day';
 import { ExtraDuty } from './extra-duty';
 import type { ExtraDutyTable, ExtraDutyTableConfig } from './extra-duty-table';
 import { Month } from './month';
@@ -69,6 +70,7 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
   readonly config: ExtraDutyTableConfig;
   readonly weekDay: number;
   readonly month: Month;
+  readonly date: Day;
 
   constructor(
     readonly index: number,
@@ -77,6 +79,7 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
     this.config = table.config;
     this.month = table.month;
     this.weekDay = dayOfWeekFrom(this.month.getFirstMonday(), this.index);
+    this.date = new Day(this.month.year, this.month.index, this.index);
 
     this.size = this.getMaxDuties();
 

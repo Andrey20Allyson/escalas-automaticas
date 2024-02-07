@@ -1,5 +1,5 @@
 import { ExtraEventName } from "../structs";
-import { JQScheduleAssigner } from "./assigners/jq-assigner";
+import { DefaultScheduleAssigner } from "./assigners/default-assigner";
 import { DefaultScheduleClassifier } from "./classifiers/classifier";
 import { ClassifyingScheduleBuilder } from "./classifying-schedule-builder";
 
@@ -9,7 +9,7 @@ export class JQScheduleBuilder extends ClassifyingScheduleBuilder {
   ) {
     super(
       ExtraEventName.JIQUIA,
-      new DefaultScheduleClassifier(tries, new JQScheduleAssigner()),
+      new DefaultScheduleClassifier(tries, new DefaultScheduleAssigner()),
     );
   }
 }
