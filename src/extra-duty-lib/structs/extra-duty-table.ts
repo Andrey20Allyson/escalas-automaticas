@@ -65,9 +65,16 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
     return placeSet.values();
   }
 
-  findDuty(predicate: (duty: ExtraDuty) => boolean, start: number = 0): ExtraDuty | undefined {
-    for (const duty of this.iterDuties()) {
-      if (predicate(duty) === true) return duty;
+  findDuty(predicate: (duty: ExtraDuty) => boolean, start: number = 0, end: number = this.width): ExtraDuty | undefined {
+    if (start < 0) start = 0;
+    if (end > this.width) end = this.width;
+    
+    for (let i = start; i < end; i++) {
+      const day = this.getDay(i);
+
+      for (const duty of day) {
+        if (predicate(duty) === true) return duty;
+      }
     }
   }
 
