@@ -14,6 +14,8 @@ export class MonthParser {
   }
 
   parse(data: string): Month {
+    if (data === 'now') return Month.now();
+
     const numbers = data.split(this.separator);
     if (numbers.length !== 2) {
       throw new Error(`Invalid format, expected mm${this.separator}yy or mm${this.separator}yyyy recived ${data}`);
