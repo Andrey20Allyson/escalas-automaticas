@@ -78,6 +78,14 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     return this.weekDay === weekDay;
   }
 
+  next(count: number = 1): ExtraDuty | undefined {
+    return this.day.at(this.index + count);
+  }
+  
+  prev(count: number = 1): ExtraDuty | undefined {
+    return this.day.at(this.index - count);
+  }
+
   *[Symbol.iterator](): Iterator<[string, WorkerInfo]> {
     for (const [_, worker] of this.workers.placeFrom(this.config.currentPlace)) {
       yield [worker.name, worker];
