@@ -29,15 +29,15 @@ export function loadCommand<S extends z.ZodObject<z.ZodRawShape>>(config: LoadCo
     const isOptional = schema.isOptional();
     const openHint = isOptional ? '[' : '<';
     const closeHint = isOptional ? ']' : '>';
-    
+
     if (info.hint !== undefined) {
-      hint = `${openHint}${info.hint}${closeHint}`;  
+      hint = `${openHint}${info.hint}${closeHint}`;
     } else {
       hint = `${openHint}str${closeHint}`
     }
 
     const aliasStr = info.alias !== undefined ? `-${info.alias}, ` : '';
-    
+
     command.option(`${aliasStr}--${name} ${hint}`, info.description);
   }
 
@@ -46,9 +46,15 @@ export function loadCommand<S extends z.ZodObject<z.ZodRawShape>>(config: LoadCo
   const { action, schema } = config;
   if (action !== undefined) {
     command.action(() => {
-      const options = schema.parse(command.opts()) as z.infer<S>;
+      const options = schema.safeParse(command.opts()) as z.SafeParseReturnType<any, z.infer<S>>;
+      if (options.success === false) {
+        for (const { message, path } of options.error.errors) {
+          console.error(`[--${path} Option Error]: ${message}\n`);
+        }
+        process.exit(1);
+      }
 
-      action(options, command);
+      action(options.data, command);
     });
   }
 

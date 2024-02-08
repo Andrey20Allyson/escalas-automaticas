@@ -18,9 +18,8 @@ const generateOptionsSchema = z.object({
     .number({ coerce: true })
     .optional(),
   date: z
-    .string()
+    .string({ required_error: `Can't run with out the date, pass -d or --date config` })
     .transform(s => DEFAULT_MONTH_PARSER.parse(s))
-    .optional(),
 });
 
 export type GenerateCommandOptions = z.infer<typeof generateOptionsSchema>;

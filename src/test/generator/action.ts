@@ -12,7 +12,6 @@ import { Fancyfier, UnassignedWorkersMessageData } from "../../utils/fancyfier";
 import { MockFactory } from "./mock";
 import { RandomWorkerMockFactory } from "./mock/worker/random";
 import fs from 'fs/promises';
-import { exit } from "process";
 
 function mockWorkers(year: number, month: number) {
   const workerMocker: MockFactory<WorkerInfo> = new RandomWorkerMockFactory({ month, year });
@@ -32,13 +31,13 @@ async function loadWorkers(year: number, month: number, inputFile: string) {
   });
 }
 
-export async function generate(options: GenerateCommandOptions = {}) {
+export async function generate(options: GenerateCommandOptions) {
   const {
     mode = options.input !== undefined ? 'input-file' : 'mock',
     input: inputFile = 'input/data.xlsx',
     tries = 7000,
     output: outputFile,
-    date: month = Month.now(),
+    date: month,
   } = options;
 
   const beckmarker = new Benchmarker({ metric: 'sec' });
