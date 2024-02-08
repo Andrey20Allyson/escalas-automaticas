@@ -41,16 +41,15 @@ export class ScheduleAssignerV1 extends BaseScheduleAssigner {
   }
 
   assignInto(table: ExtraDutyTable, workers: WorkerInfo[]): ExtraDutyTable {
-    // if (table.config.currentPlace === ExtraEventName.JIQUIA) {
-    //   const dailyWorkers = workers.filter(this.isDailyWorker);
+    if (table.config.currentPlace === ExtraEventName.JIQUIA) {
+      const dailyWorkers = workers.filter(this.isDailyWorker).filter(() => Math.random() > .5);
 
-    //   this._assignArray(table, dailyWorkers, {
-    //     min: 1,
-    //     max: 1,
-    //     inPairs: false,
-    //     passDutyWhen: duty => duty.start !== 19,
-    //   });
-    // }
+      this._assignArray(table, dailyWorkers, {
+        min: 1,
+        inPairs: false,
+        passDutyWhen: duty => duty.start !== 19,
+      });
+    }
 
     this._assignDailyWorkerArray(table, workers);
     this._assignArray(table, workers.filter(this.isDailyWorker), { min: 2, inPairs: false });
