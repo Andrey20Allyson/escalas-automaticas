@@ -21,24 +21,24 @@ export class Day {
   }
 
   isBefore(other: Day): boolean {
-    if (this.year < other.year) {
-      return true;
+    if (this.year > other.year) {
+      return false;
     }
 
-    if (this.month < other.month) {
-      return true;
+    if (this.month > other.month) {
+      return false;
     }
 
     return this.index < other.index;
   }
 
   isAfter(other: Day): boolean {
-    if (this.year > other.year) {
-      return true;
+    if (this.year < other.year) {
+      return false;
     }
 
-    if (this.month > other.month) {
-      return true;
+    if (this.month < other.month) {
+      return false;
     }
 
     return this.index > other.index;
