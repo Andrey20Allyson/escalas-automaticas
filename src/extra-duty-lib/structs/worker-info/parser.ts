@@ -1,7 +1,13 @@
-import { WorkerInfo } from ".";
+import { Gender, Graduation, WorkerInfo } from ".";
 import { parseNumberOrThrow } from "../../../utils";
-import { DEFAULT_DAYS_OF_WORK_PARSER, DaysOfWorkParser } from "../days-of-work";
-import { IWorkTimeParser, WorkTimeParser } from "../work-time/parser";
+import { Parser } from "../base/parser";
+import { DEFAULT_DAYS_OF_WORK_PARSER, DaysOfWork } from "../days-of-work";
+import { WorkLimit } from "../work-limit";
+import { WorkLimitParser } from "../work-limit/parser";
+import { WorkTime } from "../work-time";
+import { WorkTimeParser } from "../work-time/parser";
+import { WorkerIdentifier } from "../worker-identifier";
+import { WorkerIdentifierParser } from "../worker-identifier/parser";
 
 export interface WorkerInfoParseData {
   name: string;
@@ -11,17 +17,40 @@ export interface WorkerInfoParseData {
   month: number;
   hourly: string;
   gender?: string;
-  registration: string;
-  individualRegistry?: string;
+  workerId: string;
+  individualId?: string;
+  workLimit?: string;
+}
+
+export interface WorkerInfoParserOptions {
+  daysOfWorkParser?: Parser<WorkerInfoParseData, DaysOfWork>;
+  workTimeParser?: Parser<WorkerInfoParseData, WorkTime>;
+  identifierParser?: Parser<WorkerInfoParseData, WorkerIdentifier>;
+  workLimitParser?: Parser<WorkerInfoParseData, WorkLimit>;
 }
 
 export class WorkerInfoParser {
-  readonly daysOfWorkParser: DaysOfWorkParser;
-  readonly workTimeParser: IWorkTimeParser;
+  private readonly genderMap: NodeJS.Dict<Gender> = {
+    'F': 'female',
+    'M': 'male',
+  };
 
-  constructor() {
-    this.daysOfWorkParser = DEFAULT_DAYS_OF_WORK_PARSER;
-    this.workTimeParser = new WorkTimeParser();
+  private readonly graduationMap: NodeJS.Dict<Graduation> = {
+    'INSP': 'insp',
+    'GCM': 'gcm',
+    'SI': 'sub-insp',
+  };
+
+  readonly daysOfWorkParser: Parser<WorkerInfoParseData, DaysOfWork>;
+  readonly workTimeParser: Parser<WorkerInfoParseData, WorkTime>;
+  readonly identifierParser: Parser<WorkerInfoParseData, WorkerIdentifier>;
+  readonly workLimitParser: Parser<WorkerInfoParseData, WorkLimit>;
+
+  constructor(options?: WorkerInfoParserOptions) {
+    this.daysOfWorkParser = options?.daysOfWorkParser ?? DEFAULT_DAYS_OF_WORK_PARSER;
+    this.workTimeParser = options?.workTimeParser ?? new WorkTimeParser();
+    this.identifierParser = options?.identifierParser ?? new WorkerIdentifierParser();
+    this.workLimitParser = options?.workLimitParser ?? new WorkLimitParser();
   }
 
   parse(data: WorkerInfoParseData): WorkerInfo | null {
@@ -30,24 +59,35 @@ export class WorkerInfoParser {
 
     const workTime = this.workTimeParser.parse(data);
     const daysOfWork = this.daysOfWorkParser.parse(data);
-    
-    const splitedRegistration = data.registration.split('-');
-    if (splitedRegistration.length !== 2) throw new Error(`Can't parse registration "${data.registration}"`);
-
-    const [registration, postResistration] = splitedRegistration.map(parseNumberOrThrow);
+    const identifier = this.identifierParser.parse(data);
+    const limit = this.workLimitParser.parse(data);
 
     return new WorkerInfo({
       name: data.name,
-      postWorkerID: postResistration,
-      workerID: registration,
-      grad: data.grad,
       post: data.post,
       workTime,
+      limit,
       daysOfWork,
-      gender: data.gender ?? 'U',
-      individualRegistry: data.individualRegistry !== undefined ? parseNumberOrThrow(data.individualRegistry.replace(/\.|\-/g, '')) : 0,
+      identifier,
+      graduation: this.parseGradutation(data.grad),
+      gender: this.parseGender(data.gender ?? 'U'),
+      individualId: data.individualId !== undefined ? parseNumberOrThrow(data.individualId.replace(/\.|\-/g, '')) : 0,
     });
   }
+
+  parseGender(gender?: string): Gender {
+    if (gender === undefined) return 'N/A';
+
+    return this.genderMap[gender] ?? 'N/A';
+  }
+
+  parseGradutation(grad: string): Graduation {
+    return this.graduationMap[grad] ?? raise(new Error(`Unknow graduation named '${grad}'!`));
+  }
+}
+
+function raise(error: unknown): never {
+  throw error;
 }
 
 export const DEFAULT_WORKER_INFO_PARSER = new WorkerInfoParser();

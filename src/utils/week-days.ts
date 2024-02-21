@@ -6,7 +6,7 @@ const date = new Date();
 export const thisMonthFirstMonday = firstMonday(date.getDay(), date.getDate() - 1);
 export const thisMonthWeekends = Array.from(iterWeekendsFromThisMonth());
 
-export enum DaysOfWeek {
+export enum DayOfWeek {
   SUMDAY,
   MONDAY,
   TUESDAY,
@@ -44,6 +44,10 @@ export function isBusinessDay(firtMondayDate: number, date: number): boolean {
   const dayOfWeek = dayOfWeekFrom(firtMondayDate, date);
 
   return dayOfWeek >= 1 && dayOfWeek <= 5;
+}
+
+export function isMonday(day: number, firstMonday: number): boolean {
+  return day % 7 === firstMonday
 }
 
 export interface Weekend {

@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import { Text } from './text';
-import { ExtraDutyTable, WorkerInfo } from "../extra-duty-lib";
+import { ExtraDutyTable, ExtraEventName, WorkerInfo } from "../extra-duty-lib";
+import { enumerate } from "./iteration";
 
 export function numberToColoredString(value: number) {
   switch (value) {
@@ -23,35 +24,31 @@ export function analyseResult(table: ExtraDutyTable, colors = true) {
   const workersWithPositionsLeft = new Set<WorkerInfo>();
 
   for (const day of table) {
-    const numOfWorkersMap: [number, number, number, number] = [0, 0, 0, 0];
     let numOfWorkersInThisDay = 0;
 
-    for (const duty of day) {
-      const size = duty.getSize();
+    const formatedDutySizesList: string[] = [];
 
-      for (const [_, worker] of duty) {
-        if (worker.positionsLeft > 0) workersWithPositionsLeft.add(worker);
+    for (const place of Object.values(ExtraEventName)) {
+      let dutySizeCounters: number[] = [0, 0, 0, 0];
+      table.config.currentPlace = place;
+
+      for (const [i, duty] of enumerate(day)) {
+        const size = duty.getSize();
+  
+        for (const [_, worker] of duty) {
+          if (table.limiter.positionsLeftOf(worker) > 0) workersWithPositionsLeft.add(worker);
+        }
+  
+        numOfWorkersInThisDay += size;
+        dutySizeCounters[i] = size;
       }
 
-      numOfWorkersInThisDay += size;
-      numOfWorkersMap[duty.index * 2] += size;
-      numOfWorkersMap[duty.index * 2 + 1] += size;
+      formatedDutySizesList.push(dutySizeCounters.map(numberToColoredString).join(', '));
     }
 
-    const formatedDay = chalk.white(String(day.day + 1).padStart(2, '0'));
-    const formatedDutySizes = numOfWorkersMap.map(numberToColoredString).join(', ');
+    const formatedDay = chalk.white(String(day.index + 1).padStart(2, '0'));
 
-    analysisText.writeLn(chalk.gray(`  Dia(${formatedDay}) => [${formatedDutySizes}]`));
-  }
-
-  analysisText.writeLn(chalk.underline(`[ Plantões ]`));
-
-  if (workersWithPositionsLeft.size > 0) {
-    const totalOfPositionsLeft = Array.from(workersWithPositionsLeft).reduce((prev, worker) => prev + worker.positionsLeft, 0);
-
-    analysisText.writeLn(chalk.red(`  Restam ${totalOfPositionsLeft} plantões para serem ocupados!`));
-  } else {
-    analysisText.writeLn(chalk.green(`  Todos os funcionários estão ocupando 10 plantões!`));
+    analysisText.writeLn(chalk.gray(`  Dia(${formatedDay}) => [${formatedDutySizesList.join('] | [')}]`));
   }
 
   return analysisText.read();

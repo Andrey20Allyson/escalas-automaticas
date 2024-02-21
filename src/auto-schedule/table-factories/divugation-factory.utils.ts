@@ -26,7 +26,7 @@ export function toDayGridEntry(day: DayOfExtraDuty, duty: ExtraDuty, worker: Wor
 
   return {
     duty: toDutyDesc(normalizedDutyStartTime, normalizedDutyEndTime),
-    id: parseWorkerID(worker.fullWorkerID),
+    id: parseWorkerID(worker.id),
     name: `${namePrefix} ${worker.name}`,
   };
 }
@@ -76,11 +76,11 @@ export function fromExcelDim(dim: number) {
 
 export function* iterGrids(table: ExtraDutyTable): Iterable<DayGrid> {
   for (const day of table) {
-    const weekDay = dayOfWeekFrom(table.firstMonday, day.day);
+    const weekDay = dayOfWeekFrom(table.month.getFirstMonday(), day.index);
 
     const weekDayName = weekDayNames.at(weekDay) ?? 'Unknow';
 
-    const title = `Dia ${parseDayIndex(day.day)} (${weekDayName})`;
+    const title = `Dia ${parseDayIndex(day.index)} (${weekDayName})`;
 
     const grid: DayGrid = { title, entries: [], numOfDiurnal: 0, numOfNightly: 0 };
 

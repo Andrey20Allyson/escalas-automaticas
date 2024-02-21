@@ -1,122 +1,70 @@
-import fs from 'fs/promises';
-import { parseWorkers } from '../../auto-schedule/io';
-import { ExtraDutyTableV2, Holidays, WorkerRegistriesMap } from '../../extra-duty-lib';
-import { Benchmarker, Result, analyseResult } from '../../utils';
-import { argvCompiler } from '../../utils/cli';
-import { WorkerMocker } from './mock/worker';
-import { MainTableFactory } from '../../auto-schedule/table-factories';
-import path from 'path';
-import { DEFAULT_MONTH_PARSER, Month } from '../../extra-duty-lib/structs/month';
+import { program } from 'commander';
+import { z } from 'zod';
+import { DEFAULT_MONTH_PARSER } from '../../extra-duty-lib/structs/month';
+import { OptionInfoBuilder, loadCommand } from './cli';
+import { generate } from './action';
+import { bench, benchOptionsSchema } from './bench';
 
-function mockWorkers(year: number, month: number) {
-  const workerMocker = new WorkerMocker();
+const generateOptionsSchema = z.object({
+  mode: z
+    .enum(['input-file', 'mock'])
+    .optional(),
+  input: z
+    .string()
+    .optional(),
+  output: z
+    .string()
+    .optional(),
+  tries: z
+    .number({ coerce: true })
+    .optional(),
+  date: z
+    .string({ required_error: `Can't run with out the date, pass -d or --date config` })
+    .transform(s => DEFAULT_MONTH_PARSER.parse(s))
+});
 
-  return workerMocker.createArray(28, { mode: 'random', config: { month, year } });
-}
+export type GenerateCommandOptions = z.infer<typeof generateOptionsSchema>;
 
-async function loadWorkers(year: number, month: number, inputFile: string) {
-  const inputBuffer = await fs.readFile(inputFile);
-  const registriesFileBuffer = await fs.readFile('input/registries.json');
-  const holidaysFileBuffer = await fs.readFile('./input/feriados.json');
+loadCommand({
+  schema: generateOptionsSchema,
+  command: 'generate',
+  aliases: ['gen', 'g'],
+  description: `Generates a extra schedule`,
+  optionInfos: {
+    date: OptionInfoBuilder
+      .alias('d')
+      .describe('the month of extra duty table'),
+    input: OptionInfoBuilder
+      .alias('i')
+      .describe('the input file path'),
+    output: OptionInfoBuilder
+      .alias('o')
+      .describe('the output file path'),
+    tries: OptionInfoBuilder
+      .alias('t')
+      .describe('the number of times that the program will try generate the table'),
+    mode: OptionInfoBuilder
+      .alias('m')
+      .describe('select the execution mode'),
+  },
+  action: generate,
+});
 
-  const workerRegistryMap = Result.unwrap(WorkerRegistriesMap.parseJSON(registriesFileBuffer));
+loadCommand({
+  schema: benchOptionsSchema,
+  command: 'bench',
+  aliases: ['bnc', 'b', 'mark'],
+  description: `Benchmarks the table generation`,
+  optionInfos: {
+    times: OptionInfoBuilder
+      .alias('t')
+      .describe('How much times the program with run the assign procedure'),
+    weight: OptionInfoBuilder
+      .alias('w')
+      .describe('How much hard is to assign a worker')
+      .hint('low|mid|high'),
+  },
+  action: bench,
+});
 
-  const holidays = Result.unwrap(Holidays.safeParse(holidaysFileBuffer));
-
-  return parseWorkers(inputBuffer, {
-    workerRegistryMap,
-    holidays,
-    month,
-    year,
-  });
-}
-
-export type WorkersLoadMode = 'mock' | 'input-file';
-
-export interface TestExecOptions {
-  mode?: WorkersLoadMode;
-  inputFile?: string;
-  outputFile?: string;
-  tries?: number;
-  month?: Month;
-}
-
-async function exec(options: TestExecOptions = {}) {
-  const {
-    mode = options.inputFile !== undefined ? 'input-file' : 'mock',
-    inputFile = 'input/data.xlsx',
-    tries = 7000,
-    outputFile,
-    month = Month.now(),
-  } = options;
-
-  const beckmarker = new Benchmarker();
-
-  const workers = mode === 'mock'
-    ? mockWorkers(month.year, month.index)
-    : await loadWorkers(month.year, month.index, inputFile);
-
-  const table = new ExtraDutyTableV2({
-    year: month.year,
-    month: month.index,
-  });
-
-  const tableAssignBenchmark = beckmarker.start('talbe assign');
-
-  table.tryAssignArrayMultipleTimes(workers, tries);
-
-  tableAssignBenchmark.end();
-
-  const analisysString = analyseResult(table);
-  console.log(analisysString);
-
-  const benchmarkString = beckmarker.getMessage();
-  console.log(benchmarkString);
-
-  console.log(table.integrity);
-  console.log(`pode ser utilizado: ${table.integrity.isCompliant()}`);
-
-  if (outputFile) {
-    const pattern = await fs.readFile('input/output-pattern.xlsx');
-
-    const factory = new MainTableFactory(pattern);
-
-    const outBuffer = await factory.generate(table, { sheetName: 'DADOS' });
-
-    const outputFileWithExt = path.extname(outputFile) === '.xlsx'
-      ? outputFile
-      : outputFile + '.xlsx';
-
-    fs.writeFile(path.resolve(outputFileWithExt), outBuffer);
-  }
-}
-
-async function runCli() {
-  const cliController = argvCompiler.compile();
-
-  if (cliController.hasFlag('help', 'h')) {
-    console.log(
-      'flags:\n' +
-      '  --mode <"mock" | "input-file"> : select the execution mode (aliases to -m)\n' +
-      '  --input <string> : the input file path (aliases to -i)\n' +
-      '  --output <string> : the output file path (aliases to -o)\n' +
-      '  --tries <number> : the number of times that the program will try generate the table (aliases to -t)\n' +
-      '  --date <mm/yy> : the month of extra duty table (aliases to -d)'
-    );
-
-    return;
-  }
-
-  const rawDate = cliController.optionalFlag('date', 'd')?.asString();
-  const month = rawDate ? DEFAULT_MONTH_PARSER.parse(rawDate) : undefined;
-
-  exec({
-    mode: cliController.optionalFlag('mode', 'm')?.asEnum(['mock', 'input-file']),
-    inputFile: cliController.optionalFlag('input', 'i')?.asString(),
-    outputFile: cliController.optionalFlag('output', 'o')?.asString(),
-    tries: cliController.optionalFlag('tries', 't')?.asNumber(),
-    month,
-  });
-}
-
-runCli();
+program.parse();

@@ -1,21 +1,19 @@
-import { getMonth } from "../../../utils";
 import { DaysOfWork } from '../days-of-work';
+import { Limitable } from "../limitable";
+import { WorkLimit } from "../work-limit";
 import { WorkTime } from '../work-time';
+import { WorkerIdentifier } from '../worker-identifier';
 
-export interface WorkerInfoConfig extends Worker {
-  readonly post: string;
-  readonly grad: string;
-  readonly gender: string;
-  readonly workerID: number;
-  readonly postWorkerID: number;
-  readonly individualRegistry: number;
-  startPositionsLeft?: number;
-}
-
-export interface Worker {
+export interface WorkerInfoConfig {
   readonly name: string;
+  readonly post: string;
+  readonly graduation: Graduation;
+  readonly gender: Gender;
+  readonly identifier: WorkerIdentifier;
+  readonly individualId: number;
   readonly daysOfWork: DaysOfWork;
   readonly workTime: WorkTime;
+  limit?: WorkLimit;
 }
 
 export interface Clonable<T> {
@@ -27,67 +25,27 @@ export type WorkerToMapEntryCallback = (this: typeof WorkerInfo, worker: WorkerI
 export type Graduation = 'sub-insp' | 'insp' | 'gcm';
 export type Gender = 'N/A' | 'female' | 'male';
 
-export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
-  static readonly genderMap: NodeJS.Dict<Gender> = {
-    'F': 'female',
-    'M': 'male',
-  };
-
-  static readonly graduationMap: NodeJS.Dict<Graduation> = {
-    'INSP': 'insp',
-    'GCM': 'gcm',
-    'SI': 'sub-insp',
-  };
-
-  positionsLeft: number;
-  readonly startPositionsLeft: number;
-
+export class WorkerInfo implements Limitable, Clonable<WorkerInfo> {
+  readonly id: number;
+  readonly limit: WorkLimit;
+  readonly identifier: WorkerIdentifier;
   readonly name: string;
   readonly gender: Gender;
   readonly daysOfWork: DaysOfWork;
   readonly graduation: Graduation;
   readonly workTime: WorkTime;
-  readonly fullWorkerID: number;
 
   constructor(readonly config: WorkerInfoConfig) {
+    this.identifier = config.identifier;
     this.name = this.config.name;
     this.daysOfWork = this.config.daysOfWork;
     this.workTime = this.config.workTime;
+    this.limit = config.limit ?? new WorkLimit();
 
-    this.fullWorkerID = WorkerInfo.workerIDToNumber(this.config.workerID, this.config.postWorkerID);
-    this.graduation = WorkerInfo.parseGradutation(config.grad);
-    this.gender = WorkerInfo.parseGender(this.config.gender);
-
-    this.startPositionsLeft = this.config.startPositionsLeft ?? 10;
-    this.positionsLeft = this.startPositionsLeft;
-  }
-
-  resetPositionsLeft() {
-    this.positionsLeft = this.startPositionsLeft;
-  }
-
-  occupyPositions(num = 1) {
-    this.positionsLeft -= num;
-  }
-
-  leavePositions(num = 1) {
-    this.positionsLeft += num;
-  }
-
-  isPositionsLeftEqualsToStart() {
-    return this.positionsLeft === this.startPositionsLeft;
-  }
-
-  isCompletelyBusy(positions = 1) {
-    return this.positionsLeft - positions < 0;
-  }
-
-  cantWorkOnExtra() {
-    return !this.canWorkOnExtra();
-  }
-
-  canWorkOnExtra() {
-    return !this.isCompletelyBusy() && this.daysOfWork.getNumOfDaysOff() > 0;
+    this.graduation = config.graduation;
+    this.gender = config.gender;
+    
+    this.id = this.identifier.id;
   }
 
   isGraduate() {
@@ -95,77 +53,28 @@ export class WorkerInfo implements Worker, Clonable<WorkerInfo> {
   }
 
   clone() {
-    const { daysOfWork, grad, individualRegistry, name, post, postWorkerID, workTime, workerID, startPositionsLeft, gender } = this.config;
+    const { daysOfWork, graduation: grad, individualId, name, post, workTime, gender, identifier } = this.config;
 
     const config: WorkerInfoConfig = {
       daysOfWork: daysOfWork.clone(),
       workTime: workTime.clone(),
-
-      startPositionsLeft,
-      individualRegistry,
-      postWorkerID,
-      workerID,
+      individualId,
+      identifier,
       gender,
-      grad,
+      graduation: grad,
       name,
       post,
     };
 
     const clone = new WorkerInfo(config);
 
-    clone.positionsLeft = this.positionsLeft;
-
     return clone;
   }
 
-  private static _fakeCount = 0;
-
-  static fakeFromName(name: string) {
-    return new WorkerInfo({
-      name,
-      post: 'N/A',
-      grad: 'GCM',
-      workerID: WorkerInfo._fakeCount++,
-      postWorkerID: 0,
-      individualRegistry: 0,
-      gender: 'U',
-      workTime: new WorkTime(7, 8),
-      daysOfWork: DaysOfWork.fromDays([], 2023, getMonth()),
-    });
+  static mapFrom(workers: WorkerInfo[]): Map<number, WorkerInfo> {
+    return new Map(workers.map(worker => [worker.id, worker] as const));
   }
-
-  static parseWorkerID(value: number): [number, number] {
-    const id = Math.trunc(value / 10);
-    const postID = value - id * 10;
-
-    return [id, postID];
-  }
-
-  static workerIDToNumber(id: number, postID: number): number {
-    return id * 10 + postID;
-  }
-
-  static parseGender(gender?: string): Gender {
-    if (!gender) return 'N/A';
-
-    return this.genderMap[gender] ?? 'N/A';
-  }
-
-  static parseGradutation(grad: string): Graduation {
-    return this.graduationMap[grad] ?? raise(new Error(`Unknow graduation named '${grad}'!`));
-  }
-
-  static createMap(workers: WorkerInfo[]) {
-    return new Map(workers.map(this.workerToMapEntry));
-  }
-
-  static workerToMapEntry: WorkerToMapEntryCallback = (worker) => {
-    return [worker.fullWorkerID, worker];
-  };
-}
-
-function raise(error: unknown): never {
-  throw error;
 }
 
 export * from './parser';
+

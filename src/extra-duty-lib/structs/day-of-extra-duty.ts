@@ -1,24 +1,86 @@
-import type { ExtraDutyTable, ExtraDutyTableConfig } from '../extra-duty-table/v1';
-import { WorkerInfo } from './worker-info';
+import { DayOfWeek, dayOfWeekFrom } from '../../utils';
+import { Day } from './day';
 import { ExtraDuty } from './extra-duty';
+import type { ExtraDutyTable, ExtraDutyTableConfig } from './extra-duty-table';
+import { Month } from './month';
+import { WorkerInfo } from './worker-info';
 
 export interface DayOfExtraDutyFillOptions {
-  force?: boolean;
   start?: number;
   end?: number;
 }
 
+export class ExtraDutyArray extends Array<ExtraDuty> {
+  someIsFull(): boolean {
+    for (const duty of this) {
+      if (duty.isFull()) return true;
+    }
+
+    return false;
+  }
+
+  add(worker: WorkerInfo): this {
+    this.forEach(duty => duty.add(worker));
+
+    return this;
+  }
+
+  static fromIter(iterable: Iterable<ExtraDuty>): ExtraDutyArray {
+    return new this(...iterable);
+  }
+}
+
+export class ExtraDutiesPair implements Iterable<ExtraDutyArray> {
+  private readonly _daytime: ExtraDutyArray = new ExtraDutyArray();
+  private readonly _nighttime: ExtraDutyArray = new ExtraDutyArray();
+
+  add(duty: ExtraDuty): this {
+    if (duty.isNighttime()) {
+      this._nighttime.push(duty);
+
+      return this;
+    }
+
+    this._daytime.push(duty);
+
+    return this;
+  }
+
+  daytime(): ExtraDutyArray {
+    return this._daytime;
+  }
+
+  nighttime(): ExtraDutyArray {
+    return this._nighttime;
+  }
+
+  all(): ExtraDutyArray {
+    return new ExtraDutyArray(...this._daytime, ...this._nighttime);
+  }
+
+  *[Symbol.iterator](): Iterator<ExtraDutyArray> {
+    yield this.daytime();
+    yield this.nighttime();
+  }
+}
+
 export class DayOfExtraDuty implements Iterable<ExtraDuty> {
   private readonly duties: readonly ExtraDuty[];
-  readonly size: number;
+  private readonly size: number;
   readonly config: ExtraDutyTableConfig;
+  readonly weekDay: number;
+  readonly month: Month;
+  readonly date: Day;
 
   constructor(
-    readonly day: number,
-    readonly dutyTable: ExtraDutyTable,
+    readonly index: number,
+    readonly table: ExtraDutyTable,
   ) {
-    this.config = dutyTable.config;
-    
+    this.config = table.config;
+    this.month = table.month;
+    this.weekDay = dayOfWeekFrom(this.month.getFirstMonday(), this.index);
+    this.date = new Day(this.month.year, this.month.index, this.index);
+
     this.size = this.getMaxDuties();
 
     this.duties = ExtraDuty.dutiesFrom(this);
@@ -28,32 +90,32 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
     return this.duties[Symbol.iterator]();
   }
 
-  getMaxDuties() {
-    return Math.floor(24 / this.config.dutyInterval);
+  clear(place?: string) {
+    for (const duty of this) {
+      duty.clear(place);
+    }
   }
 
-  clear() {
-    for (const duty of this) {
-      duty.clear();
-    }
+  getSize() {
+    return this.size;
   }
 
   at(index: number): ExtraDuty | undefined {
     const maxDuties = this.getMaxDuties();
 
     if (index < 0) {
-      const dayIndex = this.day + Math.floor(index / maxDuties);
-      if (dayIndex < 0) return; 
+      const dayIndex = this.index + Math.floor(index / maxDuties);
+      if (dayIndex < 0) return;
 
-      const dayOfExtraDuty = this.dutyTable.getDay(dayIndex);
+      const dayOfExtraDuty = this.table.getDay(dayIndex);
 
       return dayOfExtraDuty.getDuty(-index % maxDuties);
     } else if (index >= maxDuties) {
       const nextIndex = index - maxDuties;
-      const dayIndex = this.day + Math.ceil((nextIndex + 1) / maxDuties);
-      if (dayIndex >= this.dutyTable.width) return;
+      const dayIndex = this.index + Math.ceil((nextIndex + 1) / maxDuties);
+      if (dayIndex >= this.table.width) return;
 
-      const dayOfExtraDuty = this.dutyTable.getDay(dayIndex);
+      const dayOfExtraDuty = this.table.getDay(dayIndex);
 
       return dayOfExtraDuty.getDuty(nextIndex % maxDuties);
     }
@@ -61,25 +123,18 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
     return this.getDuty(index);
   }
 
-  canInsert(worker: WorkerInfo, duty: ExtraDuty): boolean;
-  canInsert(worker: WorkerInfo, index: number): boolean;
-  canInsert(worker: WorkerInfo, arg1: ExtraDuty | number) {
-    const duty = this.getDutyFromDutyOrIndex(arg1);
+  pair(offset: number = 1): ExtraDutiesPair {
+    const pair = new ExtraDutiesPair();
+    const end = this.size + offset;
 
-    return duty.canAdd(worker)
-      && !this.otherDutiesHasWorker(worker, duty.index)
-      && !this.collidesWithLicense(worker)
-      && !duty.collidesWithWork(worker);
-  }
+    for (let i = offset; i < end; i++) {
+      const duty = this.at(i);
+      if (duty === undefined || duty.day.isLast() && duty.isLast()) continue;
 
-  collidesWithLicense(worker: WorkerInfo): boolean {
-    return worker.daysOfWork.licenseOn(this.day);
-  }
+      pair.add(duty);
+    }
 
-  canInsertIn(worker: WorkerInfo, dutyIndex: number) {
-    const duty = this.getDuty(dutyIndex);
-
-    return this.canInsert(worker, duty);
+    return pair;
   }
 
   getDuty(dutyIndex: number): ExtraDuty {
@@ -92,51 +147,28 @@ export class DayOfExtraDuty implements Iterable<ExtraDuty> {
     return duty;
   }
 
-  workedAtInterval(worker: WorkerInfo, start: number, end: number) {
+  includes(worker: WorkerInfo, start: number, end: number, place?: string): boolean {
     for (let i = start; i < end; i++) {
-      if (this.at(i)?.has(worker)) return true;
+      if (this.has(worker, i, place)) return true;
     }
 
     return false;
   }
 
-  otherDutiesHasWorker(worker: WorkerInfo, searchStart: number) {
-    if (this.config.dutyMinDistance < 1) throw new Error(`Distance can't be smaller than 1! distance: ${this.config.dutyMinDistance}`);
-
-    const nextIndex = searchStart + 1;
-
-    return this.workedAtInterval(worker, searchStart - this.config.dutyMinDistance, searchStart)
-      || this.workedAtInterval(worker, nextIndex, nextIndex + this.config.dutyMinDistance);
+  has(worker: WorkerInfo, dutyIndex: number, place?: string): boolean {
+    return this.at(dutyIndex)?.has(worker, place) ?? false;
   }
 
-  fill(worker: WorkerInfo, options: DayOfExtraDutyFillOptions = {}) {
-    const {
-      start = 0,
-      end = this.size,
-      force,
-    } = options;
-
-    let count = 0;
-
-    for (let i = start; i < end; i++) {
-      if (this.insert(worker, i, force)) count++;
-    }
-
-    return count;
+  isWeekDay(weekDay: DayOfWeek): boolean {
+    return this.weekDay === weekDay;
   }
 
-  insert(worker: WorkerInfo, index: number, force?: boolean): boolean;
-  insert(worker: WorkerInfo, duty: ExtraDuty, force?: boolean): boolean;
-  insert(worker: WorkerInfo, arg1: ExtraDuty | number, force = false): boolean {
-    const duty = this.getDutyFromDutyOrIndex(arg1);
-
-    if (!force && !this.canInsert(worker, duty)) return false;
-
-    return duty.add(worker, true);
+  isLast(): boolean {
+    return this.index >= this.table.width - 1;
   }
 
-  getDutyFromDutyOrIndex(dutyOrIndex: ExtraDuty | number): ExtraDuty {
-    return dutyOrIndex instanceof ExtraDuty ? dutyOrIndex : this.getDuty(dutyOrIndex);
+  private getMaxDuties() {
+    return Math.floor(24 / this.config.dutyDuration);
   }
 
   static daysFrom(table: ExtraDutyTable): readonly DayOfExtraDuty[] {

@@ -1,25 +1,13 @@
 import fs from 'fs/promises';
-import { execute, generate, generateFromWorkers, io } from '../..';
+import { generateFromWorkers, io } from '../..';
 import { parseTable, parseWorkers } from '../../auto-schedule/io';
-import { DivugationTableFactory } from '../../auto-schedule/table-factories';
-import { Holidays, WorkerRegistriesMap } from '../../extra-duty-lib';
+import { FirebaseWorkerRegistryLoader } from '../../auto-schedule/registries/worker-registry/loader';
+import { DayListTableFactory } from '../../auto-schedule/table-factories/day-list-factory';
+import { Holidays } from '../../extra-duty-lib';
 import { Benchmarker, Result, ResultError, analyseResult, getMonth, getYear } from '../../utils';
 import { BookHandler } from '../../xlsx-handlers/book';
-import { DayListTableFactory } from '../../auto-schedule/table-factories/day-list-factory';
 
 io.setFileSystem(fs);
-
-async function programTest() {
-  const INPUT_FILE = './input/data.xlsx';
-  const OUTPUT_FILE = './output/out-data.xlsx';
-
-  await execute({
-    input: INPUT_FILE,
-    output: OUTPUT_FILE,
-    analyse: true,
-    benchmark: true,
-  });
-}
 
 async function XLSXHandersTest() {
   const inputBuffer = await fs.readFile('input/output-pattern.xlsx');
@@ -53,13 +41,11 @@ async function generateTest() {
   const readInputFilesProcess = benchmarker.start('read input files');
   const inputBuffer = await fs.readFile('input/data.xlsx');
   const patternBuffer = await fs.readFile('input/output-pattern.xlsx');
-  const registriesFileBuffer = await fs.readFile('input/registries.json');
   const holidaysFileBuffer = await fs.readFile('./input/feriados.json');
   readInputFilesProcess.end();
 
-  const parseRegistriesProcess = benchmarker.start('parse registries');
-  const workerRegistryMap = Result.unwrap(WorkerRegistriesMap.parseJSON(registriesFileBuffer));
-  parseRegistriesProcess.end();
+  const loader = new FirebaseWorkerRegistryLoader();
+  const workerRegistries = await loader.load();
 
   const holidays = Result.unwrap(Holidays.safeParse(holidaysFileBuffer));
 
@@ -68,7 +54,7 @@ async function generateTest() {
 
   const workersParseProcess = benchmarker.start('parse workers');
   const workers = parseWorkers(inputBuffer, {
-    workerRegistryMap,
+    workerRegistries,
     holidays,
     month,
     year,
@@ -100,12 +86,12 @@ async function parseTableTest() {
 
   const tableBuffer = await fs.readFile('./output/data.xlsx');
   const workersBuffer = await fs.readFile('./input/data.xlsx');
-  const registriesFileBuffer = await fs.readFile('input/registries.json');
 
-  const workerRegistryMap = Result.unwrap(WorkerRegistriesMap.parseJSON(registriesFileBuffer));
+  const loader = new FirebaseWorkerRegistryLoader();
+  const workerRegistries = await loader.load();
 
   const workers = parseWorkers(workersBuffer, {
-    workerRegistryMap,
+    workerRegistries,
     month,
     year,
   });

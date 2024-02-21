@@ -1,9 +1,11 @@
 import * as XLSX from 'xlsx';
-import { ExtraDutyTableV2, Holidays, WorkerInfo, WorkerRegistriesMap } from "../extra-duty-lib";
+import { ExtraDutyTable, Holidays, WorkerInfo } from "../extra-duty-lib";
+import { WorkerInfoParser } from '../extra-duty-lib/structs/worker-info/parser';
 import { Result, ResultError, ResultType } from "../utils";
 import { BookHandler, CellHandler, LineHander } from "../xlsx-handlers";
 import { ExcelTime } from "../xlsx-handlers/utils";
-import { DEFAULT_WORKER_INFO_PARSER } from '../extra-duty-lib/structs/worker-info/parser';
+import { WorkerRegistry } from './registries/worker-registry';
+import { WorkerRegistryStorage } from './registries/worker-registry/storage';
 
 export enum WorkerInfoCollumns {
   NAME = 'd',
@@ -11,6 +13,7 @@ export enum WorkerInfoCollumns {
   GRAD = 'b',
   POST = 'e',
   REGISTRATION = 'c',
+  LIMIT = 'g',
 }
 
 export const workersTableCollumns = LineHander.collumnTuple([
@@ -18,7 +21,8 @@ export const workersTableCollumns = LineHander.collumnTuple([
   WorkerInfoCollumns.HOURLY,
   WorkerInfoCollumns.GRAD,
   WorkerInfoCollumns.POST,
-  WorkerInfoCollumns.REGISTRATION
+  WorkerInfoCollumns.REGISTRATION,
+  WorkerInfoCollumns.LIMIT,
 ]);
 
 export const workersTableCellTypes = CellHandler.typeTuple([
@@ -26,7 +30,8 @@ export const workersTableCellTypes = CellHandler.typeTuple([
   'string',
   'string',
   'string?',
-  'string'
+  'string',
+  'string?',
 ]);
 
 export function scrappeWorkersFromBook(book: XLSX.WorkBook, options: ScrappeWorkersOptions) {
@@ -38,7 +43,7 @@ export interface ScrappeWorkersOptions {
   month: number;
   sheetName?: string;
   holidays?: Holidays;
-  workerRegistryMap?: WorkerRegistriesMap;
+  workerRegistries?: WorkerRegistry[];
 }
 
 export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: ScrappeWorkersOptions): ResultType<WorkerInfo[]> {
@@ -48,6 +53,9 @@ export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: Scr
   if (ResultError.isError(sheet)) return sheet;
 
   const workerInfos: WorkerInfo[] = [];
+  const parser = new WorkerInfoParser();
+
+  const workerRegistries = options.workerRegistries ? new WorkerRegistryStorage(options.workerRegistries) : undefined; 
 
   for (const line of sheet.iterLines(2)) {
     const cellsResult = line.safeGetCells(workersTableCollumns);
@@ -56,18 +64,26 @@ export function safeScrappeWorkersFromBook(workBook: XLSX.WorkBook, options: Scr
     const typedCellsResult = CellHandler.safeTypeAll(cellsResult, workersTableCellTypes);
     if (ResultError.isError(typedCellsResult)) return typedCellsResult;
 
-    const [nameCell, hourlyCell, gradCell, postCell, registrationCell] = typedCellsResult;
+    const [
+      nameCell,
+      hourlyCell,
+      gradCell,
+      postCell,
+      registrationCell,
+      workLimitCell,
+    ] = typedCellsResult;
 
-    const workerData = options.workerRegistryMap?.get(registrationCell.value);
-    if (ResultError.isError(workerData)) return workerData;
+    const workerRegistry = workerRegistries?.get(registrationCell.value, nameCell.value);
+    if (ResultError.isError(workerRegistry)) return workerRegistry;
 
     try {
-      const worker = DEFAULT_WORKER_INFO_PARSER.parse({
+      const worker = parser.parse({
         name: nameCell.value,
         hourly: hourlyCell.value,
-        registration: registrationCell.value,
-        individualRegistry: workerData?.individualID,
-        gender: workerData?.gender,
+        workerId: registrationCell.value,
+        workLimit: workLimitCell.value,
+        individualId: workerRegistry?.individualId,
+        gender: workerRegistry?.gender,
         grad: gradCell.value,
         post: postCell.value ?? '',
         month: options.month,
@@ -106,7 +122,7 @@ export interface ScrappeTableOptions {
   sheetName?: string;
 }
 
-export function scrappeTable(buffer: Buffer, workers: WorkerInfo[], options: ScrappeTableOptions): ExtraDutyTableV2 {
+export function scrappeTable(buffer: Buffer, workers: WorkerInfo[], options: ScrappeTableOptions): ExtraDutyTable {
   const book = BookHandler.parse(buffer);
 
   const sheet = book.getSheet(options.sheetName);
@@ -114,12 +130,12 @@ export function scrappeTable(buffer: Buffer, workers: WorkerInfo[], options: Scr
   const month = sheet.at('c', 7).as('number').value - 1;
   const year = sheet.at('c', 6).as('number').value;
 
-  const table = new ExtraDutyTableV2({
+  const table = new ExtraDutyTable({
     month,
     year,
   });
 
-  const workerMap = WorkerInfo.createMap(workers);
+  const workerMap = WorkerInfo.mapFrom(workers);
 
   for (const line of sheet.iterLines(15)) {
     const selectionResult = CellHandler.safeTypeAll(line.getCells(finalTableCollumns), finalTableCellTypes);
@@ -142,7 +158,7 @@ export function scrappeTable(buffer: Buffer, workers: WorkerInfo[], options: Scr
 
     const duty = dayOfDuty.getDuty(Math.floor((startHour < firstDutyTime ? startHour + 24 - firstDutyTime : startTime.hours - firstDutyTime) / dutyDuration));
 
-    if (!duty.has(worker)) duty.add(worker, true);
+    if (!duty.has(worker)) duty.add(worker);
   }
 
   return table;

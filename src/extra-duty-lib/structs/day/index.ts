@@ -20,6 +20,46 @@ export class Day {
     }
   }
 
+  isBefore(other: Day): boolean {
+    if (this.year > other.year) {
+      return false;
+    }
+
+    if (this.month > other.month) {
+      return false;
+    }
+
+    return this.index < other.index;
+  }
+
+  isAfter(other: Day): boolean {
+    if (this.year < other.year) {
+      return false;
+    }
+
+    if (this.month < other.month) {
+      return false;
+    }
+
+    return this.index > other.index;
+  }
+
+  sumIndex(days: number): Day {
+    return new Day(
+      this.year,
+      this.month,
+      this.index + days,
+    );
+  }
+
+  subIndex(days: number): Day {
+    return new Day(
+      this.year,
+      this.month,
+      this.index - days,
+    );
+  }
+
   static fromLastOf(year: number, month: number): Day {
     return new Day(
       year,
@@ -29,7 +69,7 @@ export class Day {
   }
 
   static lastOf(year: number, month: number): number {
-    return getNumOfDaysInMonth(month, year);
+    return getNumOfDaysInMonth(month, year) - 1;
   }
 
   static isValidIndex(year: number, month: number, day: number) {

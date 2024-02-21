@@ -41,12 +41,6 @@ export class MainTableFactory implements TableFactory {
   async generate(table: ExtraDutyTable, options: TableFactoryOptions): Promise<Buffer> {
     const book = await this.getBook();
 
-    const entries = Array.from(table.entries());
-
-    entries.sort(sortByRegistration);
-
-    entries.sort(sortByGrad);
-
     const sheet = book.getWorksheet(options.sheetName);
 
     const yearCell = sheet.getCell('C6');
@@ -57,7 +51,7 @@ export class MainTableFactory implements TableFactory {
 
     monthCell.value = table.config.month + 1;
 
-    for (const [i, rowData] of enumerate(iterRows(entries))) {
+    for (const [i, rowData] of enumerate(iterRows(table))) {
       const row = sheet.getRow(i + 15);
 
       const nameCell = row.getCell(OutputCollumns.NAME);
@@ -73,9 +67,9 @@ export class MainTableFactory implements TableFactory {
       const locationCodeCell = row.getCell(OutputCollumns.LOCATION_CODE);
 
       locationCodeCell.value = 7;
-      eventCell.value = 'PARQUE DO JIQUIÁ';
+      eventCell.value = rowData.event;
       detailsCell.value = 'SEGURANÇA E APOIO A SMAS';
-
+      
       nameCell.value = rowData.name;
       registrationCell.value = rowData.registration;
       gradCell.value = rowData.grad;

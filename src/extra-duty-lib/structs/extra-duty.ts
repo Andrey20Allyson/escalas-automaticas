@@ -1,93 +1,71 @@
-import { DaysOfWeek, dayOfWeekFrom, firstMondayFromYearAndMonth } from "../../utils";
-import type { ExtraDutyTableConfig } from "../extra-duty-table/v1";
+import { dayOfWeekFrom, firstMondayFromYearAndMonth } from "../../utils";
 import type { DayOfExtraDuty } from "./day-of-extra-duty";
+import type { ExtraDutyTable, ExtraDutyTableConfig } from "./extra-duty-table";
 import { Gender, Graduation, WorkerInfo } from "./worker-info";
-
-export type GraduationQuantityMap = {
-  [K in Graduation]: number;
-};
-
-export type GenderQuantityMap = {
-  [K in Gender]: number;
-};
+import { WorkingPlaceStorage } from "./working-place-storage";
 
 export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
-  graduationQuantityMap: GraduationQuantityMap;
-  genderQuantityMap: GenderQuantityMap;
-  workers: Map<number, WorkerInfo>;
-
   readonly offTimeEnd: number;
-  readonly isNightly: boolean;
+  private readonly _isNightly: boolean;
   readonly start: number;
   readonly end: number;
   readonly firstMonday: number;
   readonly weekDay: number;
+  readonly workers: WorkingPlaceStorage;
+  readonly config: ExtraDutyTableConfig;
+  readonly table: ExtraDutyTable;
 
   constructor(
-    readonly day: number,
     readonly index: number,
-    readonly config: ExtraDutyTableConfig
+    readonly day: DayOfExtraDuty,
   ) {
-    this.workers = new Map();
+    this.table = day.table;
+    this.config = day.config;
 
-    this.start = config.firstDutyTime + config.dutyInterval * index;
+    this.workers = new WorkingPlaceStorage();
+
+    this.start = this.config.firstDutyTime + this.config.dutyDuration * index;
     this.end = this.start + this.config.dutyDuration;
-    this.offTimeEnd = this.end + this.config.dutyDuration;
-    this.isNightly = this.start >= 18 || this.start < 7;
+    this.offTimeEnd = this.end + this.config.dutyOffTimeToOrdinary;
+    this._isNightly = this.start >= 18 || this.start < 7;
     this.firstMonday = firstMondayFromYearAndMonth(this.config.year, this.config.month);
-    this.weekDay = dayOfWeekFrom(this.firstMonday, this.day);
+    this.weekDay = dayOfWeekFrom(this.firstMonday, this.day.index);
+  }
 
-    this.graduationQuantityMap = {
-      'sub-insp': 0,
-      'insp': 0,
-      'gcm': 0,
-    };
+  isNighttime(): boolean {
+    return this._isNightly;
+  }
 
-    this.genderQuantityMap = {
-      'female': 0,
-      'male': 0,
-      'N/A': 0,
-    };
+  isDaytime(): boolean {
+    return !this._isNightly;
+  }
+
+  isLast(): boolean {
+    return this.index >= this.day.getSize() - 1;
   }
 
   copy(other: ExtraDuty): this {
-    for (const _key in this.graduationQuantityMap) {
-      const key = _key as keyof GraduationQuantityMap;
-
-      this.graduationQuantityMap[key] = other.graduationQuantityMap[key];
-    }
-
-    for (const _key in this.genderQuantityMap) {
-      const key = _key as keyof GenderQuantityMap;
-
-      this.genderQuantityMap[key] = other.genderQuantityMap[key];
-    }
-
-    this.workers.clear();
-
-    for (const [_, worker] of other) {
-      this.workers.set(this.keyFrom(worker), worker);
-    }
+    this.workers.copy(other.workers);
 
     return this;
   }
 
-  gradQuantity(grad: Graduation) {
-    return this.graduationQuantityMap[grad];
+  iterPlaces(): Iterable<string> {
+    return this.workers.iterPlaceNames();    
+  }
+
+  gradQuantity(grad: Graduation): number {
+    return this.workers.graduation.quantityFrom(this.config.currentPlace, grad);
   }
 
   graduateQuantity() {
     return this.gradQuantity('insp') + this.gradQuantity('sub-insp');
   }
 
-  genderQuantity(gender: Gender) {
-    return this.genderQuantityMap[gender];
+  genderQuantity(gender: Gender): number {
+    return this.workers.gender.quantityFrom(this.config.currentPlace, gender);
   }
 
-  isDailyWorkerAtNight(worker: WorkerInfo) {
-    return worker.daysOfWork.isDailyWorker && this.isNightly;
-  }
-  
   gradIsOnly(grad: Graduation) {
     return !this.isEmpity() && this.gradQuantity(grad) === this.getSize();
   }
@@ -100,65 +78,16 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     return this.weekDay === weekDay;
   }
 
-  isWorkerInsuficient() {
-    return this.getSize() < 2;
+  next(count: number = 1): ExtraDuty | undefined {
+    return this.day.at(this.index + count);
   }
-
-  isDailyWorkerAtFridayAtNight(worker: WorkerInfo) {
-    const isFriday = this.isWeekDay(DaysOfWeek.FRIDAY);
-
-    return isFriday && this.isDailyWorkerAtNight(worker);
-  }
-
-  collidesWithWork(worker: WorkerInfo) {
-    if (this.isDailyWorkerAtFridayAtNight(worker)) return false;
-
-    return this.collidesWithTodayWork(worker)
-      || this.collidesWithTomorrowWork(worker)
-      || this.collidesWithYesterdayWork(worker);
-  }
-
-  collidesWithTodayWork(worker: WorkerInfo) {
-    const workToday = worker.daysOfWork.workOn(this.day);
-    if (!workToday) return false;
-
-    const workStart = worker.workTime.startTime;
-
-    return this.offTimeEnd > workStart;
-  }
-
-  collidesWithYesterdayWork(worker: WorkerInfo) {
-    const workYesterday = worker.daysOfWork.workOn(this.day - 1);
-    if (!workYesterday) return false;
-
-    const yesterdayWorkOffTimeEnd = worker.workTime.startTime + worker.workTime.totalTime * 2;
-
-    return yesterdayWorkOffTimeEnd - 24 > this.start;
-  }
-
-  collidesWithTomorrowWork(worker: WorkerInfo) {
-    const workTomorrow = worker.daysOfWork.workOn(this.day + 1);
-    if (!workTomorrow) return false;
-
-    const tomorrowWorkStart = worker.workTime.startTime + 24;
-
-    return this.offTimeEnd > tomorrowWorkStart;
-  }
-
-  collidesWithLicense(worker: WorkerInfo) {
-    return worker.daysOfWork.licenseOn(this.day);
-  }
-
-  breaksInspRule(worker: WorkerInfo) {
-    return worker.graduation === 'insp' && this.gradQuantity('insp') > 0;
-  }
-
-  breaksGenderRule(worker: WorkerInfo) {
-    return worker.gender === 'female' && (this.genderQuantity('female') > 0 && this.genderQuantity('male') < 1);
+  
+  prev(count: number = 1): ExtraDuty | undefined {
+    return this.day.at(this.index - count);
   }
 
   *[Symbol.iterator](): Iterator<[string, WorkerInfo]> {
-    for (const [_, worker] of this.workers) {
+    for (const [_, worker] of this.workers.placeFrom(this.config.currentPlace)) {
       yield [worker.name, worker];
     }
   }
@@ -171,81 +100,51 @@ export class ExtraDuty implements Iterable<[string, WorkerInfo]> {
     return this.getSize() === 0;
   }
 
-  has(worker: WorkerInfo) {
-    return this.workers.has(this.keyFrom(worker));
+  has(worker: WorkerInfo, place?: string) {
+    return this.workers.has(worker, place);
   }
 
-  keyFrom(worker: WorkerInfo) {
-    return worker.fullWorkerID;
+  getSize(): number {
+    return this.workers.placeFrom(this.config.currentPlace).size;
   }
 
-  getSize() {
-    return this.workers.size;
-  }
+  add(worker: WorkerInfo) {
+    this.workers.add(this.config.currentPlace, worker);
 
-  canAdd(worker: WorkerInfo, force = false) {
-    return !this.has(worker)
-      && (force
-        || !worker.isCompletelyBusy(this.config.dutyPositionSize)
-        && !this.isFull()
-        && !this.collidesWithLicense(worker)
-        && !this.breaksInspRule(worker)
-        && !this.breaksGenderRule(worker)
-      );
-  }
-
-  add(worker: WorkerInfo, force = false): boolean {
-    if (!this.canAdd(worker, force)) return false;
-
-    this.workers.set(this.keyFrom(worker), worker);
-
-    this.graduationQuantityMap[worker.graduation]++;
-    this.genderQuantityMap[worker.gender]++;
-
-    worker.occupyPositions(this.config.dutyPositionSize);
-
-    return true;
+    this.table.limiter.increase(worker);
   }
 
   delete(worker: WorkerInfo) {
-    const existed = this.workers.delete(this.keyFrom(worker));
+    const existed = this.workers.remove(this.config.currentPlace, worker);
 
     if (!existed) return;
 
-    this.graduationQuantityMap[worker.graduation]--;
-    this.genderQuantityMap[worker.gender]--;
-
-    worker.leavePositions(this.config.dutyPositionSize);
+    this.table.limiter.decrease(worker);
   }
 
-  clear() {
-    for (const [_, worker] of this) {
-      worker.leavePositions(this.config.dutyPositionSize);
+  clear(place?: string) {
+    if (place === undefined) {
+      for (const place of this.workers.iterPlaceNames()) {
+        this.clear(place);
+      }
+
+      return;
     }
 
-    this.workers.clear();
+    for (const [_, worker] of this.workers.placeFrom(place)) {
+      this.table.limiter.decreaseFrom(place, worker);
+    }
 
-    this._clearQuantityMap();
-  }
-
-  private _clearQuantityMap() {
-    resetMap(this.genderQuantityMap);
-    resetMap(this.graduationQuantityMap);
+    this.workers.clear(place);
   }
 
   static dutiesFrom(day: DayOfExtraDuty): readonly ExtraDuty[] {
-    const duties: ExtraDuty[] = new Array(day.size);
+    const duties: ExtraDuty[] = new Array(day.getSize());
 
     for (let i = 0; i < duties.length; i++) {
-      duties[i] = new ExtraDuty(day.day, i, day.config);
+      duties[i] = new ExtraDuty(i, day);
     }
 
     return duties;
-  }
-}
-
-function resetMap(map: Record<string, number>) {
-  for (const key in map) {
-    map[key] = 0;
   }
 }
