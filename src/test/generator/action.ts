@@ -1,17 +1,16 @@
+import fs from 'fs/promises';
 import path from "path";
 import { GenerateCommandOptions } from ".";
 import { parseWorkers } from "../../auto-schedule/io";
 import { FirebaseWorkerRegistryLoader } from "../../auto-schedule/registries/worker-registry/loader";
 import { MainTableFactory } from "../../auto-schedule/table-factories";
-import { WorkerInfo, ExtraDutyTable, ExtraEventName } from "../../extra-duty-lib";
+import { ExtraDutyTable, ExtraEventName, WorkerInfo } from "../../extra-duty-lib";
 import { DefautlScheduleBuilder } from "../../extra-duty-lib/builders/default-builder";
 import { DefaultTableIntegrityAnalyser } from "../../extra-duty-lib/builders/integrity";
-import { Month } from "../../extra-duty-lib/structs/month";
 import { Benchmarker, analyseResult } from "../../utils";
 import { Fancyfier, UnassignedWorkersMessageData } from "../../utils/fancyfier";
 import { MockFactory } from "./mock";
 import { RandomWorkerMockFactory } from "./mock/worker/random";
-import fs from 'fs/promises';
 
 function mockWorkers(year: number, month: number) {
   const workerMocker: MockFactory<WorkerInfo> = new RandomWorkerMockFactory({ month, year });
@@ -71,7 +70,7 @@ export async function generate(options: GenerateCommandOptions) {
     ExtraEventName.JARDIM_BOTANICO_DAYTIME,
     ExtraEventName.SUPPORT_TO_CITY_HALL,
   ]));
-  
+
   fancyfier.log(beckmarker);
   fancyfier.log(integrity);
   console.log(`pode ser utilizado: ${integrity.isCompliant()}`);
