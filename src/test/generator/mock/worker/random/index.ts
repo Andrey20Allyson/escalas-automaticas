@@ -1,5 +1,5 @@
 import { MockFactory } from "../..";
-import { WorkerInfo } from "../../../../../extra-duty-lib";
+import { ExtraEventName, WorkLimit, WorkerInfo } from "../../../../../extra-duty-lib";
 import { WorkerIdentifier } from "../../../../../extra-duty-lib/structs/worker-identifier";
 import { randomIntFromInterval } from "../../../../../utils";
 import { randomDaysOfWork } from "./days-of-work";
@@ -39,6 +39,30 @@ export class RandomWorkerMockFactory extends MockFactory<WorkerInfo> {
       randomIntFromInterval(0, 9),
     );
 
+    let limit = new WorkLimit([{
+      limit: 0,
+      place: ExtraEventName.SUPPORT_TO_CITY_HALL,
+    }, {
+      limit: 0,
+      place: ExtraEventName.JARDIM_BOTANICO_DAYTIME,
+    }]);
+
+    if (Math.random() > .55) {
+      const limits = [6, 2];
+      if (Math.random() > .5) limits.reverse();
+
+      limit = new WorkLimit([
+        ...limit.iter(),
+        {
+          limit: limits[0],
+          place: ExtraEventName.SUPPORT_TO_CITY_HALL,
+        }, {
+          limit: limits[1],
+          place: ExtraEventName.JARDIM_BOTANICO_DAYTIME,
+        }
+      ]);
+    }
+
     const worker = new WorkerInfo({
       name,
       graduation,
@@ -48,6 +72,7 @@ export class RandomWorkerMockFactory extends MockFactory<WorkerInfo> {
       identifier,
       individualId: randomIntFromInterval(0, 99_999_999_999),
       workTime,
+      limit,
     });
 
     return worker;

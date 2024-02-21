@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { DEFAULT_MONTH_PARSER } from '../../extra-duty-lib/structs/month';
 import { OptionInfoBuilder, loadCommand } from './cli';
 import { generate } from './action';
+import { bench, benchOptionsSchema } from './bench';
 
 const generateOptionsSchema = z.object({
   mode: z
@@ -47,6 +48,23 @@ loadCommand({
       .describe('select the execution mode'),
   },
   action: generate,
+});
+
+loadCommand({
+  schema: benchOptionsSchema,
+  command: 'bench',
+  aliases: ['bnc', 'b', 'mark'],
+  description: `Benchmarks the table generation`,
+  optionInfos: {
+    times: OptionInfoBuilder
+      .alias('t')
+      .describe('How much times the program with run the assign procedure'),
+    weight: OptionInfoBuilder
+      .alias('w')
+      .describe('How much hard is to assign a worker')
+      .hint('low|mid|high'),
+  },
+  action: bench,
 });
 
 program.parse();
