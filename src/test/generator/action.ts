@@ -11,6 +11,7 @@ import { Benchmarker, analyseResult } from "../../utils";
 import { Fancyfier, UnassignedWorkersMessageData } from "../../utils/fancyfier";
 import { MockFactory } from "./mock";
 import { RandomWorkerMockFactory } from "./mock/worker/random";
+import { MultiEventScheduleBuilder } from '../../extra-duty-lib/builders/multi-event-schedule-builder';
 
 function mockWorkers(year: number, month: number) {
   const workerMocker: MockFactory<WorkerInfo> = new RandomWorkerMockFactory({ month, year });
@@ -52,7 +53,7 @@ export async function generate(options: GenerateCommandOptions) {
 
   const tableAssignBenchmark = beckmarker.start('talbe assign');
 
-  const builder = new DefautlScheduleBuilder(tries);
+  const builder = MultiEventScheduleBuilder.default({ tries });
 
   builder.build(table, workers);
 
@@ -61,8 +62,10 @@ export async function generate(options: GenerateCommandOptions) {
   const analisysString = analyseResult(table);
   console.log(analisysString);
 
-  const integrity = new DefaultTableIntegrityAnalyser()
-    .analyse(table);
+  const integrity = new DefaultTableIntegrityAnalyser(undefined, [
+    ExtraEventName.JIQUIA,
+    ExtraEventName.JARDIM_BOTANICO_DAYTIME,
+  ]).analyse(table);
 
   const fancyfier = new Fancyfier();
   fancyfier.log(new UnassignedWorkersMessageData(table, workers, [

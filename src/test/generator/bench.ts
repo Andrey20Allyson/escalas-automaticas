@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import { z } from "zod";
 import { ExtraDutyTable, ExtraEventName } from "../../extra-duty-lib";
-import { ScheduleAssignerV1 } from "../../extra-duty-lib/builders/assigners/assigner-v1";
+import { MultiStepScheduleAssigner } from "../../extra-duty-lib/builders/assigners/multi-step-assigner";
 import { AssignmentRuleStack } from "../../extra-duty-lib/builders/rule-checking";
 import {
   BusyWorkerAssignmentRule,
@@ -71,7 +71,10 @@ export function bench(options: BenchActionOptions) {
     );
   }
 
-  const assigner = new ScheduleAssignerV1(ruleStack);
+  const assigner = new MultiStepScheduleAssigner(
+    ruleStack,
+    MultiStepScheduleAssigner.defaultSteps(),
+  );
 
   const benchmarker = new Benchmarker();
 
