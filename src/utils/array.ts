@@ -12,3 +12,23 @@ export function forkArray<T>(array: Array<T>, separator: (value: T) => boolean):
 
   return [trueArray, falseArray]
 }
+
+export type FilterPredicate<T> = (value: T, index: number, array: T[]) => boolean;
+
+export function removeFromArrayWhere<T>(array: T[], predicate: FilterPredicate<T>, thisArg: unknown = undefined): T[] {
+  let insertionIdx = 0;
+  
+  for (let i = 0; i < array.length; i++) {
+    const value = array[i];
+
+    if (predicate.call(thisArg, value, i, array) === true) {
+      continue;
+    }
+
+    array[insertionIdx++] = value;
+  }
+
+  array.length = insertionIdx;
+
+  return array;
+}
