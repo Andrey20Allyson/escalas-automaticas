@@ -1,1 +1,0 @@
-import { WorkerInfo } from "../../structs";
