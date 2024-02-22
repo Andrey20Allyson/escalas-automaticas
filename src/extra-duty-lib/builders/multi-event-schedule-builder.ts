@@ -68,12 +68,12 @@ export class MultiEventScheduleBuilder implements ScheduleBuilder {
     }, {
       events,
       min: 2,
-      dutyMinDistance: 1,
+      dutyMinDistance: 4,
     }, {
       events,
       min: 2,
       inPairs: false,
-      dutyMinDistance: 1,
+      dutyMinDistance: 2,
     }, {
       events,
       min: 2,
