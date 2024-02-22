@@ -16,6 +16,11 @@ export enum DayOfWeek {
   SATURDAY
 }
 
+const weekEnds = new Uint8Array([DayOfWeek.SATURDAY, DayOfWeek.SUMDAY]); 
+export function isWeekEnd(weekDay: DayOfWeek): boolean {
+  return weekEnds.includes(weekDay);
+}
+
 export function firstMondayFromYearAndMonth(year: number, month: number) {
   const date = new Date(year, month, 1);
 
