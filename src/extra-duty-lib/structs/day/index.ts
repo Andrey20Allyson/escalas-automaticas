@@ -1,23 +1,28 @@
-import { getNumOfDaysInMonth, isInteger, thisMonth, thisYear } from "../../../utils";
+import { DayOfWeek, dayOfWeekFrom, getNumOfDaysInMonth, isInteger, isWeekEnd, thisMonth, thisYear } from "../../../utils";
 import { Month } from "../month";
 
 export class Day {
-  readonly year: number;
-  readonly month: number;
+  private readonly _month: Month;
+  private _weekDay: number | null = null;
 
   constructor(
     year: number,
     month: number,
     readonly index: number,
   ) {
-    const validMonth = new Month(year, month);
-
-    this.year = validMonth.year;
-    this.month = validMonth.index;
+    this._month = new Month(year, month);
 
     if (!Day.isValidIndex(this.year, this.month, this.index)) {
-      throw new Error(`value ${this.index} don't is a valid day of month ${validMonth.toString()}`);
+      throw new Error(`value ${this.index} don't is a valid day of month ${this._month.toString()}`);
     }
+  }
+
+  get year() {
+    return this._month.year;
+  }
+
+  get month() {
+    return this._month.index;
   }
 
   isBefore(other: Day): boolean {
@@ -58,6 +63,17 @@ export class Day {
       this.month,
       this.index - days,
     );
+  }
+
+  getWeekDay(): DayOfWeek {
+    let weekDay = this._weekDay;
+    if (weekDay === null) return this._weekDay = dayOfWeekFrom(this._month.getFirstMonday(), this.index);
+
+    return weekDay;
+  }
+
+  isWeekEnd(): boolean {
+    return isWeekEnd(this.getWeekDay());
   }
 
   static fromLastOf(year: number, month: number): Day {
