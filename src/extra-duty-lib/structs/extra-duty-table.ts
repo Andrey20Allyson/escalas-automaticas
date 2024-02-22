@@ -6,7 +6,6 @@ import { Month } from './month';
 import { PositionLimiter } from './position-limiter';
 import { ExtraEventConfig, ExtraEventConfigBuilder } from './extra-events/extra-event-config';
 import { Day } from './day';
-import { exit } from 'process';
 
 export interface ExtraDutyTableConfig {
   readonly dutyDuration: number;
@@ -28,6 +27,7 @@ export interface ExtraDutyTableEntry {
 }
 
 export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
+  private _savedConfig: ExtraDutyTableConfig | null = null;
   readonly days: readonly DayOfExtraDuty[];
   readonly config: ExtraDutyTableConfig;
   readonly limiter: PositionLimiter;
@@ -141,6 +141,35 @@ export class ExtraDutyTable implements Iterable<DayOfExtraDuty> {
     if (24 % this.config.dutyDuration !== 0) {
       throw new Error(`dutyDuration shold be a number divisor of 24`);
     }
+  }
+
+  saveConfig(): void {
+    this._savedConfig = { ...this.config };
+  }
+
+  restoreConfig(): void {
+    if (this._savedConfig === null) return;
+
+    this.config.dutyOffTimeToOrdinary = this._savedConfig.dutyOffTimeToOrdinary;
+    this.config.dutyPositionSize = this._savedConfig.dutyPositionSize;
+    this.config.dutyMinDistance = this._savedConfig.dutyMinDistance;
+    this.config.dutyCapacity = this._savedConfig.dutyCapacity;
+    this.config.currentPlace = this._savedConfig.currentPlace;
+  }
+
+  setDutyCapacity(capacity: number): this {
+    this.config.dutyCapacity = capacity;
+    return this;
+  }
+
+  setCurrentEvent(name: string): this {
+    this.config.currentPlace = name;
+    return this;
+  }
+
+  setDutyMinDistance(distance: number): this {
+    this.config.dutyMinDistance = distance;
+    return this;
   }
 
   static createConfigFrom(partialConfig?: Partial<ExtraDutyTableConfig>): ExtraDutyTableConfig {
