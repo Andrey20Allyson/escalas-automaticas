@@ -49,7 +49,19 @@ export class WorkerInfo implements Limitable, Clonable<WorkerInfo> {
   }
 
   isGraduate() {
-    return this.graduation === 'insp' || this.graduation === 'sub-insp';
+    return this.isInsp() || this.isSubInsp();
+  }
+
+  isInsp(): boolean {
+    return this.graduation === 'insp';
+  }
+
+  isSubInsp(): boolean {
+    return this.graduation === 'sub-insp';
+  }
+
+  isDailyWorker(): boolean {
+    return this.daysOfWork.isDailyWorker;
   }
 
   clone() {
